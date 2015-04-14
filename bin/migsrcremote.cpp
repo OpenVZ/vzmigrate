@@ -1124,6 +1124,10 @@ int MigrateStateRemote::startVE()
 			action = DSTACT_MOUNT_VE;
 		else
 			action = DSTACT_NOTHING;
+
+		/* CT will be started on DST so ignore cancelation */
+		disable_sig_handler();
+
 		// target will register resource on HA cluster here
 		rc = channel.sendCommand(CMD_FINAL " %d", isOptSet(OPT_NOSTART)
 	                           ? 0 : action);

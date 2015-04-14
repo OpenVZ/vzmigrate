@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <fcntl.h>
 
 #include <stdarg.h>
@@ -77,8 +78,18 @@ void vprint_log(int level, const char* oformat, va_list pvar)
 	va_copy(pvar1, pvar);
 	vsnprintf(buf, sizeof(buf), oformat, pvar1);
 	va_end(pvar1);
-	if (debug_level >= LOG_DEBUG)
-		point += sprintf(buf, "%lu: ", time(NULL));
+	if (debug_level >= LOG_DEBUG) {
+		struct timeval tv;
+		struct tm tm;
+		if (gettimeofday(&tv, NULL) == 0 && localtime_r(&tv.tv_sec, &tm)) {
+			point += snprintf(buf, sizeof(buf),
+				"%4.4d-%2.2d-%2.2d %2.2d:%2.2d:%2.2d.%3.3ld: ",
+				tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+				tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_usec / 1000);
+		} else {
+			point += snprintf(buf, sizeof(buf), "%lu: ", time(NULL));
+		}
+	}
 	vsnprintf(buf + point, sizeof(buf) - point, oformat, pvar);
 	print_func(level, buf);
 }
