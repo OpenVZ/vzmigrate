@@ -1204,19 +1204,6 @@ int checkVEDir(const char * vedir, int unique)
 	return 1;
 }
 
-int VEObj::offlineManagement(bool state, bool skiparp)
-{
-	if (0 == ve_data.offlm)
-		return 0;
-
-	const char * args[] = { NULL, NULL, NULL };
-	args[0] = state ? "--offline_management=yes" : "--offline_management=no";
-
-	if (skiparp)
-		args[1] = "--skip_arpdetect";
-	return operateVE("set", "OfflineManagement", args, 0);
-}
-
 /* 0 - ipadd, 1 - ipdel*/
 static int ipset(unsigned veid, const char *cmd, struct string_list *iplist)
 {

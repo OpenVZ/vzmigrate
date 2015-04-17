@@ -967,14 +967,6 @@ int MigrateStateCommon::getHaClusterNodeID(string & id)
 	return 0;
 }
 
-int MigrateStateCommon::clean_OfflineManagement(const void * arg, const void *)
-{
-	VEObj * ve = (VEObj *) arg;
-	assert(ve);
-	logger(LOG_DEBUG, MIG_MSG_RST_OFFLINE, ve->veid());
-	return ve->offlineManagement(false);
-};
-
 int MigrateStateCommon::applyPloopQuotaImpl(const char *qfile)
 {
 	int rc;
@@ -997,10 +989,6 @@ int MigrateStateCommon::applyPloopQuotaImpl(const char *qfile)
 
 	if (!(status & ENV_STATUS_RUNNING) && (rc = dstVE->start()))
 		goto cleanup_0;
-
-	/* switch off offline management on failure */
-	if (dstVE->ve_data.offlm)
-		addCleaner(clean_OfflineManagement, dstVE);
 
 	while (fgets(buf, sizeof(buf), fp)) {
 		if (strncmp(token, buf, strlen(token)))

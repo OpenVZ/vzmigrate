@@ -103,7 +103,6 @@ public:
 	static int clean_rename(const void * arg1, const void * arg2) ;
 	void addCleanerRename(const char * src, const char * dest,
 			int success = ERROR_CLEANER);
-	static int clean_OfflineManagement(const void * arg, const void * dummy);
 
 protected:
 	int applyPloopQuotaImpl(const char *qfile);

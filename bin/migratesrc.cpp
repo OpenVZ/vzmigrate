@@ -38,7 +38,6 @@ MigrateStateSrc::MigrateStateSrc(unsigned src_ve, unsigned dst_ve,
 	addCleaner(clean_delEntry, dstVE, NULL, ANY_CLEANER);
 	addCleaner(clean_delEntry, srcVE, NULL, ANY_CLEANER);
 
-	offlineTurned = false;
 	m_convertQuota2[0] = '\0';
 }
 
@@ -94,13 +93,6 @@ int MigrateStateSrc::stopVE()
 	// by kernel license verification
 
 	int rc = 0;
-	// Turn off offline management
-	// to correctly replace IP to keeper VE
-	rc = srcVE->offlineManagement(false);
-	if (rc != 0)
-		return rc;
-	addCleaner(clean_restoreOfflineManagement, srcVE);
-	offlineTurned = true;
 
 	// We transfer VE ip addresses to some 'keeper' VE
 	if (isOptSet(OPT_KEEPER))
@@ -157,17 +149,6 @@ int MigrateStateSrc::startVEStage()
 		assert(keepVE);
 		if ((rc = restoreIPs(*keepVE, *srcVE)))
 			return rc;
-	}
-
-	if (!offlineTurned)
-	{
-		// Turn off offline management
-		// to turn it on on destination
-		rc = srcVE->offlineManagement(false);
-		if (rc != 0)
-			return rc;
-		addCleaner(clean_restoreOfflineManagement, srcVE);
-		offlineTurned = true;
 	}
 
 	// VE starting
@@ -235,16 +216,6 @@ int MigrateStateSrc::clean_restoreVE(const void * arg1, const void *arg2)
 	VEObj * v = (VEObj *) arg2;
 	rollbackIPs(*k, *v);
 	return 0;
-};
-
-int MigrateStateSrc::clean_restoreOfflineManagement(const void * arg, const void *)
-{
-	VEObj * ve = (VEObj *) arg;
-	assert(ve);
-	logger(LOG_DEBUG, MIG_MSG_RST_OFFLINE, ve->veid());
-	if (!ve->ve_data.offlm)
-		return 0;
-	return ve->offlineManagement(true);
 };
 
 int MigrateStateSrc::clean_deleteSnapshot(const void * arg1, const void * arg2)

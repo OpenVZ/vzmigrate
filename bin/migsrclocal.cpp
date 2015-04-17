@@ -404,8 +404,6 @@ int MigrateStateLocal::preMigrateStage()
 				logger(LOG_INFO, "Generate CT uuid %s", u);
 				uuid = u;
 			}
-			if ((rc = dstVE->updateConfig(VE_CONF_OFFLM, NULL)))
-				return rc;
 		}
 
 		if ((rc = dstVE->updateConfig(VE_CONF_UUID, uuid.empty() ? NULL : uuid.c_str())))
@@ -677,11 +675,6 @@ int MigrateStateLocal::startVE()
 		}
 	} else {
 		VEObj * ve = isOptSet(OPT_COPY) ? (VEObj *) srcVE : (VEObj *) dstVE;
-		// turn on offline management
-		if (ve->ve_data.offlm) {
-			if ((rc = ve->offlineManagement(true)))
-				return rc;
-		}
 
 		if (isOptSet(OPT_NOSTART))
 			return 0;

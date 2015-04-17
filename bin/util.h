@@ -37,7 +37,6 @@
 #define VE_CONF_BINDMOUNT 	"BINDMOUNT"
 #define VE_CONF_NAME	 	"NAME"
 #define VE_CONF_OSTEMPLATE	"OSTEMPLATE"
-#define VE_CONF_OFFLM		"OFFLINE_MANAGEMENT"
 #define VE_CONF_IPADDR		"IP_ADDRESS"
 #define VE_CONF_VETYPE		"VE_TYPE"
 #define VE_CONF_DISKSPACE	"DISKSPACE"
@@ -87,7 +86,6 @@ struct ve_data {
 	char *uuid;
 	char *ostemplate;
 	unsigned long technologies;
-	int offlm;
 	char *bindmount;
 	char *root;
 	char *root_orig;

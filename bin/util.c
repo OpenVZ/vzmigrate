@@ -453,15 +453,6 @@ int ve_data_load(unsigned veid, struct ve_data *ve)
 		}
 	}
 
-	/* read OFFLINE_MANAGEMENT */
-	if ((rc = vzctl2_env_get_param(h, VE_CONF_OFFLM, &data))) {
-		rc = putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
-			VE_CONF_OFFLM, vzctl2_get_last_error());
-		goto cleanup;
-	}
-	if (data)
-		ve->offlm = !strcasecmp(data, "yes");
-
 	/* read NAME */
 	if ((rc = vzctl2_env_get_param(h, VE_CONF_NAME, &data))) {
 		rc = putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",

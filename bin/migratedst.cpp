@@ -883,13 +883,6 @@ int MigrateStateDstRemote::finalStage(int action)
 	if ((rc = registerOnHaCluster()))
 		return rc;
 
-	// turn on offline management
-	if (dstVE->ve_data.offlm) {
-		if ((rc = dstVE->offlineManagement(true)))
-			return rc;
-		addCleaner(clean_OfflineManagement, dstVE);
-	}
-
 	if (action == DSTACT_START_VE)
 		rc = dstVE->start();
 	else if (action == DSTACT_MOUNT_VE)
@@ -922,14 +915,6 @@ cleanup:
 int MigrateStateDstRemote::undump(void)
 {
 	int rc;
-
-	// turn on offline management
-	if (dstVE->ve_data.offlm) {
-		rc = dstVE->offlineManagement(true, true);
-		if (rc != 0)
-			return rc;
-	}
-	addCleaner(clean_OfflineManagement, dstVE);
 
 	if (	(isOptSet(OPT_PS_MODE) || isOptSet(OPT_AGENT)) &&
 		!isOptSet(OPT_NOCONTEXT) && (m_nVziterindPid != -1))

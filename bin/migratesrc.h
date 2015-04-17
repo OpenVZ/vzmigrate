@@ -37,7 +37,6 @@ protected:
 	static int clean_closeSocket(const void * arg, const void *);
 	static int clean_mountVE(const void * arg, const void *);
 	static int clean_restoreVE(const void * arg, const void *);
-	static int clean_restoreOfflineManagement(const void * arg, const void *);
 	static int clean_deletePloopSnapshot(const void * arg, const void * arg2);
 	static int clean_registerVE(const void * arg1, const void * arg2);
 	static int clean_resumeVE(const void * arg1, const void * arg2);
@@ -74,7 +73,6 @@ public:
 
 protected:
 
-	bool offlineTurned;
 	int m_srcInitStatus;
 	char m_convertQuota2[PATH_MAX];
 

@@ -624,7 +624,7 @@ int MigrateStateRemote::doCtMigrationDefault()
 	if (rc)
 		return rc;
 
-	// keeper, offlineManagement, restore state VE
+	// keeper, restore state VE
 	if ((rc = startVEStage()))
 		return rc;
 
@@ -2070,14 +2070,6 @@ int MigrateStateRemote::doOnlinePloopSharedCtMigration()
 	{
 		assert(keepVE);
 		restoreIPs(*keepVE, *srcVE);
-	}
-
-	if (!offlineTurned)
-	{
-		if (srcVE->offlineManagement(false)) {
-			addCleaner(clean_restoreOfflineManagement, srcVE);
-			offlineTurned = true;
-		}
 	}
 
 	/* stop and umount CT _before_ merge on target */

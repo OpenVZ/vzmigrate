@@ -269,7 +269,6 @@ extern const char * getError();
 #define MIG_MSG_SET_MODE	"chmod '%s' : %m"
 #define MIG_MSG_REPLY		"can not read reply from destination node"
 #define MIG_MSG_KEEPER_RUN	"keeper CT#%d is not running"
-#define MIG_MSG_OFFLINE_MAN	"can't turn off/on offline management for CT#%d : %s"
 #define MIG_MSG_NEWTEM_REPAIR	"can't repair CT#%d packages : %s"
 #define MIG_MSG_NEWTEM_CONFPATH	"can't get template config path : %d"
 
@@ -318,7 +317,6 @@ extern const char * getError();
 #define MIG_MSG_RST_CHANNEL	"cleaning : close ssh channel"
 #define MIG_MSG_RST_RESTORE	"cleaning : restore CT#%d"
 #define MIG_MSG_RST_MOUNT	"cleaning : mount CT#%d"
-#define MIG_MSG_RST_OFFLINE	"cleaning : restore offline management CT#%d"
 #define MIG_MSG_STOP_TRACK	"cleaning : stop tracking CT#%d"
 
 /* shared FS support */

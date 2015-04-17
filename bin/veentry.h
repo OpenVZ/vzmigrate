@@ -151,9 +151,6 @@ public:
 	int issuspended();
 	bool isfrozen();
 
-	// turn on/off offline management
-	int offlineManagement(bool state, bool skiparp = false);
-
 	/* register ve with new layout */
 	int veRegister();
 	/* exec post create VE action: randomize cron too */
