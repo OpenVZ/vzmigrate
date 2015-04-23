@@ -16,7 +16,7 @@
 #include <dirent.h>
 #include <libgen.h>
 
-#include <vz/lzrw4.h>
+//#include <vz/lzrw4.h>  // comment prlcompress usage
 
 #include <ploop/ploop_if.h>
 #include <ploop/ploop1_image.h>
@@ -34,7 +34,8 @@ static struct ploop_online_copy_data *_g_online_copy_data;
 #pragma pack(0)
 #define PLOOPCOPY_START_MARKER 0x4cc0ac3c
 #define PLOOPCOPY_DATA_MARKER 0x4cc0ac3d
-#define PLOOPCOPY_COMPRESSED_DATA_MARKER 0x4cc0ac3e
+// comment prlcompress usage
+//#define PLOOPCOPY_COMPRESSED_DATA_MARKER 0x4cc0ac3e
 struct ploopcopy_start_packet
 {
 	__u32   marker;
@@ -211,24 +212,26 @@ static ssize_t send_block(struct ploop_online_copy_data *data)
 	void *buffer;
 
 	if (data->compress_buffer != NULL) {
-		// compress data
-	        /* 4K buffer place in stack */
-		lzrw4_dic_t dic[LZRW4_DIC_LEN];
-		lzrw4_size_t bsize = (lzrw4_size_t)(data->blksize + LZRW4_MAX_OVERHEAD(data->blksize));
-
-		int rc = lzrw4_compress_plain(
-			data->write_buffer,
-			data->size,
-			data->compress_buffer,
-			&bsize,
-			dic);
-
-		if (rc)
-			return -1;
-
-		pkt.marker = PLOOPCOPY_COMPRESSED_DATA_MARKER;
-		pkt.size = bsize;
-		buffer = data->compress_buffer;
+		// comment prlcompress usage
+		//// compress data
+	        ///* 4K buffer place in stack */
+		//lzrw4_dic_t dic[LZRW4_DIC_LEN];
+		//lzrw4_size_t bsize = (lzrw4_size_t)(data->blksize + LZRW4_MAX_OVERHEAD(data->blksize));
+		//
+		//int rc = lzrw4_compress_plain(
+		//	data->write_buffer,
+		//	data->size,
+		//	data->compress_buffer,
+		//	&bsize,
+		//	dic);
+		//
+		//if (rc)
+		//	return -1;
+		//
+		//pkt.marker = PLOOPCOPY_COMPRESSED_DATA_MARKER;
+		//pkt.size = bsize;
+		//buffer = data->compress_buffer;
+		return -1;
 	} else {
 		pkt.marker = PLOOPCOPY_DATA_MARKER;
 		pkt.size = data->size;
@@ -375,12 +378,15 @@ static int ploop_data_init(int sock, int tmo, int lcompress,
 		goto cleanup_0;
 	}
 	if (lcompress) {
-		data->compress_buffer = malloc(data->blksize + LZRW4_MAX_OVERHEAD(data->blksize));
-		if (data->compress_buffer == NULL) {
-			print_log(LOG_ERR, "malloc() : %m");
-			rc = -1;
-			goto cleanup_1;
-		}
+		// comment prlcompress usage
+		//data->compress_buffer = malloc(data->blksize + LZRW4_MAX_OVERHEAD(data->blksize));
+		//if (data->compress_buffer == NULL) {
+		//	print_log(LOG_ERR, "malloc() : %m");
+		//	rc = -1;
+		//	goto cleanup_1;
+		//}
+		rc = -1;
+		goto cleanup_1;
 	}
 
 	if (pthread_mutex_init(&data->read_mutex, NULL)) {
@@ -821,9 +827,10 @@ static ssize_t read_block_from_sock(struct ploop_online_copy_data *data, off_t *
 	if (pkt.marker == PLOOPCOPY_DATA_MARKER) {
 		buffer = data->read_buffer;
 		bsize = data->blksize;
-	} else if (pkt.marker == PLOOPCOPY_COMPRESSED_DATA_MARKER) {
-		buffer = data->compress_buffer;
-		bsize = data->blksize + LZRW4_MAX_OVERHEAD(data->blksize);
+	// comment prlcompress usage
+	//} else if (pkt.marker == PLOOPCOPY_COMPRESSED_DATA_MARKER) {
+	//	buffer = data->compress_buffer;
+	//	bsize = data->blksize + LZRW4_MAX_OVERHEAD(data->blksize);
 	} else {
 		print_log(LOG_ERR, "stream corrupted, bad marker");
 		return -1;
@@ -843,18 +850,19 @@ static ssize_t read_block_from_sock(struct ploop_online_copy_data *data, off_t *
 	if (size < 0)
 		return size;
 
-	if (pkt.marker == PLOOPCOPY_COMPRESSED_DATA_MARKER) {
-		/* decompress data */
-		int rc;
-		lzrw4_size_t usize = (lzrw4_size_t)data->blksize;
-
-		rc = lzrw4_decompress_plain(data->compress_buffer, size, data->read_buffer, &usize);
-		if (rc) {
-			print_log(LOG_ERR, "lzrw4_decompress_plain() return %d", rc);
-			return -1;
-		}
-		size = usize;
-	}
+	// comment prlcompress usage
+	//if (pkt.marker == PLOOPCOPY_COMPRESSED_DATA_MARKER) {
+	//	/* decompress data */
+	//	int rc;
+	//	lzrw4_size_t usize = (lzrw4_size_t)data->blksize;
+	//
+	//	rc = lzrw4_decompress_plain(data->compress_buffer, size, data->read_buffer, &usize);
+	//	if (rc) {
+	//		print_log(LOG_ERR, "lzrw4_decompress_plain() return %d", rc);
+	//		return -1;
+	//	}
+	//	size = usize;
+	//}
 	rcv_size += size;
 
 	return size;

@@ -33,7 +33,6 @@ BuildRequires: ia64_syscall
 %endif
 BuildRequires: ploop-devel >= 6.1.0-75
 BuildRequires: ploop-lib >= 6.1.0-75
-BuildRequires: prlcompress-devel >= 7.0.0-1
 BuildRequires: libuuid-devel
 Requires: vzmodules >= 2.4.20-021stab022
 Requires: rsync-static >= 2.5.7
@@ -44,7 +43,6 @@ Requires: vztt >= 6.0.9-60, vztt-lib >= 6.0.9-60
 Requires: vzquota >= 6.0.1-3
 Requires: tar
 Requires: pmigrate
-Requires: prlcompress-lib >= 7.0.0-1
 Requires: ploop-lib >= 6.1.0-75
 Provides: pmigrate.c2c
 

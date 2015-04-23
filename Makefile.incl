@@ -9,8 +9,8 @@ __ia64__=true
 endif
 
 LIBVZM = libvzm.a
-LIBVZ_SRC = -Wl,-Bstatic -lvzsock -Wl,-Bdynamic -luuid -lvzctl2 -ldl -lploop -lprlcompress
-LIBVZ_DST = -Wl,-Bstatic -lvzsock -Wl,-Bdynamic -luuid -lvzctl2 -ldl -lploop -lprlcompress
+LIBVZ_SRC = -Wl,-Bstatic -lvzsock -Wl,-Bdynamic -luuid -lvzctl2 -ldl -lploop
+LIBVZ_DST = -Wl,-Bstatic -lvzsock -Wl,-Bdynamic -luuid -lvzctl2 -ldl -lploop
 
 LIBDIR = ${VZMROOT}/lib
 
