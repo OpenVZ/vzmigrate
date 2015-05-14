@@ -133,6 +133,5 @@ public:
 	}
 };
 
-int check_ipaddr(char *in);
 #endif
 

@@ -108,39 +108,6 @@ int MigrateStateDstRemote::clean_unregisterOnHaCluster(const void * arg1, const 
 	return 0;
 };
 
-/* check ip addresses list from in for running and offline_man VE */
-int check_ipaddr(char *in)
-{
-	char *str, *addr;
-	char out[BUFSIZ+1];
-
-	if (in == NULL)
-		return 0;
-
-	out[0] = '\0';
-	for (str = in; ;str = NULL) {
-		if ((addr = strtok(str, "  ")) == NULL)
-			break;
-		if (vzctl2_get_envid_by_ip(addr) == -1) {
-			if (errno == EADDRNOTAVAIL) {
-				/* no such ip */
-				continue;
-			} else {
-				return putErr(MIG_ERR_SYSTEM,
-					"vzctl2_get_envid_by_ip(%s) error: %s",
-					addr, vzctl2_get_last_error());
-			}
-		} else {
-			/* address is in pool (VE is running or in offline_man) */
-			strncat(out, " ", sizeof(out)-strlen(out)-1);
-			strncat(out, addr, sizeof(out)-strlen(out)-1);
-		}
-	}
-	if (strlen(out))
-		return putErr(MIG_ERR_IP_IN_USE, out);
-	return 0;
-}
-
 // on Freebsd: VE private overwriting doesn't supported now
 // 'cause migrate knows nothing about uid/gidbase for this directory
 #define PRIVATECHECK	0

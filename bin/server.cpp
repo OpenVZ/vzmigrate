@@ -141,16 +141,8 @@ static int cmdFinalStage(istringstream & is)
 
 static int cmdCheckIPs(istringstream & is)
 {
-	char in[BUFSIZ+1];
-	char *p;
-
-	if (is.str().size() >= sizeof(in))
-		return putErr(MIG_ERR_PROTOCOL,
-			"Too long message: size = %d", is.str().size());
-	strncpy(in, is.str().c_str(), sizeof(in));
-	for (p = in + strlen(CMD_CHECK_IPS); *p == ' '; p++) ;
-
-	return check_ipaddr(p);
+	// obsoleted
+	return 0;
 }
 
 static int cmdCopyPloopImageOnline1(istringstream & is)
