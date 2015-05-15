@@ -342,24 +342,16 @@ int MigrateStateCommon::h_true(const char * , const char * )
 	return 0;
 }
 
-/************************
-* !!!!!!!! NOTE !!!!!!!!!!!!!!!!
-* PLEASE DON'T REMOVE second "-H", 'cause rsync DOESN'T work
-* without IT.
-* !!!!!!!! NOTE !!!!!!!!!!!!!!!!
-* **************************/
-
 const char ** MigrateStateCommon::getRsyncArgs()
 {
 	static const char *rsync_args[MAX_ARGS];
 	static char sIOLimitKBPS[32];
 	int i = 0;
 
-	rsync_args[i++] = "/usr/local/share/vzlinmigrate/rsync";
+	rsync_args[i++] = "rsync";
 	rsync_args[i++] = "-E";
 	rsync_args[i++] = "-q";
 	rsync_args[i++] = "-a";
-	rsync_args[i++] = "-H";
 	rsync_args[i++] = "-H";
 	if (use_sparse_opt)
 		rsync_args[i++] = "--sparse";
