@@ -32,22 +32,22 @@ public:
 	int checkClusterID();
 	int checkSharedFile(const char *dir, bool *shared);
 	int checkSharedDisk();
- 	int checkOptions(unsigned long long *options);
- 	int checkSharedDir(
- 			const char *cmd400,
- 			const char *cmd401,
- 			const char *dir,
- 			const char *title,
- 			const char *uuid,
- 			int *shared,
- 			int *reply);
+	int checkOptions(unsigned long long *options);
+	int checkSharedDir(
+			const char *cmd400,
+			const char *cmd401,
+			const char *dir,
+			const char *title,
+			const char *uuid,
+			int *shared,
+			int *reply);
 
 	/* check target VE name */
 	int checkDstName();
 
 	MigrateStateRemote(
-		unsigned src_ve,
-		unsigned dst_ve,
+		const char * src_ctid,
+		const char * dst_ctid,
 		const char * priv,
 		const char * root,
 		const char * dst_name);

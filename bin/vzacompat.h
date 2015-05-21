@@ -10,7 +10,7 @@ int vza_init_cli(struct vzsock_ctx *ctx, void **conn);
 int vza_start_swap_cli(
 		struct vzsock_ctx *ctx,
 		void *conn,
-		unsigned dst_veid,
+		const char *dst_ctid,
 		int *sock,
 		void **swapch);
 int vza_send_data(

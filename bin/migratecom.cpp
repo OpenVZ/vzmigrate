@@ -880,7 +880,7 @@ cleanup:
 	return rc;
 }
 
-int MigrateStateCommon::runHaman(unsigned veid, const char *cmd, ...)
+int MigrateStateCommon::runHaman(const char *ctid, const char *cmd, ...)
 {
 	char buf[100], argbuf[100];
 	char * args[] = {(char *)BIN_HAMAN, (char *)"-i", (char *)"-q", (char *)cmd,
@@ -901,7 +901,7 @@ int MigrateStateCommon::runHaman(unsigned veid, const char *cmd, ...)
 	va_start(pvar, cmd);
 	if (strcmp(cmd, "rename") == 0) {
 		// for rename specify new resource id
-		snprintf(argbuf, sizeof(argbuf), "ct-%u", va_arg(pvar, unsigned));
+		snprintf(argbuf, sizeof(argbuf), "ct-%s", va_arg(pvar, const char*));
 		args[ndx++] = (char *)argbuf;
 	} else if (strcmp(cmd, "move-to") == 0) {
 		strncpy(argbuf, va_arg(pvar, char *), sizeof(argbuf));
@@ -922,7 +922,7 @@ int MigrateStateCommon::runHaman(unsigned veid, const char *cmd, ...)
 		args[ndx++] = (char *)path;
 	}
 	va_end(pvar);
-	snprintf(buf, sizeof(buf), "ct-%u", veid);
+	snprintf(buf, sizeof(buf), "ct-%s", ctid);
 	return vzm_execve(args, NULL, -1, -1, NULL);
 }
 
@@ -1021,7 +1021,7 @@ int MigrateStateCommon::checkDstIDFree(const VEObj &ve)
 		return rc;
 
 	if (status & ENV_STATUS_EXISTS)
-		return putErr(MIG_ERR_EXISTS, MIG_MSG_EXISTS, ve.veid());
+		return putErr(MIG_ERR_EXISTS, MIG_MSG_EXISTS, ve.ctid());
 
 	return 0;
 }

@@ -97,7 +97,8 @@ CVZMOptions::~CVZMOptions()
 
 static const char * prog_name = NULL;
 
-unsigned keeperVEID = VEID0;
+ctid_t g_keeperCTID = "\0";
+
 
 #define AGENT_PREFIX	"-agent"
 #define AGENT40_PREFIX	"-agent40"
@@ -285,68 +286,44 @@ static int parse_UPH(
 	return 0;
 }
 
-/* get CT ID or name */
-static int get_veid_or_name(const char *str, unsigned *id, char **name)
+static int get_ctid_or_name(const char *str, ctid_t ctid, char **name)
 {
-	char *p;
-	int is_name = 0;
-
-	*id = VEID0;
+	SET_CTID(ctid, NULL);
 	*name = NULL;
-	for (p = (char *)str; *p; ++p) {
-		if (*p < '0' || *p > '9') {
-			is_name = 1;
-			break;
-		}
-	}
 
-	if (is_name) {
-		int sz = (strlen(str) + 1)*2;
+	if (vzctl2_parse_ctid(str, ctid) != 0) {
+		int sz = (strlen(str) + 1) * 2;
 		if ((*name = (char *)malloc(sz)) == NULL)
 			return putErr(MIG_ERR_SYSTEM, "malloc() : %m");
-		if (vzctl2_convertstr(str, *name, sz) ||
+		if (vzctl2_convertstr(str, *name, sz) != 0 ||
 				!vzctl2_is_env_name_valid(*name))
-			return putErr(MIG_ERR_USAGE,
-				"Invalid CT name : %s", str);
-	} else {
-		*id = strtoul(str, &p, 10);
-		if (*p != '\0')
-			return putErr(MIG_ERR_USAGE,
-				"Invalid CT ID : %s", str);
-	        if (*id == VEID0)
-			return putErr(MIG_ERR_USAGE,
-				"Invalid CT ID : %s", str);
+			return putErr(MIG_ERR_USAGE, "Invalid CTID or CT name : %s", str);
 	}
+
 	return 0;
 }
 
-static unsigned getVEIDOpt(const char * opt)
+static void get_ctid_opt(const char * opt, ctid_t ctid)
 {
-	char * dummy;
-	unsigned veid = strtoul(opt, &dummy, 10);
-	if (*dummy != '\0'
-	        || veid == VEID0)
+	if (vzctl2_parse_ctid(opt, ctid) != 0)
 		usage();
-	return veid;
 }
 
-/* get veid */
-void get_veid(char *arg, VEOptEntry *entry)
+static void get_ctid(char *arg, VEOptEntry *entry)
 {
 	int rc;
 	char *name = NULL;
 
-	if ((rc = get_veid_or_name(arg, &entry->src_veid, &name)))
+	if ((rc = get_ctid_or_name(arg, entry->src_ctid, &name)))
 		exit(-rc);
 
 	if (name) {
-		unsigned id;
-		if (vzctl2_get_envid_by_name(name, &id)) {
-			logger(LOG_ERR, "Invalid source CT name "\
-				"specified: %s", arg);
+		ctid_t ctid;
+		if (vzctl2_get_envid_by_name(name, ctid)) {
+			logger(LOG_ERR, "Invalid source CT name specified: %s", arg);
 			exit(-MIG_ERR_SYSTEM);
 		}
-		entry->src_veid = id;
+		SET_CTID(entry->src_ctid, ctid);
 		free(name);
 	}
 }
@@ -367,30 +344,30 @@ static int ve_list_process_old(char **argv, CVZMOptions *opts)
 		char *arg = argv[point];
 		char *p;
 		/* Read entry as :
-		<src_veid>[:<dst_veid>[:<dst_priv_dir>[:<dst_root_dir>]]]
+		<src_ctid>[:<dst_ctid>[:<dst_priv_dir>[:<dst_root_dir>]]]
 		*/
 
-		// Read 'source' veid
+		// Read 'source' ctid
 		if ((p = strchr(arg, ':')) == NULL) {
-			get_veid(arg, entry);
-			entry->dst_veid = entry->src_veid;
+			get_ctid(arg, entry);
+			SET_CTID(entry->dst_ctid, entry->src_ctid);
 			goto finish;
 		} else {
 			*p = '\0';
-			get_veid(arg, entry);
-			entry->dst_veid = entry->src_veid;
+			get_ctid(arg, entry);
+			SET_CTID(entry->dst_ctid, entry->src_ctid);
 		}
 
-		// Read 'dst' veid
+		// Read 'dst' ctid
 		arg = ++p;
 		if ((p = strchr(arg, ':')) == NULL) {
 			if (strlen(arg))
-				entry->dst_veid = getVEIDOpt(arg);
+				get_ctid_opt(arg, entry->dst_ctid);
 			goto finish;
 		} else {
 			*p = '\0';
 			if (strlen(arg))
-				entry->dst_veid = getVEIDOpt(arg);
+				get_ctid_opt(arg, entry->dst_ctid);
 		}
 
 		// Read 'dst' priv_path
@@ -433,9 +410,9 @@ static int ve_list_process_old(char **argv, CVZMOptions *opts)
 			usage();
 finish:
 		if (opts->bintype == BIN_LOCAL
-			&& entry->src_veid == entry->dst_veid
+			&& CMP_CTID(entry->src_ctid, entry->dst_ctid) == 0
 			&& (isOptSet(OPT_COPY)
-			    || (entry->root_path == NULL && entry->priv_path == NULL && entry->dst_name == NULL)))
+				|| (entry->root_path == NULL && entry->priv_path == NULL && entry->dst_name == NULL)))
 			usage();
 
 		opts->veMigrateList.push_back(entry);
@@ -452,21 +429,21 @@ finish:
 			logger(LOG_ERR, "Memory allocation failure");
 			exit(-MIG_ERR_SYSTEM);
 		}
-		snprintf((char *)VEArgs[point], size, "'%u:%u", \
-			entry->src_veid, entry->dst_veid);
+		snprintf((char *)VEArgs[point], size, "'%s:%s",
+			entry->src_ctid, entry->dst_ctid);
 		if (entry->priv_path) {
-			strncat((char *)VEArgs[point], ":", \
+			strncat((char *)VEArgs[point], ":",
 				size - strlen(VEArgs[point]) - 1);
-			strncat((char *)VEArgs[point], entry->priv_path, \
+			strncat((char *)VEArgs[point], entry->priv_path,
 				size - strlen(VEArgs[point]) - 1);
 		}
 		if (entry->root_path) {
-			strncat((char *)VEArgs[point], ":", \
+			strncat((char *)VEArgs[point], ":",
 				size - strlen(VEArgs[point]) - 1);
-			strncat((char *)VEArgs[point], entry->root_path, \
+			strncat((char *)VEArgs[point], entry->root_path,
 				size - strlen(VEArgs[point]) - 1);
 		}
-		strncat((char *)VEArgs[point], "'", \
+		strncat((char *)VEArgs[point], "'",
 			size - strlen(VEArgs[point]) - 1);
 	}
 
@@ -683,7 +660,10 @@ void parse_options (int argc, char **argv)
 			break;
 
 		case KEEPER_OPTS:
-			keeperVEID = optarg ? getVEIDOpt(optarg) : DEFAULT_KEEPER_VEID;
+			if (optarg)
+				get_ctid_opt(optarg, g_keeperCTID);
+			else
+				SET_CTID(g_keeperCTID, SERVICE_CTID);
 			setOpt(OPT_KEEPER);
 			break;
 
@@ -837,7 +817,7 @@ void parse_options (int argc, char **argv)
 		case NEW_ID_OPTS:
 			if (optarg == NULL)
 				usage();
-			entry->dst_veid = getVEIDOpt(optarg);
+			get_ctid_opt(optarg, entry->dst_ctid);
 			new_syntax = 1;
 			break;
 		case NEW_PRIVATE_OPTS:
@@ -911,8 +891,6 @@ void parse_options (int argc, char **argv)
 	argv += optind;
 
 	if (!strcmp(prog_name, BNAME_PM_C2C)) {
-		char *p;
-		int is_digit = 1;
 		/*
 		 * we're now called with the following argv:
 		 *    localhost/<ctid> <host>/<newid>
@@ -928,18 +906,13 @@ void parse_options (int argc, char **argv)
 		if (argc < 2)
 			usage();
 
-		for (p = (char *)argv[1]; *p; ++p) {
-			if (*p < '0' || *p > '9') {
-				is_digit = 0;
-				break;
-			}
-		}
-
-		if (is_digit) {
-			entry->dst_veid = getVEIDOpt(argv[1]);
+		ctid_t ctid;
+		if (vzctl2_parse_ctid(argv[1], ctid) == 0) {
+			SET_CTID(entry->dst_ctid, ctid);
 			VZMoptions.bintype = BIN_LOCAL;
 			open_logger("vzmlocal");
 		} else {
+			char *p;
 			if ((p = strchr(argv[1], '/'))) {
 				/*
 				   pmigrate.c2c is internal command and should get
@@ -948,7 +921,7 @@ void parse_options (int argc, char **argv)
 				*/
 				char *name = NULL;
 				*p++ = '\0';
-				rc = get_veid_or_name(p, &entry->dst_veid, &name);
+				rc = get_ctid_or_name(p, entry->dst_ctid, &name);
 				if (rc)
 					exit(-rc);
 				if (name)
@@ -1001,7 +974,7 @@ void parse_options (int argc, char **argv)
 					}
 				}
 			}
-		        freeaddrinfo(addrlist);
+			freeaddrinfo(addrlist);
 		}
 
 		/* perform postponed due to late initialization checks */
@@ -1165,20 +1138,20 @@ void parse_options (int argc, char **argv)
 			} else {
 				p = argv[0];
 			}
-			get_veid(p, entry);
+			get_ctid(p, entry);
 
-			if (entry->dst_veid == VEID0)
-				entry->dst_veid = entry->src_veid;
+			if (EMPTY_CTID(entry->dst_ctid))
+				SET_CTID(entry->dst_ctid, entry->src_ctid);
 		} else {
 			if (strchr(argv[0], ':')) {
 				logger(LOG_ERR, "Old ve list syntax can not be used "\
 						"with --new-* options: %s", argv[0]);
 				usage();
 			}
-			get_veid(argv[0], entry);
+			get_ctid(argv[0], entry);
 
-			if (entry->dst_veid == VEID0)
-				entry->dst_veid = entry->src_veid;
+			if (EMPTY_CTID(entry->dst_ctid))
+				SET_CTID(entry->dst_ctid, entry->src_ctid);
 		}
 		VZMoptions.veMigrateList.push_back(entry);
 
@@ -1194,21 +1167,21 @@ void parse_options (int argc, char **argv)
 			logger(LOG_ERR, "Memory allocation failure");
 			exit(-MIG_ERR_SYSTEM);
 		}
-		snprintf((char *)VEArgs[0], size, "'%u:%u", \
-			entry->src_veid, entry->dst_veid);
+		snprintf((char *)VEArgs[0], size, "'%s:%s",
+			entry->src_ctid, entry->dst_ctid);
 		if (entry->priv_path) {
-			strncat((char *)VEArgs[0], ":", \
+			strncat((char *)VEArgs[0], ":",
 				size - strlen(VEArgs[0]) - 1);
-			strncat((char *)VEArgs[0], entry->priv_path, \
+			strncat((char *)VEArgs[0], entry->priv_path,
 				size - strlen(VEArgs[0]) - 1);
 		}
 		if (entry->root_path) {
-			strncat((char *)VEArgs[0], ":", \
+			strncat((char *)VEArgs[0], ":",
 				size - strlen(VEArgs[0]) - 1);
-			strncat((char *)VEArgs[0], entry->root_path, \
+			strncat((char *)VEArgs[0], entry->root_path,
 				size - strlen(VEArgs[0]) - 1);
 		}
-		strncat((char *)VEArgs[0], "'", \
+		strncat((char *)VEArgs[0], "'",
 			size - strlen(VEArgs[0]) - 1);
 		VEArgs[1] = NULL;
 	} else {
@@ -1225,15 +1198,10 @@ void parse_options (int argc, char **argv)
 		VZMoptions.bigname += VZMoptions.src_addr;
 		VZMoptions.bigname += VZMoptions.dst_addr;
 
-		char srcve[ITOA_BUF_SIZE];
-		char dstve[ITOA_BUF_SIZE];
 		for (VEOptEntries::const_iterator it = VZMoptions.veMigrateList.begin();
 			it != VZMoptions.veMigrateList.end(); ++it) {
-			snprintf(srcve, sizeof(srcve), "%u",
-				(*it)->src_veid);
-			snprintf(dstve, sizeof(dstve), "%u",
-				(*it)->dst_veid);
-			VZMoptions.bigname += string(":") + srcve + string(":") + dstve;
+			VZMoptions.bigname += std::string(":") + (*it)->src_ctid;
+			VZMoptions.bigname += std::string(":") + (*it)->dst_ctid;
 		}
 	}
 

@@ -138,7 +138,7 @@ public:
 	/* get filename of active delta (image) for ploop-based CT */
 	static int ploopGetTopImageFileName(const char *xmlconf, char *path, size_t size);
 	/* run HA cluster manager */
-	static int runHaman(unsigned veid, const char *cmd, ...);
+	static int runHaman(const char *ctid, const char *cmd, ...);
 	/* get node id of HA cluster */
 	int getHaClusterNodeID(string & id);
 	int getActivePloopDelta(struct string_list *list);

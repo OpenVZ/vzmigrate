@@ -82,16 +82,16 @@ private:
 	/* VE is frozen or not */
 	bool is_frozen;
 
-	unsigned ve_id;
+	ctid_t m_ctid;
 
 	int lock_fd;
 
 	void priv_init();
 
 public:
-	unsigned veid() const
+	const char* ctid() const
 	{
-		return ve_id;
+		return m_ctid;
 	}
 
 	const char * root;
@@ -107,7 +107,7 @@ public:
 	/* ve format */
 	int veformat;
 
-	VEObj(unsigned ve);
+	VEObj(const char *ctid);
 	virtual ~VEObj();
 	int init_existed();
 	int init_empty();
@@ -219,7 +219,8 @@ int rollbackIPs(VEObj &k, VEObj &v);
 
 /* check target VE RATE on destination node */
 int check_rate(struct string_list *rate);
-std::string subst_VEID_back(unsigned veid, const char *path);
+char *subst_CTID(const char *ctid, const char *src);
+std::string subst_VEID_back(const char *ctid, const char *path);
 void remove_trail_slashes(char *path);
 std::string remove_trail_slashes(const char *path);
 

@@ -26,16 +26,14 @@
 #include <string>
 #include <map>
 
-using namespace std;
-
-class CNewVEsList : public map<unsigned, VEObj *>
+class CNewVEsList : public std::map<std::string, VEObj *>
 {
 public:
 	~CNewVEsList();
 };
 
-extern CNewVEsList * veList;
-extern map<unsigned, unsigned> * veid_map;
+extern CNewVEsList * g_veList;
+extern std::map<std::string, std::string> * g_ctidMap;
 extern MigrateStateDstRemote * state;
 
 int main_loop();

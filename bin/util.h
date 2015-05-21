@@ -124,10 +124,7 @@ int vz_setiolimit();
 void ve_data_init(struct ve_data *ve);
 void ve_data_clean(struct ve_data *ve);
 /* read VE config */
-int ve_data_load(unsigned veid, struct ve_data *ve);
-
-/* replace $VEID to veid in string */
-char *subst_VEID(unsigned veid, const char *src);
+int ve_data_load(const char *ctid, struct ve_data *ve);
 
 /* char* double-linked list */
 /* sample of using:
@@ -231,7 +228,7 @@ int split_path(	const char *path,
 		size_t lsize);
 
 /* read VE_ROOT */
-int get_ve_root(unsigned veid, char *root, size_t size);
+int get_ve_root(const char *ctid, char *root, size_t size);
 
 /* check process exit status */
 int check_exit_status(char *task, int status);

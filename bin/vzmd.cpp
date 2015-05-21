@@ -49,51 +49,39 @@ void print_out(int level, const char * str)
 	conn->channel.sendErrMsg(level + MIG_ERR_DEBUG_OUT, "%s", str);
 }
 
-int get_VEID(const char * str, unsigned *veid)
-{
-	char * dummy;
-	unsigned id = strtoul(str, &dummy, 10);
-	if (*dummy != '\0')
-		return putErr(MIG_ERR_USAGE, "Bad container ID %s", str);
-	*veid = id;
-	return 0;
-}
-
 static int parse_ve_entry(char *token, CNewVEsList *ve_list)
 {
 	int rc;
 	char *arg = token;
 	char *p;
-	unsigned src_veid, dst_veid;
+	ctid_t src_ctid;
+	ctid_t dst_ctid;
 	char *root_path = NULL;
 	char *priv_path = NULL;
 
 	/* Read entry as :
-	<src_veid>[:<dst_veid>[:<dst_priv_dir>[:<dst_root_dir>]]]
+	<src_ctid>[:<dst_ctid>[:<dst_priv_dir>[:<dst_root_dir>]]]
 	*/
-	// Read 'source' veid
+
+	// Read 'source' ctid
 	if ((p = strchr(arg, ':')) == NULL) {
-		if ((rc = get_VEID(arg, &src_veid)))
-			return rc;
-		dst_veid = src_veid;
+		SET_CTID(src_ctid, arg);
+		SET_CTID(dst_ctid, src_ctid);
 		goto finish;
 	} else {
 		*p = '\0';
-		if ((rc = get_VEID(arg, &src_veid)))
-			return rc;
-		dst_veid = src_veid;
+		SET_CTID(src_ctid, arg);
+		SET_CTID(dst_ctid, src_ctid);
 	}
 
-	// Read 'dst' veid
+	// Read 'dst' ctid
 	arg = ++p;
 	if ((p = strchr(arg, ':')) == NULL) {
-		if ((rc = get_VEID(arg, &dst_veid)))
-			return rc;
+		SET_CTID(dst_ctid, arg);
 		goto finish;
 	} else {
 		*p = '\0';
-		if ((rc = get_VEID(arg, &dst_veid)))
-			return rc;
+		SET_CTID(dst_ctid, arg);
 	}
 
 	// Read 'dst' priv_path
@@ -117,11 +105,11 @@ static int parse_ve_entry(char *token, CNewVEsList *ve_list)
 	root_path = strdup(arg);
 
 finish:
-	VEObj * ve = new VEObj(dst_veid);
+	VEObj * ve = new VEObj(dst_ctid);
 	if (ve == NULL)
 		return putErr(MIG_ERR_SYSTEM, "new() : %m");
 
-	(*ve_list)[ve->veid()] = ve;
+	(*ve_list)[std::string(ve->ctid())] = ve;
 
 	ve->setPrivate(priv_path);
 	ve->setRoot(root_path);
@@ -152,7 +140,9 @@ int process_connection(struct vzsock_ctx *ctx, int sock)
 		rc = putErr(MIG_ERR_SYSTEM, "new() : %m");
 		goto cleanup_0;
 	}
-/* TODO !!! */ conn->channel.ctx = *ctx;
+
+	/* TODO !!! */
+	conn->channel.ctx = *ctx;
 	conn->channel.conn = cn;
 
 	/* redirect err msg in socket */
@@ -168,7 +158,7 @@ int process_connection(struct vzsock_ctx *ctx, int sock)
 	logger(LOG_DEBUG, "%s", reply);
 	if (strcmp(p, "vzmigrate") == 0) {
 		VZMoptions.bintype = BIN_DEST;
-		if ((veList = new CNewVEsList()) == NULL) {
+		if ((g_veList = new CNewVEsList()) == NULL) {
 			rc = putErr(MIG_ERR_SYSTEM, "new() : %m");
 			goto cleanup_1;
 		}
@@ -218,7 +208,7 @@ int process_connection(struct vzsock_ctx *ctx, int sock)
 		if ((token = strtok(p, " ")) == NULL)
 			break;
 		/* process VEID:private:root record */
-		if ((rc = parse_ve_entry(token, veList)))
+		if ((rc = parse_ve_entry(token, g_veList)))
 			goto cleanup_2;
 	}
 
@@ -230,8 +220,8 @@ int process_connection(struct vzsock_ctx *ctx, int sock)
 	print_func = print_func_old;
 
 cleanup_2:
-	delete veList;
-	veList = NULL;
+	delete g_veList;
+	g_veList = NULL;
 cleanup_1:
 	delete conn;
 	conn = NULL;

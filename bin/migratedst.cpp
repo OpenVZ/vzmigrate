@@ -53,7 +53,7 @@ int MigrateStateDstRemote::clean_destroy(const void * arg, const void *)
 /*	call destroy for 'unexisted' VE too (non-existed private, etc...)
 	if (!ve->isexist())
 		return 0; */
-	logger(LOG_DEBUG, MIG_MSG_RST "destroy CT#%d", ve->veid());
+	logger(LOG_DEBUG, MIG_MSG_RST "destroy CT %s", ve->ctid());
 	ve->destroy();
 	return 0;
 };
@@ -62,7 +62,7 @@ int MigrateStateDstRemote::clean_unregister(const void * arg, const void *)
 {
 	VEObj * ve = (VEObj *) arg;
 	assert(ve);
-	logger(LOG_DEBUG, MIG_MSG_RST "unregister CT#%d", ve->veid());
+	logger(LOG_DEBUG, MIG_MSG_RST "unregister CT %s", ve->ctid());
 	ve->unregister();
 	return 0;
 };
@@ -71,7 +71,7 @@ int MigrateStateDstRemote::clean_restoreKill(const void * arg, const void *)
 {
 	VEObj * ve = (VEObj *) arg;
 	assert(ve);
-	logger(LOG_DEBUG, MIG_MSG_RST "restore kill CT#%d", ve->veid());
+	logger(LOG_DEBUG, MIG_MSG_RST "restore kill CT %s", ve->ctid());
 	ve->kill_restore();
 	return 0;
 };
@@ -80,7 +80,7 @@ int MigrateStateDstRemote::clean_umount(const void * arg, const void *)
 {
 	VEObj * ve = (VEObj *) arg;
 	assert(ve);
-	logger(LOG_DEBUG, MIG_MSG_RST "umount CT#%d", ve->veid());
+	logger(LOG_DEBUG, MIG_MSG_RST "umount CT %s", ve->ctid());
 	ve->umount();
 	return 0;
 };
@@ -98,11 +98,11 @@ int MigrateStateDstRemote::clean_unregisterOnHaCluster(const void * arg1, const 
 	assert(sHaClusterNodeID);
 
 	if ((sHaClusterNodeID == NULL) || (strlen(sHaClusterNodeID) == 0)) {
-		logger(LOG_DEBUG, "unregister HA cluster resource %u", ve->veid());
-		runHaman(ve->veid(), "del");
+		logger(LOG_DEBUG, "unregister HA cluster resource %s", ve->ctid());
+		runHaman(ve->ctid(), "del");
 	} else {
-		logger(LOG_DEBUG, "move HA cluster resource %u to node %s", ve->veid(), sHaClusterNodeID);
-		runHaman(ve->veid(), "move-to", sHaClusterNodeID);
+		logger(LOG_DEBUG, "move HA cluster resource %s to node %s", ve->ctid(), sHaClusterNodeID);
+		runHaman(ve->ctid(), "move-to", sHaClusterNodeID);
 	}
 	free(sHaClusterNodeID);
 	return 0;
@@ -123,8 +123,8 @@ int MigrateStateDstRemote::initVEMigration(VEObj * ve)
 	ve->setLayout(option_to_vzlayout(m_initOptions));
 	ve->veformat = option_to_veformat(m_initOptions);
 
-	logger(LOG_INFO, "Start of CT %d migration (private %s, root %s, opt=%d)",
-			ve->veid(), ve->priv, ve->root, m_initOptions);
+	logger(LOG_INFO, "Start of CT %s migration (private %s, root %s, opt=%d)",
+			ve->ctid(), ve->priv, ve->root, m_initOptions);
 
 	if (!isOptSet(OPT_AGENT) && isOptSet(OPT_ONLINE) &&
 				(VZMoptions.remote_version < MIGRATE_VERSION_400))
@@ -834,7 +834,7 @@ int MigrateStateDstRemote::finalVEtuning()
 			return rc;
 	}
 
-	logger(LOG_INFO, "End of CT %d migration", dstVE->veid());
+	logger(LOG_INFO, "End of CT %s migration", dstVE->ctid());
 	return rc;
 }
 
@@ -958,7 +958,7 @@ int MigrateStateDstRemote::createSwapChannel(string veid_str)
 		/* ignore veid_str from source: source known nothing about
 		   --new_id option on dst side (https://jira.sw.ru/browse/PSBM-9045) */
 		char str[100];
-		snprintf(str, sizeof(str)-1, "%u", dstVE->veid());
+		snprintf(str, sizeof(str)-1, "%s", dstVE->ctid());
 		argv[1] = str;
 		logger(LOG_DEBUG, "%s %s", argv[0], argv[1]);
 
@@ -1008,15 +1008,15 @@ int MigrateStateDstRemote::registerOnHaCluster()
 		return 0;
 
 	if (m_sHaClusterNodeID.empty()) {
-		logger(LOG_DEBUG, "register HA cluster resource %u", dstVE->veid());
-		rc = runHaman(dstVE->veid(), "add", dstVE->ve_data.ha_prio, dstVE->priv);
+		logger(LOG_DEBUG, "register HA cluster resource %s", dstVE->ctid());
+		rc = runHaman(dstVE->ctid(), "add", dstVE->ve_data.ha_prio, dstVE->priv);
 	} else {
-		logger(LOG_DEBUG, "move HA cluster resource %u from node %s",
-					dstVE->veid(), m_sHaClusterNodeID.c_str());
-		rc = runHaman(dstVE->veid(), "move-from", m_sHaClusterNodeID.c_str());
+		logger(LOG_DEBUG, "move HA cluster resource %s from node %s",
+			dstVE->ctid(), m_sHaClusterNodeID.c_str());
+		rc = runHaman(dstVE->ctid(), "move-from", m_sHaClusterNodeID.c_str());
 	}
 	if (rc)
-		return putErr(rc, "Can't register resource %u at HA cluster", dstVE->veid());
+		return putErr(rc, "Can't register resource %s at HA cluster", dstVE->ctid());
 
 	addCleaner(clean_unregisterOnHaCluster, dstVE, strdup(m_sHaClusterNodeID.c_str()));
 	return 0;

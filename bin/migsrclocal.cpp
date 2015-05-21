@@ -59,12 +59,13 @@ std::string combine_path(const std::string &dir, const std::string &name)
 	return os.str();
 }
 
-MigrateStateLocal::MigrateStateLocal(unsigned src_ve, unsigned dst_ve,
+MigrateStateLocal::MigrateStateLocal(
+				const char * src_ctid, const char * dst_ctid,
 				const char * priv, const char * root,
 				const char * dst_name, const char * uuid)
-		: MigrateStateSrc(src_ve, dst_ve, priv, root, dst_name)
+		: MigrateStateSrc(src_ctid, dst_ctid, priv, root, dst_name)
 {
-	is_thesame_veid = 0;
+	is_thesame_ctid = 0;
 	is_thesame_private = 0;
 	is_thesame_root = 0;
 	is_thesame_location = 0;
@@ -189,7 +190,7 @@ int MigrateStateLocal::createDstBundles()
 	int rc;
 
 	for (it = bundles.begin(); it != bundles.end(); ++it) {
-		if (is_thesame_veid)
+		if (is_thesame_ctid)
 			continue;
 		if (strcmp(it->second.src.c_str(), srcVE->priv) == 0)
 			continue;
@@ -265,8 +266,8 @@ int MigrateStateLocal::preMigrateStage()
 
 	START_STAGE();
 
-	if (srcVE->veid() == dstVE->veid())
-		is_thesame_veid = 1;
+	if (CMP_CTID(srcVE->ctid(), dstVE->ctid()) == 0)
+		is_thesame_ctid = 1;
 
 	if ((rc = srcVE->init_existed()))
 		return rc;
@@ -279,11 +280,11 @@ int MigrateStateLocal::preMigrateStage()
 	if ((rc = checkCommonSrc()))
 		return rc;
 
-	if (!is_thesame_veid)
+	if (!is_thesame_ctid)
 		if ((rc = checkDstIDFree(*dstVE)))
 			return rc;
 
-	if (srcVE->veid() == dstVE->veid()) {
+	if (CMP_CTID(srcVE->ctid(), dstVE->ctid()) == 0) {
 		/* for move-root/private-mode: if target private or root is not defined
 		   will use private/root of source CT */
 		if (!dstVE->priv)
@@ -330,11 +331,11 @@ int MigrateStateLocal::preMigrateStage()
 			return rc;
 	}
 
-	if (is_thesame_veid && is_thesame_private && is_thesame_root)
+	if (is_thesame_ctid && is_thesame_private && is_thesame_root)
 		return putErr(MIG_ERR_EQUALS, MIG_MSG_EQUALS);
 
 	// clean destination
-	if (!is_thesame_veid)
+	if (!is_thesame_ctid)
 		dstVE->clean();
 
 	// check VE root
@@ -370,7 +371,7 @@ int MigrateStateLocal::preMigrateStage()
 
 	/* and lock new VE only after private creation
 	   (vzctl will create lock file in private, #119945) */
-	if (!is_thesame_veid) {
+	if (!is_thesame_ctid) {
 		if ((rc = dstVE->lock()))
 			return rc;
 	}
@@ -386,7 +387,7 @@ int MigrateStateLocal::preMigrateStage()
 	if ((rc = dstVE->checkName(dstVE->ve_data.name)))
 		return rc;
 
-	if (!is_thesame_veid) {
+	if (!is_thesame_ctid) {
 		std::string uuid(m_uuid ? : "");
 
 		if ((rc = h_copy(srcVE->confPath().c_str(),
@@ -426,10 +427,10 @@ int MigrateStateLocal::preFinalStage()
 	int rc;
 	START_STAGE();
 
-	logger(LOG_INFO, "Copying/modifying config scripts of CT#%d ...",
-	       srcVE->veid());
+	logger(LOG_INFO, "Copying/modifying config scripts of CT %s ...",
+		srcVE->ctid());
 
-	if (is_thesame_veid) {
+	if (is_thesame_ctid) {
 		/* create config backup */
 		if ((rc = h_backup(dstVE->confRealPath().c_str())))
 			return rc;
@@ -474,10 +475,10 @@ int MigrateStateLocal::preFinalStage()
 		if (isOptSet(OPT_COPY)) {
 			// target CT private
 			if (is_priv_on_shared) {
-				rc = runHaman(dstVE->veid(), "add", srcVE->ve_data.ha_prio, dstVE->priv);
+				rc = runHaman(dstVE->ctid(), "add", srcVE->ve_data.ha_prio, dstVE->priv);
 				if (rc)
 					return putErr(rc,
-						"Can't add resource %u at HA cluster", dstVE->veid());
+						"Can't add resource %s at HA cluster", dstVE->ctid());
 				addCleaner(clean_unitaryHaClusterResouce, dstVE, "del");
 			}
 		} else if (!is_thesame_private) {
@@ -492,19 +493,19 @@ int MigrateStateLocal::preFinalStage()
 
 			if (is_priv_on_shared) {
 				// target private was moved to shared
-				rc = runHaman(dstVE->veid(), "add", srcVE->ve_data.ha_prio, dstVE->priv);
+				rc = runHaman(dstVE->ctid(), "add", srcVE->ve_data.ha_prio, dstVE->priv);
 				if (rc)
 					return putErr(rc,
-						"Can't add resource %u at HA cluster", dstVE->veid());
+						"Can't add resource %s at HA cluster", dstVE->ctid());
 				addCleaner(clean_unitaryHaClusterResouce, dstVE, "del");
 			}
 
 			if (is_src_priv_on_shared) {
 				// source private was removed from shared
-				rc = runHaman(srcVE->veid(), "del");
+				rc = runHaman(srcVE->ctid(), "del");
 				if (rc)
 					return putErr(rc,
-						"Can't remove resource %u from HA cluster", srcVE->veid());
+						"Can't remove resource %s from HA cluster", srcVE->ctid());
 				addCleaner(clean_unitaryHaClusterResouce, dstVE, "add");
 			}
 		}
@@ -554,7 +555,7 @@ int MigrateStateLocal::postFinalStage()
 	START_STAGE();
 
 	if (!isOptSet(OPT_COPY)) {
-		if (!is_thesame_veid)
+		if (!is_thesame_ctid)
 			srcVE->unregister();
 		if (!is_thesame_private && access(srcVE->priv, F_OK) == 0)
 			rmdir_recursively(srcVE->priv);
@@ -588,7 +589,7 @@ int MigrateStateLocal::postFinalStage()
 			char env[100];
 			char * const args[] = {script, NULL};
 			char * const envp[] = {env, NULL};
-			snprintf(env, sizeof(env), "VEID=%u", dstVE->veid());
+			snprintf(env, sizeof(env), "VEID=%s", dstVE->ctid());
 			vzm_execve(args, envp, -1, -1, NULL);
 		}
 
@@ -596,7 +597,7 @@ int MigrateStateLocal::postFinalStage()
 		   https://jira.sw.ru/browse/PCLIN-8821.
 		   vzctl execaction will mount CT, run script and umount CT */
 		if ((rc = dstVE->ExecPostCreate()))
-			logger(LOG_ERR, "post create action failed for CT %d", dstVE->veid());
+			logger(LOG_ERR, "post create action failed for CT %s", dstVE->ctid());
 
 		/* change FS uuid for cloned CT (https://jira.sw.ru/browse/PSBM-11961) */
 		if (srcVE->layout >= VZCTL_LAYOUT_5) {
@@ -633,11 +634,11 @@ int MigrateStateLocal::suspendVEOnline()
 	int rc;
 
 	if ((rc = srcVE->suspend(0, false)))
-		return putErr(rc, MIG_MSG_SUSPEND, srcVE->veid(), getError());
+		return putErr(rc, MIG_MSG_SUSPEND, srcVE->ctid(), getError());
 	addCleaner(clean_resumeVE, srcVE);
 
 	if ((rc = srcVE->dump()))
-		return putErr(rc, MIG_MSG_DUMP, srcVE->veid(), getError());
+		return putErr(rc, MIG_MSG_DUMP, srcVE->ctid(), getError());
 
 	if ((rc = srcVE->kill_chkpnt()))
 		return rc;
@@ -668,10 +669,10 @@ int MigrateStateLocal::startVE()
 	if (isOptSet(OPT_ONLINE)) {
 		if (isOptSet(OPT_COPY)) {
 			if ((rc = srcVE->resume_chkpnt()))
-				return putErr(rc, MIG_MSG_DST_RESUME, srcVE->veid(), getError());
+				return putErr(rc, MIG_MSG_DST_RESUME, srcVE->ctid(), getError());
 		} else {
 			if ((rc = dstVE->cmd_restore()))
-				return putErr(rc, MIG_MSG_DST_RESUME, dstVE->veid(), getError());
+				return putErr(rc, MIG_MSG_DST_RESUME, dstVE->ctid(), getError());
 		}
 	} else {
 		VEObj * ve = isOptSet(OPT_COPY) ? (VEObj *) srcVE : (VEObj *) dstVE;
@@ -793,7 +794,7 @@ int MigrateStateLocal::clean_restoreVE(const void * arg1, const void *)
 {
 	VEObj * ve = (VEObj *) arg1;
 	assert(ve);
-	logger(LOG_DEBUG, MIG_MSG_RST_RESUME, ve->veid());
+	logger(LOG_DEBUG, MIG_MSG_RST_RESUME, ve->ctid());
 
 	// Resume source VE
 	if (ve->dumpfile == NULL && !ve->issuspended())
@@ -801,7 +802,7 @@ int MigrateStateLocal::clean_restoreVE(const void * arg1, const void *)
 
 	if (ve->cmd_restore())
 		return putErr(MIG_ERR_STARTVE, MIG_MSG_RESUME,
-		              ve->veid(), getError());
+			ve->ctid(), getError());
 	return 0;
 }
 
@@ -810,7 +811,7 @@ int MigrateStateLocal::clean_unitaryHaClusterResouce(const void * arg1, const vo
 	VEObj * ve = (VEObj *) arg1;
 	const char *cmd = (const char *)arg2;
 	assert(ve);
-	runHaman(ve->veid(), cmd, ve->ve_data.ha_prio);
+	runHaman(ve->ctid(), cmd, ve->ve_data.ha_prio);
 	return 0;
 }
 
@@ -820,7 +821,7 @@ int MigrateStateLocal::clean_moveHaClusterResource(const void * arg1, const void
 	VEObj * dstVE = (VEObj *) arg2;
 	assert(srcVE);
 	assert(dstVE);
-	runHaman(srcVE->veid(), "rename", dstVE->veid());
+	runHaman(srcVE->ctid(), "rename", dstVE->ctid());
 	return 0;
 }
 
@@ -927,14 +928,6 @@ std::string external_disk_path::dst_path() const
 	return combine_path(location, dst_id, name);
 }
 
-static std::string id2str(VEObj *v)
-{
-	ostringstream os;
-
-	os << v->veid();
-	return os.str();
-}
-
 void MigrateStateLocal::buildBundles()
 {
 	struct bundle &b = bundles[srcVE->priv];
@@ -949,7 +942,8 @@ void MigrateStateLocal::buildBundles()
 			b.disks.push_back(get_rel_path(b.src, it->image));
 		} else {
 			// find bundles and unbundled disks in external disks
-			struct external_disk_path p(it->image.c_str(), id2str(srcVE), id2str(dstVE));
+			struct external_disk_path p(it->image.c_str(),
+				std::string(srcVE->ctid()), std::string(dstVE->ctid()));
 			if (p.has_bundle) {
 				struct bundle &b = bundles[p.src_bundle()];
 				if (b.disks.empty()) {

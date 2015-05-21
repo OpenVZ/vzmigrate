@@ -38,7 +38,7 @@ static int vza_open_sock(const char *sfx, int *sock)
 	if (VZMoptions.version <= MIGRATE_VERSION_202 || isOptSet(OPT_AGENT40)) {
 		strcpy(root, "/");
 	} else {
-		if ((rc = get_ve_root(SERVICEVEID, root, sizeof(root))))
+		if ((rc = get_ve_root(SERVICE_CTID, root, sizeof(root))))
 			return rc;
 	}
 
@@ -123,7 +123,7 @@ cleanup_0:
 int vza_start_swap_cli(
 		struct vzsock_ctx *ctx,
 		void *conn,
-		unsigned dst_veid,
+		const char *dst_ctid,
 		int *sock,
 		void **swapch)
 {
@@ -136,8 +136,7 @@ int vza_start_swap_cli(
 		if (VZMoptions.remote_version >= MIGRATE_VERSION_400) {
 			/* protocol 250 known nothing about this command
 			   try to do not send it and continue */
-			snprintf(buffer, sizeof(buffer),
-				CMD_ITERCH " %d", dst_veid);
+			snprintf(buffer, sizeof(buffer), CMD_ITERCH " %s", dst_ctid);
 			if ((rc = ch_send_cmd(ctx, conn, buffer)))
 				return rc;
 		}

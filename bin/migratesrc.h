@@ -65,7 +65,7 @@ public:
 	virtual int suspendVEOnline() = 0;
 	virtual int suspendVEOffline() = 0;
 
-	MigrateStateSrc(unsigned src_ve, unsigned dst_ve,
+	MigrateStateSrc(const char * src_ctid, const char * dst_ctid,
 		const char * priv, const char * root, const char *name);
 	~MigrateStateSrc();
 

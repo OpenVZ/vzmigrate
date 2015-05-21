@@ -39,12 +39,12 @@ void VEObj::priv_init()
 	is_frozen = false;
 }
 
-VEObj::VEObj(unsigned ve)
+VEObj::VEObj(const char *ctid)
 {
 	priv_init();
 
-	ve_id = ve;
-};
+	SET_CTID(m_ctid, ctid);
+}
 
 VEObj::~VEObj()
 {
@@ -61,17 +61,17 @@ int VEObj::init_existed()
 	int rc;
 	vzctl_env_status_t env_status;
 
-	if (vzctl2_get_env_status(veid(), &env_status, ENV_STATUS_ALL))
+	if (vzctl2_get_env_status(ctid(), &env_status, ENV_STATUS_ALL))
 		return putErr(MIG_ERR_SYSTEM, MIG_MSG_NOSTATUS);
 
 	if (!(env_status.mask & ENV_STATUS_EXISTS))
-		return putErr(MIG_ERR_NOEXIST, MIG_MSG_NOEXIST, veid());
+		return putErr(MIG_ERR_NOEXIST, MIG_MSG_NOEXIST, ctid());
 
-/* TODO: move to upper level */
+	/* TODO: move to upper level */
 	if (isOptSet(OPT_COPY) && (env_status.mask & ENV_STATUS_SUSPENDED))
 		return putErr(MIG_ERR_SUSPEND, MIG_MSG_CLONE_FORBIDDEN_FOR_SUSPENDED);
 
-	if ((rc = ve_data_load(ve_id, &ve_data)))
+	if ((rc = ve_data_load(m_ctid, &ve_data)))
 		return rc;
 
 	root = ve_data.root;
@@ -108,7 +108,7 @@ string VEObj::confRealPath() const
 	std::ostringstream os;
 
 	if (layout < VZCTL_LAYOUT_4)
-		os << VE_CONF_DIR << veid() << ".conf";
+		os << VE_CONF_DIR << ctid() << ".conf";
 	else
 		os << priv << "/ve.conf";
 
@@ -133,7 +133,7 @@ string VEObj::confPath() const
 {
 	std::ostringstream os;
 
-	os << VE_CONF_DIR << veid() << ".conf";
+	os << VE_CONF_DIR << ctid() << ".conf";
 	return os.str();
 }
 
@@ -157,7 +157,7 @@ string VEObj::suspendPath() const
 	os << dumpDir() << "/" SUSPEND_FILE;
 
 	if (layout < VZCTL_LAYOUT_4)
-		os << "." << veid();
+		os << "." << ctid();
 
 	return os.str();
 }
@@ -165,7 +165,7 @@ string VEObj::suspendPath() const
 void VEObj::setPrivate(const char *p)
 {
 	free((void*)priv);
-	priv = subst_VEID(veid(), p);
+	priv = subst_CTID(ctid(), p);
 }
 
 bool VEObj::isCustomPrivate() const
@@ -176,17 +176,17 @@ bool VEObj::isCustomPrivate() const
 void VEObj::setRoot(const char *p)
 {
 	free((void*)root);
-	root = subst_VEID(veid(), p);
+	root = subst_CTID(ctid(), p);
 }
 
 std::string VEObj::getPrivateConf()
 {
-	return subst_VEID_back(veid(), priv);
+	return subst_VEID_back(ctid(), priv);
 }
 
 std::string VEObj::getRootConf()
 {
-	return subst_VEID_back(veid(), root);
+	return subst_VEID_back(ctid(), root);
 }
 
 int VEObj::prepareConfig()
@@ -446,9 +446,9 @@ int VEObj::getStatus(int status, int *out)
 {
 	vzctl_env_status_t ve_status;
 
-	if (vzctl2_get_env_status(ve_id, &ve_status, status | ENV_SKIP_OWNER))
+	if (vzctl2_get_env_status(m_ctid, &ve_status, status | ENV_SKIP_OWNER))
 		return putErr(MIG_ERR_VZCTL,
-			"vzctl2_get_env_status(%u) : %s", ve_id, vzctl2_get_last_error());
+			"vzctl2_get_env_status(%s) : %s", m_ctid, vzctl2_get_last_error());
 
 	*out = ve_status.mask;
 	return 0;
@@ -508,15 +508,15 @@ int VEObj::lock()
 	if (isOptSet(OPT_SKIP_LOCKVE))
 		return 0;
 
-	logger(LOG_ERR, "locking %d", veid());
+	logger(LOG_ERR, "locking %s", ctid());
 
-	lock_fd = vzctl2_env_lock_prvt(veid(), priv, layout, get_lock_status());
+	lock_fd = vzctl2_env_lock_prvt(ctid(), priv, get_lock_status());
 	if (lock_fd  == -2)
 		return putErr(MIG_ERR_LOCK, MIG_MSG_LOCK,
-			veid(), "CT locked");
+			ctid(), "CT locked");
 	else if (lock_fd < 0)
 		return putErr(MIG_ERR_LOCK, MIG_MSG_LOCK,
-			veid(), vzctl2_get_last_error());
+			ctid(), vzctl2_get_last_error());
 
 	return 0;
 }
@@ -526,7 +526,7 @@ void VEObj::unlock()
 	if (!islocked())
 		return;
 
-	vzctl2_env_unlock_prvt(veid(), lock_fd, priv);
+	vzctl2_env_unlock_prvt(ctid(), lock_fd, priv);
 	lock_fd = -1;
 }
 
@@ -567,8 +567,8 @@ int VEObj::destroy()
 	vzctl_env_status_t ve_status;
 
 	/* get VE status */
-	if (vzctl2_get_env_status(veid(), &ve_status, ENV_STATUS_ALL))
-		putErr(MIG_ERR_VZCTL, "Cannot get status for CT %d", veid());
+	if (vzctl2_get_env_status(ctid(), &ve_status, ENV_STATUS_ALL))
+		putErr(MIG_ERR_VZCTL, "Cannot get status for CT %s", ctid());
 
 	if (ve_status.mask & ENV_STATUS_RUNNING) {
 		if ((rc = operateVE("stop", NULL, NULL, 0)))
@@ -576,19 +576,19 @@ int VEObj::destroy()
 	} else if (ve_status.mask & ENV_STATUS_MOUNTED) {
 		if ((rc = operateVE("umount", NULL, NULL, 0)))
 			return rc;
-        }
+	}
 
 	return operateVE("destroy", NULL, NULL, 1);
 }
 
 int VEObj::suspend(unsigned int flags, bool use_context, bool stop_tracker)
 {
+// obsolete, c/r support removed from vzctl
+#if 0
 	int rc;
 	char buf[ITOA_BUF_SIZE];
 	char veid_hex[10];
-	const char * opt[MAX_ARGS] =
-	    {"--suspend", "--flags", buf, NULL
-	    };
+	const char * opt[MAX_ARGS] = {"--suspend", "--flags", buf, NULL};
 
  	snprintf(buf, sizeof(buf), "%u", flags);
 	snprintf(veid_hex, sizeof(veid_hex), "%x", veid());
@@ -600,6 +600,8 @@ int VEObj::suspend(unsigned int flags, bool use_context, bool stop_tracker)
 		return rc;
 	is_frozen = true;
 	return 0;
+#endif
+	return -1;
 }
 
 int VEObj::tsnapshot(const char *guid)
@@ -620,29 +622,39 @@ int VEObj::snapshot_delete(const char *guid)
 
 int VEObj::cmd_suspend()
 {
+// obsolete, c/r support removed from vzctl
+#if 0
 	const char * opts[] = {"--dumpfile", dumpfile, NULL };
 
 	if (dumpfile == NULL)
 		 opts[0] = NULL;
 
 	return operateVE("suspend", "Suspending", opts, 0);
+#endif
+	return -1;
 }
 
 int VEObj::cmd_restore()
 {
+// obsolete, c/r support removed from vzctl
+#if 0
 	const char * opts[] = {"--dumpfile", dumpfile, NULL };
 
 	if (dumpfile == NULL)
 		 opts[0] = NULL;
 
 	return operateVE("restore", "Restoring", opts, 0);
+#endif
+	return -1;
 }
 
 int VEObj::dump()
 {
+// obsolete, c/r support removed from vzctl
+#if 0
 	const char * opt[] =
-	    {"--dump", "--dumpfile", dumpfile, NULL
-	    };
+		{"--dump", "--dumpfile", dumpfile, NULL
+		};
 	int rc;
 
 	rc = operateVE("chkpnt", "Dumping", opt, 0);
@@ -650,10 +662,14 @@ int VEObj::dump()
 	fiu_do_on("veentry/VEObj/dump", rc = MIG_ERR_SYSTEM);
 #endif
 	return rc;
+#endif
+	return -1;
 }
 
 int VEObj::undump(int use_context)
 {
+// obsolete, c/r support removed from vzctl
+#if 0
 	int rc, rcode;
 	int i = 0;
 	int count = 0;
@@ -695,19 +711,27 @@ int VEObj::undump(int use_context)
 		putErr(MIG_ERR_SYSTEM, "%s", buf);
 	}
 	return rc;
+#endif
+	return -1;
 }
 
 int VEObj::resume_chkpnt()
 {
+// obsolete, c/r support removed from vzctl
+#if 0
 	const char * opt[] =
-	    {"--resume", NULL
-	    };
+		{"--resume", NULL
+		};
 	int rc = operateVE("chkpnt", "Resuming", opt, 0);
 	return rc;
+#endif
+	return -1;
 }
 
 int VEObj::resume_restore(int use_context)
 {
+// obsolete, c/r support removed from vzctl
+#if 0
 	char veid_hex[10];
 	const char * args[] = { "--resume", NULL, NULL, NULL };
 
@@ -718,22 +742,32 @@ int VEObj::resume_restore(int use_context)
 	}
 
 	return operateVE("restore", "Resuming", args, 0);
+#endif
+	return -1;
 }
 
 int VEObj::kill_chkpnt()
 {
+// obsolete, c/r support removed from vzctl
+#if 0
 	const char * opt[] =
-	    {"--kill", NULL
-	    };
+		{"--kill", NULL
+		};
 	return operateVE("chkpnt", "Killing", opt, 0);
+#endif
+	return -1;
 }
 
 int VEObj::kill_restore()
 {
+// obsolete, c/r support removed from vzctl
+#if 0
 	const char * opt[] =
-	    {"--kill", NULL
-	    };
+		{"--kill", NULL
+		};
 	return operateVE("restore", "Killing", opt, 0);
+#endif
+	return -1;
 }
 
 int VEObj::unSet(const char *param)
@@ -747,30 +781,26 @@ int VEObj::unSet(const char *param)
 
 int VEObj::vm_prepare()
 {
-	char veid_str[ITOA_BUF_SIZE];
 	char * const args[] =
-	    {(char *)"/usr/libexec/vzvmprep", veid_str, NULL};
+		{(char *)"/usr/libexec/vzvmprep", m_ctid, NULL};
 
- 	snprintf(veid_str, sizeof(veid_str), "%u", veid());
 	logger(LOG_DEBUG, "preparing vm");
 	return vzm_execve(args, NULL, -1, -1, NULL);
 }
 
 int VEObj::vm_iteration(int fd_in, int fd_out)
 {
-	char veid_str[ITOA_BUF_SIZE];
 	char in[ITOA_BUF_SIZE];
 	char out[ITOA_BUF_SIZE];
 	char * const args[] =
-	    {(char *)BIN_VZITER, veid_str, in, out, NULL};
+		{(char *)BIN_VZITER, m_ctid, in, out, NULL};
 
 #ifdef FIU_ENABLE
 	fiu_return_on("veentry/VEObj/vm_iteration", MIG_ERR_SYSTEM);
 #endif
 
- 	snprintf(veid_str, sizeof(veid_str), "%u", veid());
- 	snprintf(in, sizeof(in), "%u", fd_in);
- 	snprintf(out, sizeof(out), "%u", fd_out);
+	snprintf(in, sizeof(in), "%u", fd_in);
+	snprintf(out, sizeof(out), "%u", fd_out);
 	logger(LOG_DEBUG, "preparing vm");
 	return vzm_execve(args, NULL, -1, -1, NULL);
 }
@@ -779,13 +809,11 @@ int VEObj::operateVE(const char * func, const char * action,
 		const char ** options, int quiet)
 {
 	int rc, i;
-	char veid_str[ITOA_BUF_SIZE];
 	string_list argv;
 
 	if (action && !quiet)
-		logger(LOG_INFO, "%s CT#%d ...", action, veid());
+		logger(LOG_INFO, "%s CT %s ...", action, ctid());
 
- 	snprintf(veid_str, sizeof(veid_str), "%u", veid());
 	string_list_init(&argv);
 	string_list_add(&argv, BIN_VZCTL);
 	if (quiet)
@@ -794,7 +822,7 @@ int VEObj::operateVE(const char * func, const char * action,
 	string_list_add(&argv, "--skipowner");
 	string_list_add(&argv, "--ignore-ha-cluster");
 	string_list_add(&argv, (char *)func);
-	string_list_add(&argv, veid_str);
+	string_list_add(&argv, ctid());
 	if (options) {
 		for (i = 0; options[i]; i++)
 			string_list_add(&argv, (char *)options[i]);
@@ -865,12 +893,18 @@ int VEObj::registration()
 	// will rewrite old owner on force registration
 	// vzmigrate will itself to register CT on HA cluster
 	int flags = VZ_REG_RENEW | VZ_REG_FORCE | VZ_REG_SKIP_HA_CLUSTER;
-	logger(LOG_DEBUG, "vzctl2_env_register(%s, %u, %d)",
-			priv, veid(), flags);
-	if (vzctl2_env_register((char *)priv, veid(), flags) == -1)
+
+	struct vzctl_reg_param reg;
+	memset(&reg, 0, sizeof(struct vzctl_reg_param));
+	SET_CTID(reg.ctid, ctid());
+
+	logger(LOG_DEBUG, "vzctl2_env_register(%s, %s, %d)",
+			priv, ctid(), flags);
+
+	if (vzctl2_env_register((char *)priv, &reg, flags) == -1)
 		return putErr(MIG_ERR_VZCTL,
-			"vzctl2_env_register(%s, %u, %d) error: %s",
-			priv, veid(), flags, vzctl2_get_last_error());
+			"vzctl2_env_register(%s, %s, %d) error: %s",
+			priv, ctid(), flags, vzctl2_get_last_error());
 	return 0;
 }
 
@@ -879,12 +913,12 @@ int VEObj::unregister()
 	// do not remove VEID on force unregister
 	// vzmigrate will itself to unregister CT on HA cluster
 	int flags = VZ_REG_FORCE | VZ_UNREG_PRESERVE | VZ_REG_SKIP_HA_CLUSTER;
-	logger(LOG_DEBUG, "vzctl2_env_unregister(%s, %u, %d)",
-			priv, veid(), VZ_REG_FORCE);
-	if (vzctl2_env_unregister((char *)priv, veid(), flags) == -1)
+	logger(LOG_DEBUG, "vzctl2_env_unregister(%s, %s, %d)",
+			priv, ctid(), VZ_REG_FORCE);
+	if (vzctl2_env_unregister((char *)priv, ctid(), flags) == -1)
 		return putErr(MIG_ERR_VZCTL,
-			"vzctl2_env_unregister(%s, %u, %d) error: %s",
-			priv, veid(), VZ_REG_FORCE, vzctl2_get_last_error());
+			"vzctl2_env_unregister(%s, %s, %d) error: %s",
+			priv, ctid(), VZ_REG_FORCE, vzctl2_get_last_error());
 	return 0;
 }
 
@@ -932,7 +966,7 @@ int VEObj::stopVpsd()
 		if (access(path, F_OK))
 			return 0;
 	}
-	return putErr(MIG_ERR_SYSTEM, "Can't stop vpsd in CT %d", veid());
+	return putErr(MIG_ERR_SYSTEM, "Can't stop vpsd in CT %s", ctid());
 }
 
 int VEObj::createLayout()
@@ -1034,7 +1068,7 @@ void VEObj::setLayout(int new_layout)
 
 int VEObj::loadConfig()
 {
-	return ve_data_load(ve_id, &ve_data);
+	return ve_data_load(m_ctid, &ve_data);
 }
 
 int VEObj::updateMAC()
@@ -1074,33 +1108,31 @@ cleanup:
 /* check that this name does not used by other VE */
 int VEObj::checkName(const char *name)
 {
-	unsigned id;
+	ctid_t tmpCtid;
 	int rc;
 
 	if (name == NULL)
 		return 0;
 
-	rc = vzctl2_get_envid_by_name(name, &id);
+	rc = vzctl2_get_envid_by_name(name, tmpCtid);
 	/* it may be our name */
-	if ((rc == 0) && (id != (unsigned)veid()))
+	if ((rc == 0) && (CMP_CTID(tmpCtid, ctid()) != 0))
 		return putErr(MIG_ERR_NAME_CONFLICT,
-			MIG_MSG_NAME_CONFLICT, name, id);
+			MIG_MSG_NAME_CONFLICT, name, tmpCtid);
 	return 0;
 }
 
 /* set VE name */
 int VEObj::setName(char const *name)
 {
-	char veid_str[ITOA_BUF_SIZE];
 	char * const envp[] =
-	    {(char *)"LANG=en_US.UTF-8", NULL
-	    };
+		{(char *)"LANG=en_US.UTF-8", NULL
+		};
 	char * const args[] =
-	    {
-		(char *)BIN_VZCTL, (char *)"--skiplock", (char *)"set", veid_str,
+		{
+		(char *)BIN_VZCTL, (char *)"--skiplock", (char *)"set", m_ctid,
 		(char *)"--name", (char *)name, (char *)"--save", NULL
-	    };
-	snprintf(veid_str, sizeof(veid_str), "%u", veid());
+		};
 
 	if (name == NULL)
 		return 0;
@@ -1111,11 +1143,9 @@ int VEObj::setName(char const *name)
 
 int VEObj::renewMAC()
 {
-	char veid_str[ITOA_BUF_SIZE];
 	char * const args[] =
-	    { (char *)BIN_VZCTL, (char *)"--skiplock", (char *)"set",
-		veid_str, (char *)"--netif_mac_renew", (char *)"--save", NULL };
-	snprintf(veid_str, sizeof(veid_str), "%u", veid());
+		{(char *)BIN_VZCTL, (char *)"--skiplock", (char *)"set",
+		m_ctid, (char *)"--netif_mac_renew", (char *)"--save", NULL};
 	return vzm_execve(args, NULL, -1, -1, NULL);
 }
 
@@ -1147,7 +1177,7 @@ int checkVEDir(const char * vedir, int unique)
 {
 	int rc = 0;
 	int cnt, i;
-	vzctl_ids_t *veids;
+	vzctl_ids_t *ctids;
 	char path[PATH_MAX + 1];
 
 	if (access(vedir, F_OK) == 0) {
@@ -1158,11 +1188,11 @@ int checkVEDir(const char * vedir, int unique)
 	}
 
 	/* check that another VE, doesn't use this dir */
-	if ((veids = vzctl2_alloc_env_ids()) == NULL)
+	if ((ctids = vzctl2_alloc_env_ids()) == NULL)
 		return putErr(MIG_ERR_VZCTL, "vzctl2_alloc_env_ids(): %s",
 			vzctl2_get_last_error());
 
-	if ((cnt = vzctl2_get_env_ids_by_state(veids, ENV_STATUS_EXISTS)) < 0)
+	if ((cnt = vzctl2_get_env_ids_by_state(ctids, ENV_STATUS_EXISTS)) < 0)
 		return putErr(MIG_ERR_VZCTL, "vzctl2_get_env_ids_by_state(): %s",
 			vzctl2_get_last_error());
 
@@ -1171,12 +1201,12 @@ int checkVEDir(const char * vedir, int unique)
 		int err;
 		const char *data;
 
-		if (veids->ids[i] == 0)
+		if (EMPTY_CTID(ctids->ids[i]))
 			continue;
 
-		vzctl2_get_env_conf_path(veids->ids[i], path, sizeof(path));
-		h = vzctl2_env_open(veids->ids[i], \
-			VZCTL_CONF_SKIP_GLOBAL|VZCTL_CONF_BASE_SET|VZCTL_CONF_SKIP_PARAM_ERRORS, &err);
+		vzctl2_get_env_conf_path(ctids->ids[i], path, sizeof(path));
+		h = vzctl2_env_open(ctids->ids[i],
+			VZCTL_CONF_SKIP_GLOBAL | VZCTL_CONF_BASE_SET | VZCTL_CONF_SKIP_PARAM_ERRORS, &err);
 		if (err) {
 			logger(LOG_ERR, "vzctl2_env_open(%s) error: %s",
 				path, vzctl2_get_last_error());
@@ -1187,30 +1217,28 @@ int checkVEDir(const char * vedir, int unique)
 		// directories for VE
 		if (vzctl2_env_get_ve_root_path(vzctl2_get_env_param(h), &data) == 0 &&
 				isConcurrentDirs(vedir, data))
-			rc = putErr(MIG_ERR_EXISTS, MIG_MSG_AREA_USED,
-					vedir, veids->ids[i]);
+			rc = putErr(MIG_ERR_EXISTS, MIG_MSG_AREA_USED, vedir, ctids->ids[i]);
 
 		if (vzctl2_env_get_ve_private_path(vzctl2_get_env_param(h), &data) == 0 &&
 				isConcurrentDirs(vedir, data))
-			rc = putErr(MIG_ERR_EXISTS, MIG_MSG_AREA_USED, vedir, veids->ids[i]);
+			rc = putErr(MIG_ERR_EXISTS, MIG_MSG_AREA_USED, vedir, ctids->ids[i]);
 
 		vzctl2_env_close(h);
 		if (rc)
 			break;
 	}
-	vzctl2_free_env_ids(veids);
+	vzctl2_free_env_ids(ctids);
 	if (rc)
 		return rc;
 	return 1;
 }
 
 /* 0 - ipadd, 1 - ipdel*/
-static int ipset(unsigned veid, const char *cmd, struct string_list *iplist)
+static int ipset(const char *ctid, const char *cmd, struct string_list *iplist)
 {
 	int rc;
 	struct string_list argv;
 	struct string_list_el *p;
-	char buf[ITOA_BUF_SIZE];
 
 	if (string_list_empty(iplist))
 		return 0;
@@ -1221,8 +1249,7 @@ static int ipset(unsigned veid, const char *cmd, struct string_list *iplist)
 	string_list_add(&argv, "--skiplock");
 	string_list_add(&argv, "--skipowner");
 	string_list_add(&argv, "set");
-	snprintf(buf, sizeof(buf), "%u", veid);
-	string_list_add(&argv, buf);
+	string_list_add(&argv, ctid);
 
 	string_list_for_each(iplist, p) {
 		string_list_add(&argv, cmd);
@@ -1231,7 +1258,7 @@ static int ipset(unsigned veid, const char *cmd, struct string_list *iplist)
 
 	logger(LOG_DEBUG, "Set CT IP addresses");
 	if ((rc = vzml_execve(&argv, NULL, -1, -1, 0)))
-		logger(LOG_ERR, "Can't set IPs for CT#%u", veid);
+		logger(LOG_ERR, "Can't set IPs for CT %s", ctid);
 
 	string_list_clean(&argv);
 
@@ -1242,13 +1269,13 @@ int exchangeIPs(VEObj &k, VEObj &v)
 {
 	int rc;
 
-	if ((rc = ipset(v.veid(), "--ipdel", &v.ve_data.ipaddr)))
+	if ((rc = ipset(v.ctid(), "--ipdel", &v.ve_data.ipaddr)))
 		return rc;
 
-	if ((rc = ipset(k.veid(), "--ipadd", &v.ve_data.ipaddr))) {
+	if ((rc = ipset(k.ctid(), "--ipadd", &v.ve_data.ipaddr))) {
 		// attempt to restore
-		if (ipset(v.veid(), "--ipadd", &v.ve_data.ipaddr))
-			logger(LOG_WARNING, "can't restore CT#%d IP addresses", v.veid());
+		if (ipset(v.ctid(), "--ipadd", &v.ve_data.ipaddr))
+			logger(LOG_WARNING, "can't restore CT %s IP addresses", v.ctid());
 		return rc;
 	}
 
@@ -1259,36 +1286,54 @@ int restoreIPs(VEObj &k, VEObj &v)
 {
 	// we only should delete IPs from keeper VE
 	// 'cause adding IPs to srcVE will happen on the stage of VE start
-	return ipset(k.veid(), "--ipdel", &v.ve_data.ipaddr);
+	return ipset(k.ctid(), "--ipdel", &v.ve_data.ipaddr);
 }
 
 int rollbackIPs(VEObj &k, VEObj &v)
 {
 	int rc;
 
-	rc = ipset(k.veid(), "--ipdel", &v.ve_data.ipaddr);
+	rc = ipset(k.ctid(), "--ipdel", &v.ve_data.ipaddr);
 	if (rc != 0)
 		return rc;
 
-	rc = ipset(v.veid(), "--ipadd", &v.ve_data.ipaddr);
+	rc = ipset(v.ctid(), "--ipadd", &v.ve_data.ipaddr);
 	if (rc != 0)
 		return rc;
 
 	return 0;
 }
 
-std::string subst_VEID_back(unsigned veid, const char *path)
+/* replace $VEID to ctid in string */
+char *subst_CTID(const char *ctid, const char *src)
+{
+	const char *VEID_STR1 = "$VEID";
+	const char *VEID_STR2 = "${VEID}";
+
+	if (src == NULL)
+		return NULL;
+
+	std::string res(src);
+	size_t pos;
+	if ((pos = res.find(VEID_STR1)) != std::string::npos) {
+		res.replace(pos, strlen(VEID_STR1), ctid);
+	} else if ((pos = res.find(VEID_STR2)) != std::string::npos) {
+		res.replace(pos, strlen(VEID_STR2), ctid);
+	}
+
+	return strdup(res.c_str());
+}
+
+std::string subst_VEID_back(const char *ctid, const char *path)
 {
 	char buffer[PATH_MAX];
-	char veid_str[ITOA_BUF_SIZE];
 	char *bdir, *bname;
 
 	strncpy(buffer, path, sizeof(buffer));
 	remove_trail_slashes(buffer);
 	bname = basename(buffer);
 	bdir = dirname(buffer);
-	snprintf(veid_str, sizeof(veid_str), "%u", veid);
-	if (strcmp(bname, veid_str) == 0)
+	if (strcmp(bname, ctid) == 0)
 		return string(bdir) + "/$VEID";
 	else
 		return path;

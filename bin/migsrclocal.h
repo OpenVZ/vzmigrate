@@ -41,13 +41,13 @@ public:
 
 	virtual int startVE();
 
-	MigrateStateLocal(unsigned src_ve, unsigned dst_ve,
+	MigrateStateLocal(const char * src_ctid, const char * dst_ctid,
 			const char * priv, const char * root,
 			const char *dst_name = NULL, const char *uuid = NULL);
 	~MigrateStateLocal();
 
 protected:
-	int is_thesame_veid;
+	int is_thesame_ctid;
 	int is_thesame_private;
 	int is_thesame_root;
 	int is_thesame_location;

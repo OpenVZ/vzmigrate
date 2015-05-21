@@ -20,14 +20,14 @@
 
 extern struct vz_data *vzcnf;
 
-MigrateStateSrc::MigrateStateSrc(unsigned src_ve, unsigned dst_ve,
-                                 const char * priv, const char * root,
+MigrateStateSrc::MigrateStateSrc(const char * src_ctid, const char * dst_ctid,
+				const char * priv, const char * root,
 				const char *name)
 		: MigrateStateCommon()
 {
 	keepVE = NULL;
-	srcVE = new VEObj(src_ve);
-	dstVE = new VEObj(dst_ve);
+	srcVE = new VEObj(src_ctid);
+	dstVE = new VEObj(dst_ctid);
 	dstVE->setPrivate(priv);
 	dstVE->setRoot(root);
 	dstVE->setNameData(name);
@@ -52,7 +52,7 @@ int MigrateStateSrc::suspendVE_Ploop()
 	int rc;
 
 	if ((rc = srcVE->suspend()))
-		return putErr(rc, MIG_MSG_SUSPEND, srcVE->veid(), getError());
+		return putErr(rc, MIG_MSG_SUSPEND, srcVE->ctid(), getError());
 	addCleaner(clean_resumeVE, srcVE);
 
 	return 0;
@@ -65,13 +65,13 @@ int MigrateStateSrc::suspendVE_VZFS()
 
 	// stop tracker too if is is possible
 	if ((rc = srcVE->suspend(0, false, support)))
-		return putErr(rc, MIG_MSG_SUSPEND, srcVE->veid(), getError());
+		return putErr(rc, MIG_MSG_SUSPEND, srcVE->ctid(), getError());
 	addCleaner(clean_resumeVE, srcVE);
 
 	// use workaround to stop tracker
 	if (!support) {
 		if ((rc = srcVE->dump()))
-			return putErr(rc, MIG_MSG_DUMP, srcVE->veid(), getError());
+			return putErr(rc, MIG_MSG_DUMP, srcVE->ctid(), getError());
 	}
 
 	return 0;
@@ -181,11 +181,11 @@ int MigrateStateSrc::clean_mountVE(const void * arg, const void *)
 {
 	VEObj * ve = (VEObj *) arg;
 	assert(ve);
-	logger(LOG_DEBUG, MIG_MSG_RST_MOUNT, ve->veid());
+	logger(LOG_DEBUG, MIG_MSG_RST_MOUNT, ve->ctid());
 	// Mount source VE
 	if ((ve->ismount() ? 0 : ve->mount()) != 0)
 		return putErr(MIG_ERR_STARTVE, MIG_MSG_START,
-		              ve->veid(), getError());
+			ve->ctid(), getError());
 	return 0;
 };
 
@@ -195,7 +195,7 @@ int MigrateStateSrc::clean_startVE(const void * arg, const void *)
 	VEObj * ve = (VEObj *) arg;
 	assert(ve);
 
-	logger(LOG_DEBUG, MIG_MSG_RST_START, ve->veid());
+	logger(LOG_DEBUG, MIG_MSG_RST_START, ve->ctid());
 	ve->start();
 	return 0;
 };
@@ -265,7 +265,7 @@ int MigrateStateSrc::clean_registerVE(const void * arg1, const void *)
 	VEObj *ve = (VEObj *)arg1;
 	assert(ve);
 
-	logger(LOG_DEBUG, "Register CT %d", ve->veid());
+	logger(LOG_DEBUG, "Register CT %s", ve->ctid());
 	if (ve->registration())
 		return 0;
 	ve->operateVE("set", NULL, opts, 0);
@@ -277,7 +277,7 @@ int MigrateStateSrc::clean_resumeVE(const void * arg1, const void *)
 	VEObj * ve = (VEObj *) arg1;
 
 	assert(ve);
-	logger(LOG_DEBUG, MIG_MSG_RST_RESUME, ve->veid());
+	logger(LOG_DEBUG, MIG_MSG_RST_RESUME, ve->ctid());
 	// Resume source VE
 	if (ve->isfrozen())
 		ve->resume_chkpnt();
@@ -382,7 +382,8 @@ int MigrateStateSrc::checkCommonSrc()
 
 	// do not migrate temporary VE for template cache
 	if (srcVE->ve_data.ve_type && strcasecmp(srcVE->ve_data.ve_type, "temporary") == 0)
-			return putErr(MIG_ERR_SPECIALVE, MIG_MSG_SPECIAL, srcVE->veid(), srcVE->ve_data.ve_type);
+		return putErr(MIG_ERR_SPECIALVE, MIG_MSG_SPECIAL,
+			srcVE->ctid(), srcVE->ve_data.ve_type);
 
 	return 0;
 }

@@ -126,7 +126,7 @@ int main(int argc, char **argv)
 
 MigrateStateCommon * state = NULL;
 
-static unsigned failedVE = 0;
+static ctid_t g_failedCTID = "\0";
 
 static void exitM(int code)
 {
@@ -141,14 +141,15 @@ static void exitM(int code)
 	}
 
 	it = VZMoptions.veMigrateList.begin();
-	if (!failedVE || (unsigned)(*it)->dst_veid == failedVE)
+	if (EMPTY_CTID(g_failedCTID) || CMP_CTID((*it)->dst_ctid, g_failedCTID) == 0)
 		exit(code);
+
 	ostringstream s;
 	for (it = VZMoptions.veMigrateList.begin();
-	        it != VZMoptions.veMigrateList.end() && (unsigned)(*it)->dst_veid != failedVE; ++it)
-		s << " " << (*it)->dst_veid;
+		it != VZMoptions.veMigrateList.end() && CMP_CTID((*it)->dst_ctid, g_failedCTID) != 0; ++it)
+		s << " " << (*it)->dst_ctid;
 	logger(LOG_INFO, isOptSet(OPT_COPY) ? "Successfully created CT(s):%s"
-	       : "Successfully moved CT(s):%s", s.str().c_str());
+		: "Successfully moved CT(s):%s", s.str().c_str());
 
 	exit(code);
 }
@@ -158,24 +159,24 @@ static void migrateVEs()
 	int rc;
 
 	for (VEOptEntries::const_iterator it = VZMoptions.veMigrateList.begin();
-	        it != VZMoptions.veMigrateList.end(); it ++)
+		it != VZMoptions.veMigrateList.end(); it++)
 	{
-		logger(LOG_INFO, isOptSet(OPT_DRY_RUN) ? "The beginning of check " "CT#%d -> CT#%d, [%s], [%s] ..." : "Moving/copying"
-			" CT#%d -> CT#%d, [%s], [%s] ...",
-		       (*it)->src_veid, (*it)->dst_veid, (*it)->priv_path ?: "" ,
-		       (*it)->root_path ?: "");
+		logger(LOG_INFO,
+			isOptSet(OPT_DRY_RUN)
+				? "The beginning of check CT %s -> CT %s, [%s], [%s] ..."
+				: "Moving/copying CT %s -> CT %s, [%s], [%s] ...",
+			(*it)->src_ctid, (*it)->dst_ctid, (*it)->priv_path ?: "",
+			(*it)->root_path ?: "");
 
-		failedVE = (*it)->dst_veid;
-
-		unsigned dstve = ((*it)->dst_veid == (*it)->src_veid)
-	                     ? (*it)->src_veid : (*it)->dst_veid;
+		SET_CTID(g_failedCTID, (*it)->dst_ctid);
 
 		if (VZMoptions.bintype == BIN_SRC)
-			state = new MigrateStateRemote((*it)->src_veid, dstve,
-                               (*it)->priv_path, (*it)->root_path, (*it)->dst_name);
+			state = new MigrateStateRemote((*it)->src_ctid, (*it)->dst_ctid,
+				(*it)->priv_path, (*it)->root_path, (*it)->dst_name);
 		else if (VZMoptions.bintype == BIN_LOCAL)
-			state = new MigrateStateLocal((*it)->src_veid, dstve,
-                              (*it)->priv_path, (*it)->root_path, (*it)->dst_name, (*it)->uuid);
+			state = new MigrateStateLocal((*it)->src_ctid, (*it)->dst_ctid,
+				(*it)->priv_path, (*it)->root_path, (*it)->dst_name, (*it)->uuid);
+
 		if (state == NULL) {
 			logger(LOG_ERR, MIG_MSG_SYSTEM);
 			exitM(-MIG_ERR_SYSTEM);
@@ -190,9 +191,9 @@ static void migrateVEs()
 			if (isOptSet(OPT_DRY_RUN))
 				logger(LOG_ERR, "Checking error: %s", getError());
 			else
-				logger(LOG_ERR, "Can't move/copy CT#%d -> CT#%d, [%s], [%s] : %s",
-			               (*it)->src_veid, (*it)->dst_veid, (*it)->priv_path ?: "" ,
-			               (*it)->root_path ?: "", getError());
+				logger(LOG_ERR, "Can't move/copy CT %s -> CT %s, [%s], [%s] : %s",
+					(*it)->src_ctid, (*it)->dst_ctid, (*it)->priv_path ?: "" ,
+					(*it)->root_path ?: "", getError());
 		}
 		else
 			logger(LOG_INFO, "Successfully completed");
@@ -203,6 +204,7 @@ static void migrateVEs()
 			/* cleanup routines shouldn't be affected by the terminated flag */
 			terminated = 0;
 		}
+
 		xdelete(state);
 		if (rc)
 			exitM(-rc);

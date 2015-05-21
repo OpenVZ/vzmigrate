@@ -340,7 +340,7 @@ void ve_data_clean(struct ve_data *ve)
 }
 
 /* read VE config */
-int ve_data_load(unsigned veid, struct ve_data *ve)
+int ve_data_load(const char *ctid, struct ve_data *ve)
 {
 	int err, rc = 0;
 	const char *data;
@@ -348,16 +348,16 @@ int ve_data_load(unsigned veid, struct ve_data *ve)
 	struct vzctl_env_handle *h;
 	struct vzctl_env_param *env;
 
-	h = vzctl2_env_open(veid, VZCTL_CONF_SKIP_PARAM_ERRORS, &err);
+	h = vzctl2_env_open(ctid, VZCTL_CONF_SKIP_PARAM_ERRORS, &err);
 	if (err)
-		return putErr(MIG_ERR_VZCTL, "vzctl2_env_open(%d) err: %d error: %s",
-			veid, err, vzctl2_get_last_error());
+		return putErr(MIG_ERR_VZCTL, "vzctl2_env_open(%s) err: %d error: %s",
+			ctid, err, vzctl2_get_last_error());
 
 	env = vzctl2_get_env_param(h);
 	/* read expanded and original root and private */
 	if (vzctl2_env_get_ve_root_orig_path(env, &data)) {
 		rc = putErr(MIG_ERR_SYSTEM,
-				"Can't read VE_ROOT from CT %u config", veid);
+				"Can't read VE_ROOT from CT %s config", ctid);
 		goto cleanup;
 	}
 	if ((ve->root_orig = strdup(data)) == NULL) {
@@ -858,44 +858,6 @@ cleanup:
 	return rc;
 }
 
-/* cloned from vzctl */
-char *subst_VEID(unsigned veid, const char *src)
-{
-	char *srcp;
-	char str[BUFSIZ];
-	char *sp, *se;
-	int r, len, veidlen;
-
-	if (src == NULL)
-		return NULL;
-
-	if ((srcp = strstr(src, "$VEID")))
-		veidlen = sizeof("$VEID") - 1;
-	else if ((srcp = strstr(src, "${VEID}")))
-		veidlen = sizeof("${VEID}") - 1;
-	else
-		return strdup(src);
-
-	sp = str;
-	se = str + sizeof(str);
-	len = srcp - src; /* Length of src before $VEID */
-	if (len > (int)sizeof(str))
-		return NULL;
-	memcpy(str, src, len);
-	sp += len;
-	r = snprintf(sp, se - sp, "%d", veid);
-	sp += r;
-	if ((r < 0) || (sp >= se))
-		return NULL;
-	if (*srcp) {
-		r = snprintf(sp, se - sp, "%s", srcp + veidlen);
-		sp += r;
-		if ((r < 0) || (sp >= se))
-			return NULL;
-	}
-	return strdup(str);
-}
-
 /* create directory with parent directories as needed */
 int make_dir(const char *path, mode_t mode)
 {
@@ -1110,22 +1072,22 @@ int split_path(	const char *path,
 	return 0;
 }
 
-int get_ve_root(unsigned veid, char *root, size_t size)
+int get_ve_root(const char *ctid, char *root, size_t size)
 {
 	int err, rc;
 	const char *ve_root;
 	struct vzctl_env_handle *h;
 
-	h = vzctl2_env_open(veid, \
-		VZCTL_CONF_SKIP_GLOBAL|VZCTL_CONF_BASE_SET|VZCTL_CONF_SKIP_PARAM_ERRORS, &err);
+	h = vzctl2_env_open(ctid,
+		VZCTL_CONF_SKIP_GLOBAL | VZCTL_CONF_BASE_SET | VZCTL_CONF_SKIP_PARAM_ERRORS, &err);
 	if (err)
-		return putErr(MIG_ERR_VZCTL, "vectl_env_open(%d) error: %s",
-				veid, vzctl2_get_last_error());
+		return putErr(MIG_ERR_VZCTL, "vectl_env_open(%s) error: %s",
+				ctid, vzctl2_get_last_error());
 
 	rc = vzctl2_env_get_ve_root_path(vzctl2_get_env_param(h), &ve_root);
 	if (rc)
 		rc = putErr(MIG_ERR_VZCTL,
-			"can't read VE_ROOT from CT#%u config", veid);
+			"can't read VE_ROOT from CT %s config", ctid);
 	else
 		strncpy(root, ve_root, size);
 

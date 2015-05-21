@@ -29,16 +29,14 @@ using namespace std;
 
 CNewVEsList::~CNewVEsList()
 {
-	for (map<unsigned, VEObj *>::const_iterator it = this->begin();
-	        it != this->end(); it++)
+	for (std::map<std::string, VEObj *>::const_iterator it = this->begin();
+			it != this->end(); it++)
 		delete it->second;
 }
 
-CNewVEsList * veList = NULL;
-map<unsigned,unsigned> * veid_map = NULL;
+CNewVEsList * g_veList = NULL;
+std::map<std::string, std::string> * g_ctidMap = NULL;
 MigrateStateDstRemote * state = NULL;
-
-// ---------
 
 static int cmdVersion(istringstream & is, ostringstream & os)
 {
@@ -161,9 +159,9 @@ static int cmdCopyPloopImageOnline1(istringstream & is)
 
 static int cmdInitMigration(istringstream & is)
 {
-	// Get VEID to init
-	unsigned veid;
-	if ((is >> veid) == NULL)
+	// Get CTID to init
+	std::string ctid;
+	if ((is >> ctid) == NULL)
 		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
 
 	// Get additional init options
@@ -171,18 +169,18 @@ static int cmdInitMigration(istringstream & is)
 	if ((is >> options) == NULL)
 		options = 0;
 
-	CNewVEsList::iterator it = veList->find(veid);
-	if (it == veList->end()) {
+	CNewVEsList::iterator it = g_veList->find(ctid);
+	if (it == g_veList->end()) {
 		// New syntax for PSBM - src part knows nothing about CTID
 		// change and thus put src CTID to "init" cmd. Try to find
 		// respective mapping and thus veObj with new ID.
-		map<unsigned, unsigned>::iterator it2 = veid_map->find(veid);
-		if (it2 == veid_map->end())
+		std::map<std::string, std::string>::iterator it2 = g_ctidMap->find(ctid);
+		if (it2 == g_ctidMap->end())
 			return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
 
-		// map found, search list by dst_veid
-		it = veList->find(it2->second);
-		if (it == veList->end())
+		// map found, search list by dst_ctid
+		it = g_veList->find(it2->second);
+		if (it == g_veList->end())
 			return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
 	}
 
@@ -190,7 +188,7 @@ static int cmdInitMigration(istringstream & is)
 	if (state == NULL)
 		return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
 
-	veList->erase(it);
+	g_veList->erase(it);
 	return state->initMigration();
 }
 

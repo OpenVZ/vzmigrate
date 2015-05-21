@@ -42,8 +42,7 @@ extern "C" {
 #define VE_OLD_CONF_DIR			"/etc/sysconfig/vz-scripts/"
 #define PID_FILE			"vzmigrate_ssh_pid"
 
-#define VEID0		((unsigned) 0)
-#define SERVICEVEID	((unsigned) 1)
+#define SERVICE_CTID	"1"
 
 extern int debug_level;
 extern int terminated;
@@ -189,11 +188,9 @@ extern const char * getError();
 
 #define MIG_MSG_PROTOCOL	"migrate protocol error"
 #define MIG_MSG_UNKNOWN_CMD	"unknown command: \"%s\", ignored"
-#define MIG_MSG_NOTMPLDIR       "failed to access template directory"
-#define MIG_MSG_NOSTATUS        "failed to get CT status"
+#define MIG_MSG_NOTMPLDIR	"failed to access template directory"
+#define MIG_MSG_NOSTATUS	"failed to get CT status"
 
-#define MSG_CHECK_VE		", check CT#%d before start"
-#define MSG_USE_FORCE		", use '-f' option"
 #define MSG_FORCE_USED		"Force option is used"
 #define MIG_MSG_GET_CPU_CAPS	"Can't get destination cpu capabilities, seems you need to check versions of packages on destination node"
 #define MIG_MSG_CHECK_CAPS	"Can't check source cpu capabilities, seems you need to load CPT modules or check versions of packages on source node"
@@ -210,28 +207,22 @@ extern const char * getError();
 #define MIG_MSG_PAGEIN_EXEC	"Can't execute vzpageind"
 #define MIG_MSG_PAGEIN_STATE	"vzpageind is not running"
 #define MIG_MSG_PKTDEPS_COM	"Destination node has not got required packages [%s]"
-#define MIG_MSG_CACHES_COM	"Destination node has not got required caches [%s]"
-#define MIG_MSG_CACHES		MIG_MSG_CACHES_COM MSG_USE_FORCE " or run vzuncache on this CT"
-#define MIG_MSG_CACHES_WARN	MIG_MSG_CACHES_COM MSG_CHECK_VE
 #define MIG_MSG_IP_IN_USE_COM	"IP addresses [%s] already in use on destination node"
-#define MIG_MSG_IP_IN_USE	MIG_MSG_IP_IN_USE_COM MSG_USE_FORCE
-#define MIG_MSG_IP_IN_USE_WARN	MIG_MSG_IP_IN_USE_COM MSG_CHECK_VE
-#define MIG_MSG_CANTCONVERT	"Can't convert CT config to new format on destination side" MSG_CHECK_VE
+#define MIG_MSG_IP_IN_USE	MIG_MSG_IP_IN_USE_COM ", use '-f' option"
+#define MIG_MSG_IP_IN_USE_WARN	MIG_MSG_IP_IN_USE_COM ", check CT %s before start"
 
-#define MIG_MSG_AREA_USED	"directory '%s' or it descendant already used by CT#%d"
+#define MIG_MSG_AREA_USED	"directory '%s' or it descendant already used by CT %s"
 #define MIG_MSG_SEND_PKT	"can't send command to destination side : %m"
 #define MIG_MSG_CANT_CONN_SRC	"can't connect to source node (%s) : %s"
 #define MIG_MSG_CANT_CONNECT	"can't connect to destination node"
 #define MIG_MSG_NOT_INSTALL	"seems you need install migrate package on destination node"
-#define MIG_MSG_LOCK		"can't lock CT#%d : %s"
+#define MIG_MSG_LOCK		"can't lock CT %s : %s"
 #define MIG_MSG_TEMPL_LOCK	"can't lock template \"%s\""
-#define MIG_MSG_NOEXIST		"CT#%d doesn't exist"
+#define MIG_MSG_NOEXIST		"CT %s doesn't exist"
 #define MIG_MSG_TEMPL_NOEXIST	"Template \"%s\" doesn't exist"
-#define MIG_MSG_VEIMPROPER	"CT#%d is improper"
-#define MIG_MSG_VEIMPROPER_CONF	"Improper CT/VZ config"
 #define MIG_MSG_VELIST		"can't get list of containers"
 #define MIG_MSG_TEMIMPROPER	"Template \"%s\" is broken"
-#define MIG_MSG_EXISTS		"CT#%d already exists"
+#define MIG_MSG_EXISTS		"CT %s already exists"
 #define MIG_MSG_TEMPL_EXISTS	"Later or the same template version \"%s/%s\" already exists on destination"
 //TODO: friendly text
 #define MIG_MSG_EZTEMPL_EXISTS	"EZ template \"%s\" already exists on destination"
@@ -240,37 +231,29 @@ extern const char * getError();
 #define MIG_MSG_CMP_LOCATIONS	"compare old and new CT locations failed : %m"
 #define MIG_MSG_SYSTEM		"system error : %m"
 #define MIG_MSG_EXEC_TRACK	"can not run tracking"
-#define MIG_MSG_TRACK_FAILED	"tracking failed : exit code [%d]"
-#define MIG_MSG_TRACK_TREE	"can not create track tree"
 #define MIG_MSG_COPY		"copy (using : [%s]) failed : %s"
 #define MIG_MSG_MOVE		"can not move '%s' -> '%s' : %m"
 #define MIG_MSG_COPY_FILE	"can not copy '%s' -> '%s' : %s"
 #define MIG_MSG_EXEC_BIN	"can not exec '%s' : %m"
-#define MIG_MSG_STOP		"can not stop/umount CT#%d : %s"
-#define MIG_MSG_START		"can not start/mount CT#%d : %s"
+#define MIG_MSG_STOP		"can not stop/umount CT %s : %s"
+#define MIG_MSG_START		"can not start/mount CT %s : %s"
 #define MIG_MSG_REALTIME	"Can not perform online migration with low delay"
 #define MIG_MSG_ITER_MIG	"Iterative migration is not available"
 #define MIG_MSG_LAZY		"Can not perform lazy online migration"
 #define MIG_MSG_ONLINE_ELDER	"Can not perform online migration to/from elder version"
-#define MIG_MSG_VM_PREP		"can not prepare vm for CT#%d : %s"
-#define MIG_MSG_SUSPEND		"can not suspend CT#%d : %s"
-#define MIG_MSG_LAZY_VM		"can not set lazy_vm flag for CT#%d : %s"
-#define MIG_MSG_DUMP		"can not dump CT#%d : %s" MIG_MSG_TRYOFFLINE
-#define MIG_MSG_PAGEOUT		"can not start pageout for CT#%d : %s"
-#define MIG_MSG_UNDUMP		"can not undump CT#%d : %s" MIG_MSG_TRYOFFLINE
+#define MIG_MSG_VM_PREP		"can not prepare vm for CT %s : %s"
+#define MIG_MSG_SUSPEND		"can not suspend CT %s : %s"
+#define MIG_MSG_DUMP		"can not dump CT %s : %s" MIG_MSG_TRYOFFLINE
+#define MIG_MSG_UNDUMP		"can not undump CT %s : %s" MIG_MSG_TRYOFFLINE
 #define MIG_MSG_TRYOFFLINE	"\nThis CT can't be migrated online at the moment. Try offline migration."
-#define MIG_MSG_ITER		"can not prepare destination CT#%d for iterative migration : %s"
-#define MIG_MSG_ROLLBACK	"can not rollback to simple online migration on destination CT#%d : %s"
-#define MIG_MSG_DST_RESUME	"can not resume destination CT#%d : %s"
-#define MIG_MSG_RESUME		"can not resume CT#%d : %s"
-#define MIG_MSG_SPECIAL		"CT#%d is special CT type '%s'"
+#define MIG_MSG_ITER		"can not prepare destination CT %s for iterative migration : %s"
+#define MIG_MSG_DST_RESUME	"can not resume destination CT %s : %s"
+#define MIG_MSG_RESUME		"can not resume CT %s : %s"
+#define MIG_MSG_SPECIAL		"CT %s is special CT type '%s'"
 #define MIG_MSG_DELETE		"can not delete '%s' : %s"
 #define MIG_MSG_CREATE_DIR	"can not create dir '%s' : %m "
 #define MIG_MSG_SET_MODE	"chmod '%s' : %m"
 #define MIG_MSG_REPLY		"can not read reply from destination node"
-#define MIG_MSG_KEEPER_RUN	"keeper CT#%d is not running"
-#define MIG_MSG_NEWTEM_REPAIR	"can't repair CT#%d packages : %s"
-#define MIG_MSG_NEWTEM_CONFPATH	"can't get template config path : %d"
 
 #define MIG_MSG_LICENSE		"License check failed: %s"
 #define MIG_MSG_DISKSPACE	"Disk space check failed: %s"
@@ -286,7 +269,7 @@ extern const char * getError();
 #define MIG_MSG_BAD_VEFORMAT	"can't get source CT format"
 #define MIG_MSG_VZCACHE2	"can't migrate vzcache2 area %s (old protocol)"
 #define MIG_MSG_SUSPENDED	"can't migrate suspended CT (old protocol)"
-#define MIG_MSG_NAME_CONFLICT	"name %s already used by CT %d"
+#define MIG_MSG_NAME_CONFLICT	"name %s already used by CT %s"
 #define MIG_MSG_PLOOP_FORMAT	"The following ploop format is not supported "\
 				"on the destination node: %d"
 #define MIG_MSG_CONVERT_BINDMOUNTS	"Migration CT with bindmounts does "\
@@ -312,12 +295,10 @@ extern const char * getError();
 #define MIG_MSG_RST_RMDIR	"cleaning : 'rmdir' dir : %s"
 #define MIG_MSG_RST_RM_DIR	"cleaning : 'rm' dir : %s"
 #define MIG_MSG_RST_RENAME	"cleaning : rename : %s -> %s"
-#define MIG_MSG_RST_START	"cleaning : start CT#%d"
-#define MIG_MSG_RST_RESUME	"cleaning : resume CT#%d"
+#define MIG_MSG_RST_START	"cleaning : start CT %s"
+#define MIG_MSG_RST_RESUME	"cleaning : resume CT %s"
 #define MIG_MSG_RST_CHANNEL	"cleaning : close ssh channel"
-#define MIG_MSG_RST_RESTORE	"cleaning : restore CT#%d"
-#define MIG_MSG_RST_MOUNT	"cleaning : mount CT#%d"
-#define MIG_MSG_STOP_TRACK	"cleaning : stop tracking CT#%d"
+#define MIG_MSG_RST_MOUNT	"cleaning : mount CT %s"
 
 /* shared FS support */
 #define MIG_MSG_THESAME_CLUSTER	"Source and target %s resides "\

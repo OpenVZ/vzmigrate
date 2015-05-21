@@ -35,15 +35,16 @@ void parse_options (int argc, char **argv);
 
 struct VEOptEntry
 {
-	unsigned src_veid;
-	unsigned dst_veid;
+	ctid_t src_ctid;
+	ctid_t dst_ctid;
 	const char * root_path;
 	const char * priv_path;
 	char * dst_name;
 	char * uuid;
 	VEOptEntry()
 	{
-		src_veid = dst_veid = VEID0;
+		SET_CTID(src_ctid, NULL);
+		SET_CTID(dst_ctid, NULL);
 		root_path = priv_path = dst_name = uuid = NULL;
 	};
 	~VEOptEntry()
@@ -89,8 +90,6 @@ typedef vector<string> TemplOptEntries;
 #define MIGRATE_VERSION_250 	250 // in virtuozzo 3.0 used this protocol
 #define MIGRATE_VERSION_202 	202
 #define MIGRATE_VERSION_OLD 	0
-
-#define DEFAULT_KEEPER_VEID	SERVICEVEID
 
 #define BIN_LOCAL	0
 #define BIN_SRC		1
@@ -154,7 +153,7 @@ typedef vector<string> TemplOptEntries;
 #define DSTACT_UNDUMP_VE	10
 #define DSTACT_RESUME_VE	11
 
-extern unsigned keeperVEID;
+extern ctid_t g_keeperCTID;
 extern const char * service_root;
 
 struct timeout {

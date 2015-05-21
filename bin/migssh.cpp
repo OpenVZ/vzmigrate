@@ -368,17 +368,15 @@ int ssh_recv_data(
 int ssh_start_swap_cli(
 		struct vzsock_ctx *ctx,
 		const char *dst_bin,
-		unsigned dst_veid,
+		const char *dst_ctid,
 		void **swapch)
 {
 	const char * sshArgs[MAX_ARGS];
 	int ret;
-	char veid_str[ITOA_BUF_SIZE];
 
 	sshArgs[0] = NULL;
-	snprintf(veid_str, sizeof(veid_str), "%u", dst_veid);
-	arrangeArgs(sshArgs, sizeof(sshArgs)/sizeof(char *), sshArgs,
-		dst_bin, veid_str, (void *)NULL);
+	arrangeArgs(sshArgs, sizeof(sshArgs) / sizeof(char *), sshArgs,
+		dst_bin, dst_ctid, (void *)NULL);
 
 	if (debug_level >= LOG_DEBUG)
 		dump_args("establish ssh swap channel: ", (char* const*)sshArgs);

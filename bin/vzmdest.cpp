@@ -63,31 +63,31 @@ int vzmdest_send(
 
 static void exitM(int rc)
 {
-	delete veList;
-	delete veid_map;
+	delete g_veList;
+	delete g_ctidMap;
 	exit(-rc);
 }
 
 static int initializeVEs()
 {
-	veList = new CNewVEsList();
-	if (veList == NULL)
+	g_veList = new CNewVEsList();
+	if (g_veList == NULL)
 		return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
 
-	veid_map = new map<unsigned, unsigned>();
-	if (veid_map == NULL)
+	g_ctidMap = new std::map<std::string, std::string>();
+	if (g_ctidMap == NULL)
 		return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
 
 	// initialize VEs, check status and do locking
 	for (VEOptEntries::const_iterator it = VZMoptions.veMigrateList.begin();
-	        it != VZMoptions.veMigrateList.end(); ++it)
+		it != VZMoptions.veMigrateList.end(); ++it)
 	{
-		VEObj * ve = new VEObj((*it)->dst_veid);
+		VEObj * ve = new VEObj((*it)->dst_ctid);
 		if (ve == NULL)
 			return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
 
-		(*veList)[ve->veid()] = ve;
-		(*veid_map)[(*it)->src_veid] = ve->veid();
+		(*g_veList)[std::string(ve->ctid())] = ve;
+		(*g_ctidMap)[std::string((*it)->src_ctid)] = std::string(ve->ctid());
 
 		ve->setPrivate((*it)->priv_path);
 		ve->setRoot((*it)->root_path);

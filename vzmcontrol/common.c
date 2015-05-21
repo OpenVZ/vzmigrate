@@ -23,33 +23,6 @@ int set_block(int fd, int state)
 	return 0;
 }
 
-#if 0
-/* set non-block mode for descriptor <fd> */
-static int set_non_block(int fd)
-{
-	long flags;
-
-	if ((flags = fcntl(fd, F_GETFL)) == -1)
-		return putErr(MIG_ERR_SYSTEM, "fcntl() : %m");
-	if ((fcntl(fd, F_SETFL, flags | O_NONBLOCK)) == -1)
-		return putErr(MIG_ERR_SYSTEM, "fcntl() : %m");
-	return 0;
-}
-
-/* set non-block mode for descriptor <fd> */
-static int _set_block(int fd)
-{
-	long flags;
-
-	if ((flags = fcntl(fd, F_GETFL)) == -1)
-		return putErr(MIG_ERR_SYSTEM, "fcntl() : %m");
-	if ((fcntl(fd, F_SETFL, flags & ~O_NONBLOCK)) == -1)
-		return putErr(MIG_ERR_SYSTEM, "fcntl() : %m");
-	return 0;
-}
-#endif
-
-
 int set_clo(int fd, int state)
 {
 	int flag = state ? FD_CLOEXEC : ~FD_CLOEXEC;

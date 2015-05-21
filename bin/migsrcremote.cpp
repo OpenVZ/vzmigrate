@@ -50,13 +50,13 @@ static int copy_remote_tar(
 		const list<string> &names);
 
 MigrateStateRemote::MigrateStateRemote(
-		unsigned src_ve,
-		unsigned dst_ve,
+		const char * src_ctid,
+		const char * dst_ctid,
 		const char * priv,
 		const char * root,
 		const char *dst_name)
-: MigrateStateSrc(src_ve, dst_ve, priv, root, dst_name),
-m_bIsPrivOnShared(false)
+	: MigrateStateSrc(src_ctid, dst_ctid, priv, root, dst_name),
+	m_bIsPrivOnShared(false)
 {
 	use_iteration = true;
 	cpu_flags = 0;
@@ -65,9 +65,9 @@ m_bIsPrivOnShared(false)
 
 	m_isTargetInHaCluster = 0;
 
-/* TODO: check keeperVEID */
+	/* TODO: check g_keeperCTID */
 	if (isOptSet(OPT_KEEPER)) {
-		keepVE = new VEObj(keeperVEID);
+		keepVE = new VEObj(g_keeperCTID);
 		addCleaner(clean_delEntry, keepVE, NULL, ANY_CLEANER);
 	}
 };
@@ -304,7 +304,7 @@ int MigrateStateRemote::establishSshChannel()
 
 	if (!isOptSet(OPT_NOITER)) {
 		bin_dst = BIN_VZITERIND;
-		snprintf(buffer, sizeof(buffer), CMD_ITERCH " %u", dstVE->veid());
+		snprintf(buffer, sizeof(buffer), CMD_ITERCH " %s", dstVE->ctid());
 	} else {
 		return putErr(MIG_ERR_PROTOCOL, "Bad mode for swap channel");
 	}
@@ -313,7 +313,7 @@ int MigrateStateRemote::establishSshChannel()
 		int *sock = new(int);
 		assert(sock);
 		if ((rc = vza_start_swap_cli(&channel.ctx,
-				channel.conn, dstVE->veid(), sock, &swapch)))
+				channel.conn, dstVE->ctid(), sock, &swapch)))
 			return rc;
 		addCleaner(clean_closeSocket, (void *)sock, NULL, ANY_CLEANER);
 	} else if (isOptSet(OPT_PS_MODE)) {
@@ -338,7 +338,7 @@ int MigrateStateRemote::establishSshChannel()
 		return 0;
 	} else {
 		if ((rc = ssh_start_swap_cli(&channel.ctx, bin_dst,
-				dstVE->veid(), &swapch)))
+				dstVE->ctid(), &swapch)))
 			return rc;
 	}
 	addCleaner(clean_closeChannel, swapch, NULL);
@@ -541,7 +541,7 @@ int MigrateStateRemote::checkClusterID()
 		 * problems on a destination node.
 		 * See https://jira.sw.ru/browse/PSBM-14346
 		 */
-		if (srcVE->veid() != dstVE->veid()) {
+		if (CMP_CTID(srcVE->ctid(), dstVE->ctid()) != 0) {
 			return putErr(MIG_ERR_NONSHAREDFS,
 				"Changing ID for CT "
 				"which private directory resides on the\n"
@@ -661,8 +661,7 @@ int MigrateStateRemote::sendInitCmd()
 	options |= isOptSet(OPT_CONVERT_VZFS) ? MIGINIT_CONVERT_VZFS : 0;
 	options |= isOptSet(OPT_KEEP_DST) ? MIGINIT_KEEP_DST : 0;
 
-	return channel.sendCommand(CMD_INIT " %d %d", dstVE->veid(), options);
-
+	return channel.sendCommand(CMD_INIT " %s %d", dstVE->ctid(), options);
 }
 
 int MigrateStateRemote::checkRemoteVersion()
@@ -802,7 +801,7 @@ int MigrateStateRemote::preMigrateStage()
 		{
 			if (!isOptSet(OPT_SKIP_LICENSE) && !isOptSet(OPT_FORCE))
 				return putErr(MIG_ERR_LICENSE, MIG_MSG_LICENSE, getError());
-			logger(LOG_WARNING, MIG_MSG_LICENSE, getError(), dstVE->veid());
+			logger(LOG_WARNING, MIG_MSG_LICENSE, getError());
 			setOpt(OPT_NOSTART);
 		}
 		else if (rc != 0)
@@ -851,7 +850,7 @@ int MigrateStateRemote::preMigrateStage()
 		// some IP addresses already in use
 		if (!isOptSet(OPT_FORCE))
 			return putErr(rc, MIG_MSG_IP_IN_USE, getError());
-		logger(LOG_WARNING, MIG_MSG_IP_IN_USE_WARN, getError(), dstVE->veid());
+		logger(LOG_WARNING, MIG_MSG_IP_IN_USE_WARN, getError(), dstVE->ctid());
 		setOpt(OPT_NOSTART);
 	}
 	else if (rc != 0)
@@ -874,11 +873,10 @@ int MigrateStateRemote::preMigrateStage()
 	if (access(path.c_str(), F_OK) == 0) {
 		if (!isOptSet(OPT_FORCE))
 			return putErr(MIG_ERR_ACTIONS,
-				"CT#%d has mount script, use '-f' option",
-				srcVE->veid());
+				"CT %s has mount script, use '-f' option", srcVE->ctid());
 		logger(LOG_WARNING,
-			"CT#%d has mount script, check target CT before start",
-			srcVE->veid());
+			"CT %s has mount script, check target CT before start",
+			srcVE->ctid());
 		setOpt(OPT_NOSTART);
 	}
 
@@ -938,11 +936,11 @@ int MigrateStateRemote::suspendVEOnline()
 		return rc;
 
 	if ((rc = srcVE->suspend(cpu_flags, use_iteration)))
-		return putErr(rc, MIG_MSG_SUSPEND, srcVE->veid(), getError());
+		return putErr(rc, MIG_MSG_SUSPEND, srcVE->ctid(), getError());
 	addCleaner(clean_resumeVE, srcVE);
 
 	if ((rc = srcVE->dump()))
-		return putErr(rc, MIG_MSG_DUMP, srcVE->veid(), getError());
+		return putErr(rc, MIG_MSG_DUMP, srcVE->ctid(), getError());
 
 	return 0;
 }
@@ -982,7 +980,7 @@ int MigrateStateRemote::memoryCopyOnline()
 	{
 		if ((rc = srcVE->vm_iteration(fds[0], fds[1])))
 		{
-			logger(LOG_ERR, MIG_MSG_VM_PREP, srcVE->veid(), getError());
+			logger(LOG_ERR, MIG_MSG_VM_PREP, srcVE->ctid(), getError());
 			logger(LOG_WARNING, MIG_MSG_ITER_MIG);
 			if (isOptSet(OPT_REALTIME))
 				return rc;
@@ -1015,8 +1013,8 @@ void MigrateStateRemote::unregisterHA()
 		// this code works for all types of CT at any state
 		if (m_bIsPrivOnShared && !m_isTargetInHaCluster && srcVE->ve_data.ha_enable)
 		{
-			logger(LOG_DEBUG, "unregister HA cluster resource %u", srcVE->veid());
-			runHaman(srcVE->veid(), "del");
+			logger(LOG_DEBUG, "unregister HA cluster resource %s", srcVE->ctid());
+			runHaman(srcVE->ctid(), "del");
 		}
 	}
 }
@@ -1036,7 +1034,7 @@ int MigrateStateRemote::startVE()
 			rc = invertLazyFlag();
 			if (rc != 0)
 			{
-				logger(LOG_ERR, MIG_MSG_ITER, dstVE->veid(), getError());
+				logger(LOG_ERR, MIG_MSG_ITER, dstVE->ctid(), getError());
 				return rc;
 			}
 			VZMoptions.invert_lazy_flag = 0;
@@ -1044,14 +1042,12 @@ int MigrateStateRemote::startVE()
 
 		if (m_nFlags & VZMSRC_SHARED_PRIV) {
 			if ((rc = srcVE->kill_chkpnt())) {
-				logger(LOG_ERR, MIG_MSG_STOP,
-						srcVE->veid(), getError());
+				logger(LOG_ERR, MIG_MSG_STOP, srcVE->ctid(), getError());
 				return rc;
 			}
 			addCleaner(clean_startVE, srcVE, NULL);
 			if ((rc = srcVE->umount())) {
-				logger(LOG_ERR, MIG_MSG_STOP,
-						srcVE->veid(), getError());
+				logger(LOG_ERR, MIG_MSG_STOP, srcVE->ctid(), getError());
 				return rc;
 			}
 		}
@@ -1060,7 +1056,7 @@ int MigrateStateRemote::startVE()
 		rc = channel.sendCommand(CMD_UNDUMP " %d", DSTACT_UNDUMP_VE);
 		if (rc != 0)
 		{
-			logger(LOG_ERR, MIG_MSG_UNDUMP, dstVE->veid(), getError());
+			logger(LOG_ERR, MIG_MSG_UNDUMP, dstVE->ctid(), getError());
 			/* for debug purposes */
 			snprintf(path, sizeof(path), "%s.saved", srcVE->dumpfile);
 			rename(srcVE->dumpfile, path);
@@ -1071,7 +1067,7 @@ int MigrateStateRemote::startVE()
 		rc = channel.sendCommand(CMD_RESUME " %d", DSTACT_RESUME_VE);
 		if (rc != 0)
 		{
-			logger(LOG_ERR, MIG_MSG_DST_RESUME, dstVE->veid(), getError());
+			logger(LOG_ERR, MIG_MSG_DST_RESUME, dstVE->ctid(), getError());
 			/* for debug purposes */
 			snprintf(path, sizeof(path), "%s.saved", srcVE->dumpfile);
 			rename(srcVE->dumpfile, path);
@@ -1085,18 +1081,15 @@ int MigrateStateRemote::startVE()
 
 		if (!(m_nFlags & VZMSRC_SHARED_PRIV)) {
 			if (srcVE->kill_chkpnt())
-				logger(LOG_ERR, MIG_MSG_STOP,
-					srcVE->veid(), getError());
+				logger(LOG_ERR, MIG_MSG_STOP, srcVE->ctid(), getError());
 
 			if (srcVE->umount())
-				logger(LOG_ERR, MIG_MSG_STOP,
-					srcVE->veid(), getError());
+				logger(LOG_ERR, MIG_MSG_STOP, srcVE->ctid(), getError());
 		} else {
 			if (!isOptSet(OPT_KEEP_SRC)) {
 				/* and unregister */
 				if ((rc = srcVE->unregister())) {
-					logger(LOG_ERR, "Can't unregister CT %u",
-							srcVE->veid());
+					logger(LOG_ERR, "Can't unregister CT %s", srcVE->ctid());
 					return rc;
 				}
 				/* and set rollback on error */
@@ -1108,8 +1101,7 @@ int MigrateStateRemote::startVE()
 			if (!isOptSet(OPT_KEEP_SRC)) {
 				/* and unregister */
 				if ((rc = srcVE->unregister())) {
-					logger(LOG_ERR, "Can't unregister CT %u",
-							srcVE->veid());
+					logger(LOG_ERR, "Can't unregister CT %s", srcVE->ctid());
 					return rc;
 				}
 				/* and set rollback on error */
@@ -1257,6 +1249,7 @@ int MigrateStateRemote::checkCapabilities()
 	/* } */
 
 	/* return 0; */
+	return -1;
 }
 
 /* https://jira.sw.ru/browse/PSBM-7314 */
@@ -1503,7 +1496,7 @@ int MigrateStateRemote::clean_restoreVEconf(const void * arg1, const void *)
 	VEObj *ve = (VEObj *)arg1;
 	assert(ve);
 
-	logger(LOG_DEBUG, "Restore CT %d config", ve->veid());
+	logger(LOG_DEBUG, "Restore CT %s config", ve->ctid());
 	snprintf(path, sizeof(path), "%s" SUFFIX_MIGRATED,
 			ve->confRealPath().c_str());
 	if (rename(path, ve->confRealPath().c_str()) == -1)
@@ -1518,7 +1511,7 @@ int MigrateStateRemote::clean_startVE(const void * arg1, const void * arg2)
 	VEObj *ve = (VEObj *)arg1;
 	assert(ve);
 
-	logger(LOG_DEBUG, "Start CT %d", ve->veid());
+	logger(LOG_DEBUG, "Start CT %s", ve->ctid());
 	ve->start();
 	return 0;
 };
@@ -2016,7 +2009,7 @@ int MigrateStateRemote::doOnlinePloopSharedCtMigration()
 		// We need to do this only one time
 		rc = invertLazyFlag();
 		if (rc != 0) {
-			logger(LOG_ERR, MIG_MSG_ITER, dstVE->veid(), getError());
+			logger(LOG_ERR, MIG_MSG_ITER, dstVE->ctid(), getError());
 			goto err;
 		}
 		VZMoptions.invert_lazy_flag = 0;
@@ -2032,7 +2025,7 @@ int MigrateStateRemote::doOnlinePloopSharedCtMigration()
 	rc = channel.sendCommand(CMD_UNDUMP);
 	if (rc != 0)
 	{
-		logger(LOG_ERR, MIG_MSG_UNDUMP, dstVE->veid(), getError());
+		logger(LOG_ERR, MIG_MSG_UNDUMP, dstVE->ctid(), getError());
 		/* for debug purposes */
 		snprintf(path, sizeof(path), "%s.saved", srcVE->dumpfile);
 		rename(srcVE->dumpfile, path);
@@ -2043,7 +2036,7 @@ int MigrateStateRemote::doOnlinePloopSharedCtMigration()
 	rc = channel.sendCommand(CMD_NON_FINAL_RESUME);
 	if (rc != 0)
 	{
-		logger(LOG_ERR, MIG_MSG_DST_RESUME, dstVE->veid(), getError());
+		logger(LOG_ERR, MIG_MSG_DST_RESUME, dstVE->ctid(), getError());
 		/* for debug purposes */
 		snprintf(path, sizeof(path), "%s.saved", srcVE->dumpfile);
 		rename(srcVE->dumpfile, path);
@@ -2074,10 +2067,10 @@ int MigrateStateRemote::doOnlinePloopSharedCtMigration()
 
 	/* stop and umount CT _before_ merge on target */
 	if (srcVE->kill_chkpnt())
-		logger(LOG_ERR, MIG_MSG_STOP, srcVE->veid(), getError());
+		logger(LOG_ERR, MIG_MSG_STOP, srcVE->ctid(), getError());
 
 	if (srcVE->umount()) {
-		logger(LOG_ERR, MIG_MSG_STOP, srcVE->veid(), getError());
+		logger(LOG_ERR, MIG_MSG_STOP, srcVE->ctid(), getError());
 	} else {
 		// do not merge snapshot on target if umount failed
 		// https://jira.sw.ru/browse/PSBM-21804
