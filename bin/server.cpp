@@ -370,13 +370,6 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 	} else if (strcmp(cmd, CMD_INVERTLAZY) == 0) {
 		// invert LAZY flag for iteration migration - added in 4.0
 		return cmdInvertLazyFlag();
-#if 0
-/*I can't any sender ot this command
-It looks as if this command was obsoleted by 'synctt' before shipping */
-	} else if (strcmp(cmd, CMD_CHECK_NEWTEM_DEPS) == 0) {
-		// check templates dependencies
-		return cmdCheckNewTemDeps(is, os);
-#endif
 	} else if (strcmp(cmd, CMD_ADJUST_TMO) == 0) {
 		return cmdAdjustTimeout(is, os);
 	} else if (strcmp(cmd, CMD_STOP) == 0) {

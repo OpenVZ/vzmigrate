@@ -266,18 +266,7 @@ int main(int argc, char **argv)
 		rc = 1;
 		goto cleanup_2;
 	}
-#if 0
-	if ((str = X509_NAME_oneline(X509_get_subject_name(server_cert),0,0))) {
-		printf("\t subject: %s\n", str);
-		OPENSSL_free(str);
-	}
-	if ((str = X509_NAME_oneline(X509_get_issuer_name(server_cert),0,0))) {
-		printf("\t issuer: %s\n", str);
-		OPENSSL_free(str);
-	}
-	/* We could do all sorts of certificate verification stuff here before
-	   deallocating the certificate. */
-#endif
+
 	X509_free(server_cert);
 
 	/* verify the certificate

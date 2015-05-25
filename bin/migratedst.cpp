@@ -441,62 +441,8 @@ int MigrateStateDstRemote::cmdCheckClusterID(
 		os << "0";
 		return 0;
 	}
-#if 0
-	/* try to get shared partition list and find mount point
-	   with cluster id == source cluster id */
-	/* get shared partition list */
-	if ((shared = vzctl_get_storage()) == NULL) {
-		/* error */
-		os << "0";
-		return 0;
-	}
-	found = 0;
-	for (i = 0; shared[i]; i++) {
-		if ((rc = gfs_cluster_getid(shared[i], dst_id, sizeof(dst_id))))
-			continue;
 
-		if (strcmp(src_id.c_str(), dst_id))
-			continue;
-		/* yes, it is the same cluster */
-
-		/* check this private */
-		snprintf(path, sizeof(path), "%s/%s", shared[i], mpath.c_str());
-		if (stat(path, &st))
-			continue;
-		if (!S_ISDIR(st.st_mode))
-			continue;
-		found = 1;
-		break;
-	}
-	for (i = 0; shared[i]; i++)
-		free((void *)shared[i]);
-	free((void *)shared);
-	if (found) {
-		/* yes, shared part with src cluster id was found, but it is not
-		   equal to target private. Will change target private */
-		if ((rc = dstVE->setPrivate(path)))
-			return rc;
-		is_thesame_private = 1;
-		logger(LOG_DEBUG, MIG_MSG_THESAME_CLUSTER,
-				"CT privates", src_id.c_str());
-		/* and copy source VE config from original private */
-		if ((rc = copy_file(dstVE->confPath().c_str(),
-				dstVE->confRealPath().c_str())))
-			return putErr(MIG_ERR_COPY, MIG_MSG_COPY_FILE,
-				dstVE->confRealPath().c_str(),
-				dstVE->confPath().c_str(),
-				getError());
-		addCleaner(clean_unregister, dstVE);
-
-		if ((rc = dstVE->prepareConfig()))
-			return rc;
-		if ((rc = dstVE->loadConfig()))
-			return rc;
-		os << "1";
-	} else
-
-#endif
-		os << "0";
+	os << "0";
 
 	return 0;
 }

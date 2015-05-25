@@ -372,107 +372,7 @@ cleanup_0:
 
 	return rc;
 }
-#if 0
-static int init_ssl_server(struct vzsock_ctx *ctx, int *sock)
-{
-	int rc = 0;
-	int ret;
-	struct sockaddr_in addr;
-	int debug = (debug_level == LOG_DEBUG)?1:0;
 
-	if ((ret = vzsock_init(VZSOCK_SSL, ctx)))
-		return putErr(MIG_ERR_VZSOCK, "vzsock_init() return %d", ret);
-
-	vzsock_set(ctx, VZSOCK_DATA_DEBUG, (void *)&debug, sizeof(debug));
-
-/* TODO : certificate should be mandatory for server */
-	if (strlen(VZMoptions.certificate))
-	{
-		if ((ret = vzsock_set(ctx, VZSOCK_DATA_CRTFILE,
-			(void *)VZMoptions.certificate,
-			strlen(VZMoptions.certificate))))
-		{
-			rc = putErr(MIG_ERR_VZSOCK,
-				"vzsock_set() return %d", ret);
-			goto cleanup_0;
-		}
-	}
-
-	if (strlen(VZMoptions.privatekey))
-	{
-		if ((ret = vzsock_set(ctx, VZSOCK_DATA_KEYFILE,
-			(void *)VZMoptions.privatekey,
-				strlen(VZMoptions.privatekey))))
-		{
-			rc = putErr(MIG_ERR_VZSOCK,
-				"vzsock_set() return %d", ret);
-			goto cleanup_0;
-		}
-	}
-
-	if (strlen(VZMoptions.ciphers))
-	{
-		if ((ret = vzsock_set(ctx, VZSOCK_DATA_CIPHERS,
-			(void *)VZMoptions.ciphers,
-			strlen(VZMoptions.ciphers))))
-		{
-			rc = putErr(MIG_ERR_VZSOCK,
-				"vzsock_set() return %d", ret);
-			goto cleanup_0;
-		}
-	}
-/* TODO
-	if (strlen(CAfile)) {
-		if ((rc = vzsock_set(&ctx, VZSOCK_DATA_CAFILE,
-				(void *)CAfile, strlen(CAfile)))) {
-			syslog(LOG_ERR, "vzsock_set() return %d", rc);
-			goto cleanup_0;
-		}
-	}
-	if (strlen(CApath)) {
-		if ((rc = vzsock_set(&ctx, VZSOCK_DATA_CAFILE,
-				(void *)CApath, strlen(CApath)))) {
-			syslog(LOG_ERR, "vzsock_set() return %d", rc);
-			goto cleanup_0;
-		}
-	}
-*/
-	if ((ret = vzsock_open(ctx))) {
-		rc = putErr(MIG_ERR_VZSOCK, "vzsock_open() return %d", ret);
-		goto cleanup_0;
-	}
-
-	if ((*sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
-		rc = putErr(MIG_ERR_SYSTEM, "socket() : %m");
-		goto cleanup_0;
-	}
-
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = INADDR_ANY;
-	addr.sin_port = htons(VZMD_DEF_PORT);
-
-	if (bind(*sock, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
-		rc = putErr(MIG_ERR_SYSTEM, "bind() : %m");
-		goto cleanup_1;
-	}
-
-	if (listen(*sock, SOMAXCONN)) {
-		rc = putErr(MIG_ERR_SYSTEM, "listen() : %m");
-		goto cleanup_1;
-	}
-
-	logger(LOG_INFO, "SSL server started");
-
-	return 0;
-cleanup_1:
-	close(*sock);
-
-cleanup_0:
-	vzsock_close(ctx);
-
-	return rc;
-}
-#endif
 int main(int argc, char *argv[])
 {
 	int rc;
@@ -536,7 +436,6 @@ int main(int argc, char *argv[])
 			"%ld", VZMoptions.tmo.val);
 
 	if ((rc = init_sock_server(&ctx, &srvsock)))
-//	if ((rc = init_ssl_server(&ctx, &srvsock)))
 		goto cleanup_4;
 
 	if (!test_mode) {

@@ -10,16 +10,6 @@
 #include "openssl/ssl.h"
 #include "openssl/err.h"
 
-#if 0
-int password_callback(char *buf, int size, int rwflag, void *userdata)
-{
-	/* For the purposes of this demonstration, the password is "ibmdw" */
-	printf("*** Callback function called\n");
-	strcpy(buf, "ibmdw");
-	return 1;
-}
-#endif
-
 char *ciphers = NULL;
 size_t bufsize = 4096;
 char *CAfile = NULL;

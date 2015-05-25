@@ -371,12 +371,6 @@ const char ** MigrateStateCommon::getRsyncArgs()
 	return rsync_args;
 }
 
-#if 0
-include/gfs_ondisk.h:#define GFS_MAGIC               (0x01161970) /* for all on-disk headers */
-include/gfs_ondisk.h:#define GFS_LOCKNAME_LEN        (64)
-include/gfs_ondisk.h:   char sb_lockproto[GFS_LOCKNAME_LEN]; /* lock protocol name */
-include/gfs_ondisk.h:   char sb_locktable[GFS_LOCKNAME_LEN]; /* unique name for this FS */
-#endif
 /* for path <path> get :
 	cluster id <id>,
 	mount point <mpoint>,
