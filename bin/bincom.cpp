@@ -820,6 +820,16 @@ void parse_options (int argc, char **argv)
 			get_ctid_opt(optarg, entry->dst_ctid);
 			new_syntax = 1;
 			break;
+		case NEW_UUID_OPTS:
+		{
+			/* this is internal option for CT UUID */
+			ctid_t normUuid;
+			if (vzctl2_get_normalized_uuid(optarg, normUuid, sizeof(ctid_t)))
+				exit(-MIG_ERR_USAGE);
+			entry->uuid = strdup(normUuid);
+			new_syntax = 1;
+			break;
+		}
 		case NEW_PRIVATE_OPTS:
 			if (optarg == NULL)
 				usage();
@@ -860,12 +870,6 @@ void parse_options (int argc, char **argv)
 		case KEEP_SRC_OPTS:
 			setOpt(OPT_KEEP_SRC);
 			break;
-		case NEW_UUID_OPTS:
-			/* this is internal option for CT UUID */
-			if (!new_syntax || (optarg == NULL) || (strlen(optarg) != 36))
-				exit(-MIG_ERR_USAGE);
-			entry->uuid = strdup(optarg);
-			break;
 		case NOCOMPRESS_OPTS:
 			setOpt(OPT_NOCOMPRESS);
 			break;
@@ -880,6 +884,11 @@ void parse_options (int argc, char **argv)
 			usage();
 		}
 	}
+
+	/* initialize destination CTID using uuid if it was not explicitly specified */
+	if (EMPTY_CTID(entry->dst_ctid) && (entry->uuid != NULL))
+		SET_CTID(entry->dst_ctid, entry->uuid);
+
 	snprintf(VZMoptions.tmo.str, sizeof(VZMoptions.tmo.str), "%ld", VZMoptions.tmo.val);
 	snprintf(buffer, sizeof(buffer), "ServerAliveInterval=%ld", VZMoptions.tmo.val/3);
 	string_list_add(&VZMoptions.ssh_options, "-o");
