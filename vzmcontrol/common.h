@@ -280,6 +280,7 @@ extern const char * getError();
 #define MIG_MSG_CHECKSUM_MIGRATE        "can't migrate on vzfs traker failure. Update vzmigrate package to 6.0.7 on destination"
 #define MIG_MSG_SECOND_LEVEL_BUG	"Update vmigrate package to 6.0.8 on destination to "\
 					"migrate online with vzfs to ploop conversion."
+#define MIG_MSG_SET_DST_NAME	"can not set name %s for container"
 
 //TODO: friendly message
 #define MIG_MSG_UUID_CONFLICT 	"UUID-collision, directory %s exists"

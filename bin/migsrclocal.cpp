@@ -575,9 +575,10 @@ int MigrateStateLocal::postFinalStage()
 	}
 
 	/* set ve name */
-	if ((dstVE->ve_data.name) && (!isOptSet(OPT_COPY))) {
+	if (dstVE->ve_data.name) {
 		dstVE->unSet("name");
-		dstVE->setName(dstVE->ve_data.name);
+		if ((rc = dstVE->setName(dstVE->ve_data.name)))
+			return putErr(rc, MIG_MSG_SET_DST_NAME, dstVE->ve_data.name);
 	}
 
 	if (isOptSet(OPT_COPY)) {
