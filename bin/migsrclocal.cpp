@@ -575,11 +575,10 @@ int MigrateStateLocal::postFinalStage()
 	}
 
 	/* set ve name */
-	if (dstVE->ve_data.name) {
-		dstVE->unSet("name");
+	if (dstVE->ve_data.name)
 		if ((rc = dstVE->setName(dstVE->ve_data.name)))
 			return putErr(rc, MIG_MSG_SET_DST_NAME, dstVE->ve_data.name);
-	}
+
 
 	if (isOptSet(OPT_COPY)) {
 		/* to execute /etc/sysconfig/vz-scripts/vps.clone
