@@ -255,6 +255,7 @@ void close_pipes(int pipefd[2]);
 void close_safe(int *fd);
 void term_clean(pid_t pid, int timeout);
 void gen_uuid(char *buf);
+int get_fd(char *fd);
 
 int rmdir_recursively(const char *dirname);
 

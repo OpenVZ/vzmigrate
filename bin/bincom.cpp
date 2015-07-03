@@ -624,10 +624,15 @@ void parse_options (int argc, char **argv)
 			logger(LOG_ERR, "Syntax error in -ps mode");
 			exit(-MIG_ERR_USAGE);
 		}
-		VZMoptions.cmd_sock = atoi(argv[2]);
-		VZMoptions.data_sock = atoi(argv[3]);
-		VZMoptions.tmpl_data_sock = atoi(argv[4]);
-		VZMoptions.swap_sock = atoi(argv[5]);
+		VZMoptions.cmd_sock = get_fd(argv[2]);
+		VZMoptions.data_sock = get_fd(argv[3]);
+		VZMoptions.tmpl_data_sock = get_fd(argv[4]);
+		VZMoptions.swap_sock = get_fd(argv[5]);
+
+		if ( VZMoptions.cmd_sock < 0 || VZMoptions.data_sock < 0 ||
+		     VZMoptions.tmpl_data_sock < 0 || VZMoptions.swap_sock < 0)
+			exit(-MIG_ERR_CONN_BROKEN);
+		
 		argc -= 5;
 		argv += 5;
 	}

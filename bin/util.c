@@ -1250,6 +1250,23 @@ void close_safe(int *fd)
 	}
 }
 
+int get_fd(char *arg)
+{
+	int new_fd, fd = atoi(arg);
+
+	if (fd < 1024)
+		return fd;
+	
+	new_fd = dup(fd);
+	if (new_fd < 0) {
+		logger(LOG_ERR, "Unable to duplicate file descriptor %s: %m", arg);
+		return new_fd;
+	}
+	close(fd);
+	fcntl(new_fd, F_SETFD, ~FD_CLOEXEC);
+	return new_fd;
+}
+
 void close_pipes(int pipefd[2])
 {
 	close_safe(&pipefd[0]);
