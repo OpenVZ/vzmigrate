@@ -31,6 +31,7 @@
 #define NOCOMPRESS_OPTS		24
 #define CONVERT_VZFS_OPTS	25
 #define IGNORE_BACKUP_DISK_OPTS	26
+#define NOEVENT_OPTS		27
 
 #define MAX_VE_AVAILABLE	512
 
@@ -221,6 +222,7 @@ int main(int argc, char **argv)
 		{"nocompress", no_argument, NULL, NOCOMPRESS_OPTS},
 		{"convert-vzfs", no_argument, NULL, CONVERT_VZFS_OPTS},
 		{"ignore-backup-disk", no_argument, NULL, IGNORE_BACKUP_DISK_OPTS},
+		{"noevent", no_argument, NULL, NOEVENT_OPTS},
 		{0, 0, 0, 0}
 	};
 	char **new_args, *dst_host, *dst_ct = NULL, c;
@@ -275,6 +277,7 @@ int main(int argc, char **argv)
 			CHECK_NOOPT_ARG('b', "--batch");
 			CHECK_NOOPT_ARG(NOCOMPRESS_OPTS, "--nocompress");
 			CHECK_NOOPT_ARG(CONVERT_VZFS_OPTS, "--convert-vzfs");
+			CHECK_NOOPT_ARG(NOEVENT_OPTS, "--noevent");
 
 			CHECK_MOPT_ARG(TIMEOUT_OPTS, "--timeout");
 			CHECK_MOPT_ARG(CERTIFICATE_OPTS, "--certificate");

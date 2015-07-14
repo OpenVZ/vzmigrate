@@ -256,6 +256,7 @@ const char * VEArgs[MAX_ARGS + 1] =
 #define NOCOMPRESS_OPTS		24
 #define CONVERT_VZFS_OPTS	25
 #define IGNORE_BACKUP_DISK_OPTS	26
+#define NOEVENT_OPTS		27
 
 /* parse user:password@host */
 static int parse_UPH(
@@ -594,6 +595,7 @@ void parse_options (int argc, char **argv)
 		{"nocompress", no_argument, NULL, NOCOMPRESS_OPTS},
 		{"convert-vzfs", no_argument, NULL, CONVERT_VZFS_OPTS},
 		{"ignore-backup-disk", no_argument, NULL, IGNORE_BACKUP_DISK_OPTS},
+		{"noevent", no_argument, NULL, NOEVENT_OPTS},
 		{0, 0, 0, 0}
 	    };
 	prog_name = argv[0];
@@ -882,6 +884,9 @@ void parse_options (int argc, char **argv)
 			break;
 		case IGNORE_BACKUP_DISK_OPTS:
 			setOpt(OPT_IGNORE_BACKUP_DISK);
+			break;
+		case NOEVENT_OPTS:
+			setOpt(OPT_NOEVENT);
 			break;
 		case 'h':
 		default:

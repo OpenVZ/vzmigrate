@@ -249,6 +249,16 @@ int main(int argc, char **argv)
 	// Apply IO limits if any
 	vz_setiolimit();
 
+	if (isOptSet(OPT_PS_MODE) || isOptSet(OPT_NOEVENT))
+	{
+		/*
+		   to forbid to send vzevents by libvzctl to avoid race
+		   between vzevents from vzctl and events from dispatcher's migration task
+		   https://jira.sw.ru/browse/PSBM-9463
+		*/
+		vzctl2_set_flags(VZCTL_FLAG_DONT_SEND_EVT);
+	}
+
 	// Channel initialization
 	if (isOptSet(OPT_AGENT))
 	{
@@ -267,13 +277,6 @@ int main(int argc, char **argv)
 	}
 	else if (isOptSet(OPT_PS_MODE))
 	{
-		/*
-		   to forbid to send vzevents by libvzctl to avoid race
-		   between vzevents from vzctl and events from dispatcher's migration task
-		   https://jira.sw.ru/browse/PSBM-9463
-		*/
-		vzctl2_set_flags(VZCTL_FLAG_DONT_SEND_EVT);
-
 		rc = MigrateStateCommon::channel.createParallelsServerChannel();
 		if (rc)
 			exitM(rc);

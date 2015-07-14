@@ -103,7 +103,7 @@ int main(int argc, char **argv)
 	// Apply IO limits if any
 	vz_setiolimit();
 
-	if (isOptSet(OPT_PS_MODE)) {
+	if (isOptSet(OPT_PS_MODE) || isOptSet(OPT_NOEVENT)) {
 		/*
 		   to forbid to send vzevents by libvzctl to avoid race
 		   between vzevents from vzctl and events from dispatcher's migration task
@@ -111,6 +111,7 @@ int main(int argc, char **argv)
 		*/
 		vzctl2_set_flags(VZCTL_FLAG_DONT_SEND_EVT);
 	}
+
 	migrateVEs();
 
 	/* and close ssh connection */

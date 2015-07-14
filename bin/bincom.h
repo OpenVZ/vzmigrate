@@ -149,6 +149,7 @@ typedef vector<string> TemplOptEntries;
 #define OPT_CONVERT_VZFS	(1ULL << 42)
 #define OPT_SKIP_UMOUNT	(1ULL << 43)
 #define OPT_IGNORE_BACKUP_DISK	(1ULL << 44)
+#define OPT_NOEVENT	(1ULL << 45)
 
 #define DSTACT_UNDUMP_VE	10
 #define DSTACT_RESUME_VE	11
