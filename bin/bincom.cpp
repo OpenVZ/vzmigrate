@@ -411,8 +411,7 @@ static int ve_list_process_old(char **argv, CVZMOptions *opts)
 finish:
 		if (opts->bintype == BIN_LOCAL
 			&& CMP_CTID(entry->src_ctid, entry->dst_ctid) == 0
-			&& (isOptSet(OPT_COPY)
-				|| (entry->root_path == NULL && entry->priv_path == NULL && entry->dst_name == NULL)))
+			&& (isOptSet(OPT_COPY) || (entry->priv_path == NULL)))
 			usage();
 
 		opts->veMigrateList.push_back(entry);
@@ -1166,6 +1165,11 @@ void parse_options (int argc, char **argv)
 
 			if (EMPTY_CTID(entry->dst_ctid))
 				SET_CTID(entry->dst_ctid, entry->src_ctid);
+
+			// check is private specified during local move, it's mandatory
+			if (VZMoptions.bintype == BIN_LOCAL && !isOptSet(OPT_COPY)
+					&& (entry->priv_path == NULL))
+				usage();
 		}
 		VZMoptions.veMigrateList.push_back(entry);
 
