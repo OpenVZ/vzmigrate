@@ -2088,6 +2088,11 @@ int MigrateStateRemote::doOnlinePloopSharedCtMigration()
 		}
 	}
 
+	/* Since private resides on shared storage and destination was mounted
+	earlier than source was unmounted we have dangling .statfs files needed
+	for unmounted disks managment. Remove these files manually. */
+	delete_ploop_statfs_files();
+
 	/* and stop target side */
 	channel.sendCommand(CMD_STOP);
 
@@ -2199,4 +2204,20 @@ err:
 bool MigrateStateRemote::isSameLocation()
 {
 	return m_nFlags & VZMSRC_SHARED_PRIV;
+}
+
+/* Delete .statfs files for all shared disks of container */
+void MigrateStateRemote::delete_ploop_statfs_files()
+{
+	const char* PLOOP_STATFS_FILENAME = ".statfs";
+
+	for (ct_disk::const_iterator it = srcVE->m_disks.begin();
+			it != srcVE->m_disks.end(); ++it)
+	{
+		if (!it->is_shared())
+			continue;
+		ostringstream statfsFilename;
+		statfsFilename << it->image << "/" << PLOOP_STATFS_FILENAME;
+		clean_removeFile(statfsFilename.str().c_str(), NULL);
+	}
 }

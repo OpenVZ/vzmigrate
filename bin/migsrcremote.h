@@ -140,6 +140,7 @@ private:
 	int checkRemoteVersion();
 	void finishDestination();
 
+	void delete_ploop_statfs_files();
 };
 
 #endif
