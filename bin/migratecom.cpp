@@ -344,7 +344,6 @@ const char ** MigrateStateCommon::getRsyncArgs()
 	int i = 0;
 
 	rsync_args[i++] = "rsync";
-	rsync_args[i++] = "-E";
 	rsync_args[i++] = "-q";
 	rsync_args[i++] = "-a";
 	rsync_args[i++] = "-H";
