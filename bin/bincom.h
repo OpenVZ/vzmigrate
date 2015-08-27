@@ -63,7 +63,8 @@ typedef vector<string> TemplOptEntries;
 
 #define VZMDEST_REPLY		"migrate %d"
 
-#define MIGRATE_VERSION		MIGRATE_VERSION_608
+#define MIGRATE_VERSION			MIGRATE_VERSION_700
+#define MIGRATE_VERSION_700		700
 /* fix for converting second level quota for online migration */
 #define MIGRATE_VERSION_608 	608
 /* add degradation to rsync with checksum if tracker failed on vzfs -> vzfs*/
