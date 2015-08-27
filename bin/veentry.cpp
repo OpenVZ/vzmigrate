@@ -251,10 +251,7 @@ std::string VEObj::bindmountPath() const
 {
 	std::ostringstream os;
 
-	if (layout < VZCTL_LAYOUT_5)
-		os << priv << VE_VZFS_BINDMOUNT_DIR;
-	else
-		os << root << VE_PLOOP_BINDMOUNT_DIR;
+	os << root << VE_PLOOP_BINDMOUNT_DIR;
 
 	return os.str();
 }

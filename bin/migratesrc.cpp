@@ -47,7 +47,7 @@ MigrateStateSrc::~MigrateStateSrc()
 		unlink(m_convertQuota2);
 }
 
-int MigrateStateSrc::suspendVE_Ploop()
+int MigrateStateSrc::suspendVE()
 {
 	int rc;
 
@@ -56,34 +56,6 @@ int MigrateStateSrc::suspendVE_Ploop()
 	addCleaner(clean_resumeVE, srcVE);
 
 	return 0;
-}
-
-int MigrateStateSrc::suspendVE_VZFS()
-{
-	bool support = is_cpt_stop_tracker_supported();
-	int rc;
-
-	// stop tracker too if is is possible
-	if ((rc = srcVE->suspend(0, false, support)))
-		return putErr(rc, MIG_MSG_SUSPEND, srcVE->ctid(), getError());
-	addCleaner(clean_resumeVE, srcVE);
-
-	// use workaround to stop tracker
-	if (!support) {
-		if ((rc = srcVE->dump()))
-			return putErr(rc, MIG_MSG_DUMP, srcVE->ctid(), getError());
-	}
-
-	return 0;
-}
-
-// suspend with workaround to stop tracker
-int MigrateStateSrc::suspendVE()
-{
-	if (srcVE->layout < VZCTL_LAYOUT_5)
-		return suspendVE_VZFS();
-	else
-		return suspendVE_Ploop();
 }
 
 int MigrateStateSrc::stopVE()

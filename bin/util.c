@@ -439,7 +439,7 @@ int ve_data_load(const char *ctid, struct ve_data *ve)
 		for (p = str; *p; ++p)
 			*str = tolower(*str);
 
-		/* parse VZFS_TECHNOLOGIES string */
+		/* parse TECHNOLOGIES string */
 		for (; ;str = NULL) {
 			if ((token = strtok(str, "  ")) == NULL)
 				break;

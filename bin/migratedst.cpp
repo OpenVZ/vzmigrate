@@ -727,7 +727,6 @@ int MigrateStateDstRemote::copyStage(int stage)
 		return h_copy_remote_rsync_fast(getCopyArea().c_str(), METHOD_TRACKER);
 	case FASTCOPY_BINDMOUNTS:
 		return h_copy_remote_rsync_fast(dstVE->bindmountPath().c_str(), METHOD_CHECKSUM);
-	// above are for vzfs -> ploop conversion
 	case DUMPCOPY:
 		if ((rc = dstVE->createDumpFile()))
 			return rc;
@@ -1044,7 +1043,7 @@ int MigrateStateDstRemote::h_copy_remote_tar(const char *dst)
 		{ (char *)BIN_TAR, (char *)"-p",
 			(char *)"--same-owner", (char *)"-x", (char *)"-C", (char *) rdst, opt, NULL };
 
-	if ((dstVE->layout < VZCTL_LAYOUT_5) || isOptSet(OPT_CONVERT_VZFS)) {
+	if (isOptSet(OPT_CONVERT_VZFS)) {
 		// ploop image can not be sparse file
 		// but on vzfs->ploop convertation we copy files from root to mounted ploop
 		// so we can use --sparse option

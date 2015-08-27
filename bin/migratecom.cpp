@@ -1055,34 +1055,6 @@ int is_path_on_shared_storage(const char *path, int *is_shared, long *fstype)
 	return 0;
 }
 
-/* FIXME: remove these defines after build environment is upgraded with the
- * corresponding kernel headers
- */
-#ifndef CPTCTLTYPE
-#define CPTCTLTYPE '-'
-#endif
-#ifndef CPT_STOP_TRACKER
-#define CPT_STOP_TRACKER	_IOW(CPTCTLTYPE, 29, int)
-#endif
-/* return 1 if kernel supports graceful stopping of VZFS tracker on suspend, 0 - otherwise */
-int is_cpt_stop_tracker_supported()
-{
-	int rc = 1;
-	const char *cpt = "/proc/cpt";
-	int fd = open(cpt, O_RDWR);
-	if (fd == -1) {
-		syslog(LOG_DEBUG, "open(%s) failed: %m\n", cpt);
-		return 0;
-	}
-	// 0 if kernel supports the ioctl and CT is suspended
-	// EBADRQC if kernel supports the ioctl
-	// EINVAL if kernel doesn't support the ioctl
-	if (ioctl(fd, CPT_STOP_TRACKER, 0) == -1 && errno == EINVAL)
-		rc = 0;
-	close(fd);
-	return rc;
-}
-
 std::string rsync_dir(const char *str)
 {
 	std::string dir(str);

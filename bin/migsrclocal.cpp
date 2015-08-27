@@ -15,8 +15,6 @@
 #include "util.h"
 #include "migsrclocal.h"
 
-#define BIN_VZFSCLONE	"/usr/sbin/vzfsclone"
-
 extern struct vz_data *vzcnf;
 extern const char * actionScripts[];
 

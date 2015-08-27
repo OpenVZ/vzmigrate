@@ -206,8 +206,6 @@ extern const char * ssh_test[];
 
 #define DEF_DIR_MODE 0755
 
-#define VZFS4_FSQUOTA_FILE "quota.fs"
-
 /* Default connection timeout in seconds.
    Up to 1 hour for migration large VE from 3.0.
    vzmigrate-3.0 can not set timeout, but time of start of tracker

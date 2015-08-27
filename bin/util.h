@@ -53,7 +53,6 @@
 #define VE_CONF_DISK		"DISK"
 
 #define VE_PLOOP_BINDMOUNT_DIR	"/.bindmount"
-#define VE_VZFS_BINDMOUNT_DIR	"/fs/mnt"
 #define PFCACHE_BIN "/usr/libexec/vztt_pfcache_xattr"
 
 #define fl_prls_release	"/etc/parallels-release"

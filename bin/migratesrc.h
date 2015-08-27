@@ -43,8 +43,6 @@ protected:
 	static int clean_deleteSnapshot(const void * arg1, const void * arg2);
 
 	int suspendVE();
-	int suspendVE_Ploop();
-	int suspendVE_VZFS();
 	int checkCommonSrc();
 
 	int checkDiskSpace();

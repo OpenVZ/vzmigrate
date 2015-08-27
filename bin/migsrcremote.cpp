@@ -722,13 +722,6 @@ int MigrateStateRemote::preMigrateStage()
 	if ((rc = checkCommonSrc()))
 		return rc;
 
-	if ((srcVE->veformat == VZ_T_VZFS3) && !isOptSet(OPT_USE_RSYNC)) {
-		/* since 4.0.1 vzmigrate use default tar, which does
-		   not support magic symlinks, #475567 */
-		setOpt(OPT_USE_RSYNC);
-		logger(LOG_DEBUG, "Will use rsync for container with vzfs3");
-	}
-
 	if ((rc = sendInitCmd()))
 		return rc;
 

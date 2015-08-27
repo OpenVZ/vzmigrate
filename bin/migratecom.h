@@ -185,8 +185,6 @@ int gfs_cluster_getid(
 
 /* set *is_shared=1 if path is on NFS, GFS or pstorage, set fs type in *fstype */
 int is_path_on_shared_storage(const char *path, int *is_shared, long *fstype);
-/* return 1 if kernel supports graceful stopping of VZFS tracker on suspend */
-int is_cpt_stop_tracker_supported();
 std::string rsync_dir(const char *str);
 std::string rsync_dir(const std::string &str);
 std::string get_dd_xml(const char *dir);
