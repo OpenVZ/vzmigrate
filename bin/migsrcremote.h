@@ -70,16 +70,15 @@ protected:
 	int invertLazyFlag();
 
 	int establishChannel(class MigrateSshChannel *ch, char *cmd);
+
 	/* copy functions */
-	int h_copy_remote_rsync(const char * src);
 	int h_copy_remote_rsync_dump(const char * src);
 	/* dumpdirs of source and target nodes are on the same cluster.
 	   Do not rsync dumpfile, copy name only */
 	int h_copy_cluster_dump(const char * dumpfile);
 	int h_copy_remote_rsync_file(const char * cmd, const char * path);
-	int h_copy_remote_rsync_dir(const char * cmd, const char * path);
-	int h_copy_remote_tar(const char *src);
 	int copy_remote(const char *src, struct string_list *exclude, bool use_rsync);
+
 	/* Restore VE config from backup (<veprivate>/ve.conf.migrated)
 	   Used for migration in the same cluster */
 	static int clean_restoreVEconf(const void * arg1, const void * arg2);

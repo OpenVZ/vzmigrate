@@ -337,11 +337,6 @@ int MigrateStateCommon::h_backup(const char * src)
 	return 0;
 }
 
-int MigrateStateCommon::h_true(const char * , const char * )
-{
-	return 0;
-}
-
 const char ** MigrateStateCommon::getRsyncArgs()
 {
 	static const char *rsync_args[MAX_ARGS];

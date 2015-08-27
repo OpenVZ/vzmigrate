@@ -149,7 +149,6 @@ public:
 	int h_copy(const char * src, const char * dst);
 	int h_rename(const char * src, const char * dst);
 	int h_backup(const char * src);
-	int h_true(const char * , const char * );
 
 private:
 	int run_rsync_srv(char *args[]);

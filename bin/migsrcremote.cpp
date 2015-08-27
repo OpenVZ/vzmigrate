@@ -880,8 +880,7 @@ int MigrateStateRemote::preMigrateStage()
 		setOpt(OPT_NOSTART);
 	}
 
-	// copy config, and turn-on quota
-	// NOTE:: order is important
+	// copy config
 	if (!(m_nFlags & VZMSRC_SHARED_PRIV)) {
 		if ((rc = h_copy_remote_rsync_file(CMD_CONFSET, srcVE->confRealPath().c_str())))
 			return rc;
