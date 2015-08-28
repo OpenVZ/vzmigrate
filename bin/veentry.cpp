@@ -35,7 +35,7 @@ void VEObj::priv_init()
 	ve_data_init(&ve_data);
 
 	lock_fd = -1;
-	layout = VZCTL_LAYOUT_3;
+	layout = VZCTL_LAYOUT_5;
 	is_frozen = false;
 }
 
@@ -860,9 +860,6 @@ int VEObj::veRegister()
 	char tmpfile[PATH_MAX + 1];
 	struct stat st;
 
-	if (layout < VZCTL_LAYOUT_4)
-		return 0;
-
 	tmpfile[0] = 0;
 	if (stat(confRealPath().c_str(), &st) == 0) {
 		/* to save origin config (https://jira.sw.ru/browse/PSBM-10260) */
@@ -975,19 +972,11 @@ int VEObj::createLayout()
 
 	if (layout == VZCTL_LAYOUT_3) {
 		return putErr(MIG_ERR_SYSTEM, "Can't create layout 3");
-	} else if (layout == VZCTL_LAYOUT_4) {
-		/* for new layout: create fs/root directory
-		   and .ve.layout symlink for valid quotainit */
-		snprintf(path, sizeof(path), "%s/fs", priv);
-		if (access(path, F_OK))
-			if (mkdir(path, 0700))
-				return putErr(MIG_ERR_SYSTEM, "mkdir(%s) : %m", path);
-		snprintf(path, sizeof(path), "%s/fs/root", priv);
-		if (access(path, F_OK))
-			if (mkdir(path, 0755))
-				return putErr(MIG_ERR_SYSTEM, "mkdir(%s) : %m", path);
-	} else if (layout == VZCTL_LAYOUT_5) {
 
+	} else if (layout == VZCTL_LAYOUT_4) {
+		return putErr(MIG_ERR_SYSTEM, "Can't create layout 4");
+
+	} else if (layout == VZCTL_LAYOUT_5) {
 		snprintf(path, sizeof(path), "%s/fs", priv);
 		if (access(path, F_OK))
 			if (mkdir(path, 0755))
@@ -1010,7 +999,6 @@ int VEObj::createLayout()
 		if (access(path, F_OK))
 			if (mkdir(path, 0755))
 				return putErr(MIG_ERR_SYSTEM, "mkdir(%s) : %m", path);
-
 	}
 
 	snprintf(path, sizeof(path), "%s/.ve.layout", priv);

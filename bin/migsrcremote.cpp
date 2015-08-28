@@ -942,11 +942,6 @@ int MigrateStateRemote::suspendVEOffline()
 	return suspendVE();
 }
 
-bool MigrateStateRemote::isDumpFilesDiffer()
-{
-	return srcVE->layout < VZCTL_LAYOUT_4;
-}
-
 int MigrateStateRemote::memoryCopyOnline()
 {
 	int ret;

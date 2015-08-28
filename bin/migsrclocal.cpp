@@ -432,18 +432,16 @@ int MigrateStateLocal::preFinalStage()
 		/* create config backup */
 		if ((rc = h_backup(dstVE->confRealPath().c_str())))
 			return rc;
-		/* and modify orig config */
-		if (dstVE->layout >= VZCTL_LAYOUT_4) {
-			unlink(dstVE->confPath().c_str());
-			if ((rc = copy_file(dstVE->confPath().c_str(),
-					dstVE->confRealPath().c_str())))
-				return rc;
-		}
+		/* modify original config */
+		unlink(dstVE->confPath().c_str());
+		if ((rc = copy_file(dstVE->confPath().c_str(),
+				dstVE->confRealPath().c_str())))
+			return rc;
 		if ((rc = dstVE->updateConfig(VE_CONF_PRIV, dstVE->getPrivateConf().c_str())))
 			return rc;
 		if ((rc = dstVE->updateConfig(VE_CONF_ROOT, dstVE->getRootConf().c_str())))
 			return rc;
-	} else if (!isOptSet(OPT_COPY) && (srcVE->layout >= VZCTL_LAYOUT_4)) {
+	} else if (!isOptSet(OPT_COPY)) {
 		/* rewrote symlink to ve config by original file for VE moving.
 		   It's needs for vzctl destroy */
 		if (access(dstVE->confRealPath().c_str(), F_OK))
@@ -598,14 +596,13 @@ int MigrateStateLocal::postFinalStage()
 			logger(LOG_ERR, "post create action failed for CT %s", dstVE->ctid());
 
 		/* change FS uuid for cloned CT (https://jira.sw.ru/browse/PSBM-11961) */
-		if (srcVE->layout >= VZCTL_LAYOUT_5) {
-			if (dstVE->mount() == 0) {
-				regenerate_fs_uuid();
-				dstVE->umount();
-			} else {
-				logger(LOG_ERR, "CT mount failed, can not change disk uuid");
-			}
+		if (dstVE->mount() == 0) {
+			regenerate_fs_uuid();
+			dstVE->umount();
+		} else {
+			logger(LOG_ERR, "CT mount failed, can not change disk uuid");
 		}
+
 	}
 	END_STAGE();
 	return 0;
@@ -616,8 +613,9 @@ int MigrateStateLocal::copyDumpFile()
 	if (!isOptSet(OPT_KEEP_DUMP))
 		addCleanerRemove(clean_removeFile, srcVE->dumpfile, SUCCESS_CLEANER);
 
-	if (srcVE->layout == VZCTL_LAYOUT_5 && is_thesame_location)
-		dstVE->dumpfile = strdup(combine_path(dstVE->dumpDir(), basename_str(srcVE->dumpfile)).c_str());
+	if (is_thesame_location)
+		dstVE->dumpfile = strdup(combine_path(dstVE->dumpDir(),
+			basename_str(srcVE->dumpfile)).c_str());
 	else
 		dstVE->dumpfile = strdup(srcVE->dumpfile);
 
