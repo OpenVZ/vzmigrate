@@ -32,6 +32,7 @@ public:
 	int checkClusterID();
 	int checkSharedFile(const char *dir, bool *shared);
 	int checkSharedDisk();
+	int checkKeepDir();
 	int checkOptions(unsigned long long *options);
 	int checkSharedDir(
 			const char *cmd400,
@@ -59,6 +60,7 @@ protected:
 //	MigrateSshChannel * ch;
 	bool use_iteration;
 	unsigned int cpu_flags;
+	long is_keep_dir;
 	bool m_bIsPrivOnShared;
 	long m_isTargetInHaCluster;
 	typedef std::list<struct ploop_delta_desc *> listDeltaDesc_t;

@@ -61,6 +61,7 @@ MigrateStateRemote::MigrateStateRemote(
 	use_iteration = true;
 	cpu_flags = 0;
 
+	is_keep_dir = 0;
 	swapch = NULL;
 
 	m_isTargetInHaCluster = 0;
@@ -244,6 +245,21 @@ int MigrateStateRemote::checkOptions(unsigned long long *options)
 	}
 
 	return 0;
+}
+
+/* check that keep dir exist on destination node */
+int MigrateStateRemote::checkKeepDir()
+{
+	int rc;
+
+	if (m_nFlags & VZMSRC_SHARED_PRIV)
+		/* forget about it for private on the same
+		   shared cluster partition */
+		return 0;
+
+	logger(LOG_INFO, "Checking keep dir for private area copy");
+
+	return sendRequest((char *)CMD_CHECK_KEEP_DIR, &is_keep_dir);
 }
 
 /* get & check ploop format for ploop-based VE private */
@@ -787,6 +803,13 @@ int MigrateStateRemote::preMigrateStage()
 	if ((rc = adjustTimeout(&VZMoptions.tmo)))
 		return rc;
 
+	if (VZMoptions.remote_version >= MIGRATE_VERSION_400) {
+		if (!isOptSet(OPT_CONVERT_VZFS)) {
+			if ((rc = checkKeepDir()))
+				return rc;
+		}
+	}
+
 	// check license if target VE will be running
 	if (srcVE->isrun() && !isOptSet(OPT_NOSTART)) {
 		rc = checkAvailLicense();
@@ -832,9 +855,12 @@ int MigrateStateRemote::preMigrateStage()
 	else if (rc != 0)
 		return rc;
 
-	rc = checkDiskSpace();
-	if ((rc = checkDiskSpaceRC(rc)))
-		return rc;
+	// don't check diskspace for keep dir
+	if (!is_keep_dir) {
+		rc = checkDiskSpace();
+		if ((rc = checkDiskSpaceRC(rc)))
+			return rc;
+	}
 
 	// check IP addresses on destination HN
 	rc = checkIPAddresses();
@@ -1656,10 +1682,11 @@ static bool disk_is_ext_non_shared(const struct disk_entry &d)
 int MigrateStateRemote::copy_ct(struct string_list *exclude)
 {
 	int rc;
+	bool use_rsync = (is_keep_dir || isOptSet(OPT_USE_RSYNC));
 
 	logger(LOG_ERR, "copy CT private %s", srcVE->priv);
 	if (!(m_nFlags & VZMSRC_SHARED_PRIV)) {
-		rc = copy_remote(srcVE->priv, exclude, isOptSet(OPT_USE_RSYNC));
+		rc = copy_remote(srcVE->priv, exclude, use_rsync);
 		if (rc)
 			return rc;
 	}

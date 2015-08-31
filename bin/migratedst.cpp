@@ -37,6 +37,7 @@ MigrateStateDstRemote::MigrateStateDstRemote(VEObj * ve, int options)
 
 	is_thesame_private = 0;
 	is_privdir_exist = 0;
+	is_keepdir_exist = 0;
 	is_priv_on_shared = 0;
 	m_nVziterindPid = -1;
 	m_convertQuota2[0] = '\0';
@@ -171,6 +172,28 @@ int MigrateStateDstRemote::initVEMigration(VEObj * ve)
 					ve->priv, layout);
 
 		is_privdir_exist = 1;
+	}
+
+	/* check old migrated directory exist */
+	string keepDir = string(ve->priv) + SUFFIX_MIGRATED;
+	if (access(keepDir.c_str(), F_OK) == 0) {
+		/* 1. Do not use keep dir for ploop based CT */
+		/* 2. If private exist then keep dir is obsoleted */
+		/* 3. Don's use on layout mismatch */
+		/* 4. Don's use on vzfs conversion */
+		if (m_initOptions & MIGINIT_LAYOUT_5 ||
+				access(ve->priv, F_OK) == 0 ||
+				vzctl2_env_layout_version(keepDir.c_str()) != ve->layout ||
+				isOptSet(OPT_CONVERT_VZFS)) {
+			clean_removeDir(keepDir.c_str());
+		} else {
+			logger(LOG_INFO, "Use old .migrated folder");
+			if (::rename(keepDir.c_str(), ve->priv) != 0)
+				return putErr(MIG_ERR_SYSTEM, MIG_MSG_MOVE, keepDir.c_str(), ve->priv);
+			addCleanerRename(ve->priv, keepDir.c_str(), 0);
+
+			is_keepdir_exist = 1;
+		}
 	}
 
 	// check VE root
@@ -586,6 +609,33 @@ int MigrateStateDstRemote::cmdClusterDumpCopy(
 			dstVE->dumpfile);
 	addCleanerRemove(clean_removeFile, dstVE->dumpfile, ANY_CLEANER);
 
+	return 0;
+}
+
+/* is keep dir & can we use tar for VE private area copy? */
+int MigrateStateDstRemote::cmdCheckKeepDir(
+			ostringstream & os)
+{
+	if (!is_keepdir_exist && !is_privdir_exist) {
+		os << "0";
+		return 0;
+	}
+
+	if (is_privdir_exist && is_priv_on_shared && !is_thesame_private) {
+		/* yes, it's a bad place for this check.
+		   But this function will to call all mandatory for
+		   vzmigrate >= 4 and after cluster check.
+		   Target private area already exist, and exist on the cluster,
+		   and this cluster is other then source.
+		   vzmigrate can't rewrote this private (#89400) */
+		return putErr(MIG_ERR_EXISTS,
+			"Target private area %s already exists and "
+			"resides on cluster", dstVE->priv);
+	}
+
+	/* will use rsync for privatre area */
+	func_copyFirst = &MigrateStateDstRemote::h_copy_remote_rsync;
+	os << "1";
 	return 0;
 }
 

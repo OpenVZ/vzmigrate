@@ -34,6 +34,7 @@ protected:
 	int m_initOptions;
 	int is_thesame_private;
 	int is_privdir_exist;
+	int is_keepdir_exist;
 	struct ploop_online_copy_data *m_pPloopData;
 	char m_convertQuota2[PATH_MAX];
 
@@ -86,6 +87,7 @@ public:
 	int cmdCheckSharedFile(istringstream &is, ostringstream &os);
 	int cmdCheckSharedDump(istringstream &is, ostringstream & os);
 	int cmdClusterDumpCopy(istringstream &is);
+	int cmdCheckKeepDir(ostringstream & os);
 	int cmdCheckOptions(istringstream & is, ostringstream & os);
 	int cmdCheckCPTVersion(istringstream & is);
 	int cmdCheckKernelModules(istringstream &is);

@@ -336,6 +336,9 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 	} else if (strcmp(cmd, CMD_CLUSTER_DUMPCOPY) == 0) {
 		// checking - all added in 4.0
 		return state->cmdClusterDumpCopy(is);
+	} else if (strcmp(cmd, CMD_CHECK_KEEP_DIR) == 0) {
+		// checking - all added in 4.0
+		return state->cmdCheckKeepDir(os);
 	} else if (strcmp(cmd, CMD_CHECK_OPTIONS) == 0) {
 		// added in 4.0.1
 		return state->cmdCheckOptions(is, os);
