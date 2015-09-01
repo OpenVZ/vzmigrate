@@ -86,11 +86,14 @@ public:
 	int cmdCheckSharedPriv(istringstream &is, ostringstream & os);
 	int cmdCheckSharedFile(istringstream &is, ostringstream &os);
 	int cmdCheckSharedDump(istringstream &is, ostringstream & os);
+	int cmdCheckSharedTmpl(istringstream &is, ostringstream & os);
+	int cmdCheckClusterTmpl(istringstream &is, ostringstream & os);
 	int cmdClusterDumpCopy(istringstream &is);
 	int cmdCheckKeepDir(ostringstream & os);
 	int cmdCheckOptions(istringstream & is, ostringstream & os);
 	int cmdCheckCPTVersion(istringstream & is);
 	int cmdCheckKernelModules(istringstream &is);
+	int cmdTemplateSync(istringstream &is);
 	int cmdCopyPloopPrivate() { return h_copy_remote_tar(dstVE->priv); }
 	int cmdCopyPloopPrivateSync() { return h_copy_remote_rsync_dir(dstVE->priv); }
 

@@ -333,6 +333,12 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 	} else if (strcmp(cmd, CMD_CHECK_SHARED_DUMP) == 0) {
 		// checking - all added in 4.0
 		return state->cmdCheckSharedDump(is, os);
+	} else if (strcmp(cmd, CMD_CHECK_CLUSTER_TMPL) == 0) {
+		// checking - all added in 4.0
+		return state->cmdCheckClusterTmpl(is, os);
+	} else if (strcmp(cmd, CMD_CHECK_SHARED_TMPL) == 0) {
+		// checking - all added in 4.0
+		return state->cmdCheckSharedTmpl(is, os);
 	} else if (strcmp(cmd, CMD_CLUSTER_DUMPCOPY) == 0) {
 		// checking - all added in 4.0
 		return state->cmdClusterDumpCopy(is);
@@ -373,6 +379,8 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 	} else if (strcmp(cmd, CMD_INVERTLAZY) == 0) {
 		// invert LAZY flag for iteration migration - added in 4.0
 		return cmdInvertLazyFlag();
+	} else if (strcmp(cmd, CMD_SYNCTT) == 0) {
+		return state->cmdTemplateSync(is);
 	} else if (strcmp(cmd, CMD_ADJUST_TMO) == 0) {
 		return cmdAdjustTimeout(is, os);
 	} else if (strcmp(cmd, CMD_STOP) == 0) {

@@ -20,6 +20,7 @@
 #include <linux/fs.h>
 #include <linux/types.h>
 
+#include <vz/vztt.h>
 #include <vzctl/libvzctl.h>
 
 #include <sstream>
@@ -260,6 +261,90 @@ int MigrateStateRemote::checkKeepDir()
 	logger(LOG_INFO, "Checking keep dir for private area copy");
 
 	return sendRequest((char *)CMD_CHECK_KEEP_DIR, &is_keep_dir);
+}
+
+/* check templates on destination HN */
+int MigrateStateRemote::checkTemplates()
+{
+	void *lockdata;
+	int rc = 0;
+
+	logger(LOG_INFO, "Checking templates for CT");
+
+	/* only EZ templates are supported */
+	if (!srcVE->isNewTemOS())
+		return -1;
+
+	if ((m_nFlags & VZMSRC_SHARED_TMPL) ||
+		isOptSet(OPT_SKIP_TEMPLATE_AREA_SYNC))
+		return 0;
+
+	if (VZMoptions.remote_version < MIGRATE_VERSION_400)
+		/* will hope that vzmdest v.3 run 'vzpkg repair' */
+		return 0;
+
+	if (vztt_lock_ostemplate(srcVE->ve_data.ostemplate, &lockdata))
+		return putErr(MIG_ERR_LOCK, MIG_MSG_TEMPL_LOCK,
+			srcVE->ve_data.ostemplate);
+
+	/* check templates on destination HN */
+	rc = checkNewTemPackageDependencies();
+
+	vztt_unlock_ostemplate(lockdata);
+
+	return rc;
+}
+
+/* copy ostemplate config directory to target node */
+int MigrateStateRemote::checkNewTemPackageDependencies()
+{
+	int rc = 0;
+	struct options opts;
+	struct tmpl_info info;
+	char cmd[BUFSIZ];
+	char path[PATH_MAX + 1];
+	struct string_list_el *p;
+	struct ve_data *ve = &srcVE->ve_data;
+	list<string> args;
+
+	if (isOptSet(OPT_DRY_RUN))
+		return 0;
+
+	vztt_set_default_options(&opts);
+
+	if ((rc = vztt_get_os_tmpl_info(ve->ostemplate, &opts, &info)))
+		return putErr(MIG_ERR_SYSTEM, MIG_MSG_NEWTEM_CONFPATH, rc);
+
+	snprintf(path, sizeof(path), "%s/", info.confdir);
+	snprintf(cmd, sizeof(cmd), CMD_SYNCTT " %s vztemplate 1 %s %s",
+		ve->ostemplate, ve->ostemplate, path);
+	vztt_clean_tmpl_info(&info);
+
+	args.push_back("--delete");
+	args.push_back(path);
+	args.push_back(DUMMY_DEST);
+	rc = remoteRsyncSrc(cmd, false, args);
+	/* if template already exist on dst - it's not a error */
+	if (rc && (rc != MIG_ERR_EXISTS))
+		return rc;
+
+	string_list_for_each(&ve->templates, p) {
+		if ((rc = vztt_get_app_tmpl_info(ve->ostemplate, p->s, &opts, &info)))
+			return putErr(MIG_ERR_SYSTEM, MIG_MSG_NEWTEM_CONFPATH, rc);
+		snprintf(path, sizeof(path), "%s/", info.confdir);
+		snprintf(cmd, sizeof(cmd), CMD_SYNCTT " %s vztemplate 0 %s %s",
+			p->s, ve->ostemplate, path);
+		vztt_clean_tmpl_info(&info);
+
+		args.clear();
+		args.push_back("--delete");
+		args.push_back(path);
+		args.push_back(DUMMY_DEST);
+		rc = remoteRsyncSrc(cmd, false, args);
+		if (rc && (rc != MIG_ERR_EXISTS))
+			return rc;
+	}
+	return 0;
 }
 
 /* get & check ploop format for ploop-based VE private */
@@ -586,6 +671,22 @@ int MigrateStateRemote::checkClusterID()
 	if ((rc = checkSharedDisk()))
 		return rc;
 
+	/* for template area */
+	if (srcVE->veformat != VZ_T_SIMFS) {
+		if ((rc = checkSharedDir(
+			CMD_CHECK_CLUSTER_TMPL, CMD_CHECK_SHARED_TMPL,
+			srcVE->tmplDir().c_str(), "template area", NULL,
+			&shared, &is_thesame_shared)))
+			return rc;
+		if (shared && !is_thesame_shared) {
+			logger(LOG_WARNING, "template area on the destination "
+				"node resides on the\n"
+				"non-shared partition, will to copy.");
+		}
+		if (is_thesame_shared)
+			m_nFlags |= VZMSRC_SHARED_TMPL;
+	}
+
 	/* for dump dir */
 	if (isOptSet(OPT_ONLINE)) {
 		if (srcVE->layout < VZCTL_LAYOUT_4)
@@ -855,12 +956,25 @@ int MigrateStateRemote::preMigrateStage()
 	else if (rc != 0)
 		return rc;
 
-	// don't check diskspace for keep dir
+	// check disk space (skip this check if --keep-dst option specified)
 	if (!is_keep_dir) {
 		rc = checkDiskSpace();
 		if ((rc = checkDiskSpaceRC(rc)))
 			return rc;
 	}
+
+	// check templates on destination HN
+	rc = checkTemplates();
+	if (rc == MIG_ERR_PKG_DEPS)
+	{
+		// dependencies failed
+		if (!isOptSet(OPT_FORCE))
+			return putErr(MIG_ERR_PKG_DEPS, MIG_MSG_PKTDEPS, getError());
+		logger(LOG_WARNING, MIG_MSG_PKTDEPS_WARN, getError(), dstVE->ctid());
+		setOpt(OPT_NOSTART);
+	}
+	else if (rc != 0)
+		return rc;
 
 	// check IP addresses on destination HN
 	rc = checkIPAddresses();

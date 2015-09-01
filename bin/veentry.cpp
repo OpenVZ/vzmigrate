@@ -150,6 +150,11 @@ string VEObj::dumpDir() const
 	return os.str();
 }
 
+string VEObj::tmplDir() const
+{
+	return std::string(vzcnf->tmpldir);
+}
+
 string VEObj::suspendPath() const
 {
 	std::ostringstream os;

@@ -171,6 +171,7 @@ public:
 	const string getVEPrivateVZFS();
 	string suspendPath() const;
 	string dumpDir() const;
+	string tmplDir() const;
 	void setPrivate(const char *p);
 	void setRoot(const char *p);
 	int setNameData(const char *name);

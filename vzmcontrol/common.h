@@ -210,6 +210,8 @@ extern const char * getError();
 #define MIG_MSG_IP_IN_USE_COM	"IP addresses [%s] already in use on destination node"
 #define MIG_MSG_IP_IN_USE	MIG_MSG_IP_IN_USE_COM ", use '-f' option"
 #define MIG_MSG_IP_IN_USE_WARN	MIG_MSG_IP_IN_USE_COM ", check CT %s before start"
+#define MIG_MSG_PKTDEPS			"Destination node has not got required packages [%s], use '-f' option"
+#define MIG_MSG_PKTDEPS_WARN	"Destination node has not got required packages [%s], check CT %s before start"
 
 #define MIG_MSG_AREA_USED	"directory '%s' or it descendant already used by CT %s"
 #define MIG_MSG_SEND_PKT	"can't send command to destination side : %m"
@@ -254,6 +256,7 @@ extern const char * getError();
 #define MIG_MSG_CREATE_DIR	"can not create dir '%s' : %m "
 #define MIG_MSG_SET_MODE	"chmod '%s' : %m"
 #define MIG_MSG_REPLY		"can not read reply from destination node"
+#define MIG_MSG_NEWTEM_CONFPATH	"can't get template config path : %d"
 
 #define MIG_MSG_LICENSE		"License check failed: %s"
 #define MIG_MSG_DISKSPACE	"Disk space check failed: %s"

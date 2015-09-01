@@ -72,6 +72,8 @@
 #define CMD_CHECK_SHARED_PRIV		"checksharedpriv"
 #define CMD_CHECK_SHARED_FILE		"checksharedfile"
 #define CMD_CHECK_SHARED_DUMP		"checkshareddump"
+#define CMD_CHECK_CLUSTER_TMPL		"checkclustertmpl"
+#define CMD_CHECK_SHARED_TMPL		"checksharedtmpl"
 #define CMD_CLUSTER_DUMPCOPY		"clusterdumpcopy"
 #define CMD_CHECK_EZDIR			"checkezdir"
 #define CMD_CHECK_KEEP_DIR		"checkkeepdir"

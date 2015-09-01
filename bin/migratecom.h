@@ -38,6 +38,7 @@ int get_real_tmpl_path(
 
 // internal migration source flags
 #define VZMSRC_SHARED_PRIV	(1ULL << 0)
+#define VZMSRC_SHARED_TMPL	(1ULL << 2)
 #define VZMSRC_SHARED_DUMP	(1ULL << 3)
 
 class MigrateStateCommon
