@@ -829,19 +829,8 @@ int MigrateStateDstRemote::cmdTemplateSync(istringstream &is)
 		addCleanerRemove(clean_removeDir, path);
 	else
 		return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
-/*
-	--delete option was restored for 3.0 compatibility.
-	vzmigrate-3 client start rsync with this option, and it failed (as sample):
-Invalid file index 268447233 in recv_files (count=0)
-rsync error: protocol incompatibility (code 2) at receiver.c(348)
-rsync: connection unexpectedly closed (9 bytes read so far)
-rsync: connection unexpectedly closed (9 bytes read so far)
-rsync error: error in rsync protocol data stream (code 12) at io.c(170)
-unexpected tag 42
-rsync error: error in rsync protocol data stream (code 12) at io.c(320)
-*/
-	return remoteRsyncDst(getRsyncArgs(), "--delete", "--server", ".", \
-			path, (void *)NULL);
+
+	return remoteRsyncDst(getRsyncArgs(), "--server", ".", path, (void *)NULL);
 }
 
 int MigrateStateDstRemote::cmdHaClusterNodeID(istringstream &is, ostringstream &os)
