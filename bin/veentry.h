@@ -11,7 +11,6 @@
 #include <list>
 #include <stdlib.h>
 
-#include "entry.h"
 #include "util.h"
 
 #define VZMIGRATE_COMPONENT_NAME	"vzmigrate"
@@ -75,7 +74,7 @@ public:
 	}
 };
 
-class VEObj : public Entry
+class VEObj
 {
 private:
 	string m_snap_guid;

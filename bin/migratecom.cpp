@@ -291,7 +291,7 @@ void MigrateStateCommon::addCleanerRename(const char * src, const char * dest, i
 
 int MigrateStateCommon::clean_delEntry(const void * arg, const void *)
 {
-	Entry * e = (Entry *) arg;
+	VEObj * e = (VEObj *) arg;
 	delete e;
 	return 0;
 }
