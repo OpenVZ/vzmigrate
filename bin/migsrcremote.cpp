@@ -279,10 +279,6 @@ int MigrateStateRemote::checkTemplates()
 		isOptSet(OPT_SKIP_TEMPLATE_AREA_SYNC))
 		return 0;
 
-	if (VZMoptions.remote_version < MIGRATE_VERSION_400)
-		/* will hope that vzmdest v.3 run 'vzpkg repair' */
-		return 0;
-
 	if (vztt_lock_ostemplate(srcVE->ve_data.ostemplate, &lockdata))
 		return putErr(MIG_ERR_LOCK, MIG_MSG_TEMPL_LOCK,
 			srcVE->ve_data.ostemplate);
