@@ -20,9 +20,6 @@
 #include <sys/ioctl.h>
 #include <sstream>
 
-//#include <openssl/ssl.h>
-//#include <openssl/err.h>
-
 #include "remotecmd.h"
 #include "migratecom.h"
 #include "migssh.h"
