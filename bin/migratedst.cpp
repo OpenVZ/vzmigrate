@@ -471,33 +471,6 @@ int MigrateStateDstRemote::cmdCheckClusterID(
 	return 0;
 }
 
-/* For dumpdir */
-int MigrateStateDstRemote::cmdCheckClusterDump(
-			istringstream &is,
-			ostringstream & os)
-{
-	int rc;
-	string src_id, mpath;
-	int is_thesame_path;
-
-	if ((is >> src_id >> mpath) == NULL)
-		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
-
-	if ((rc = check_cluster_id(dstVE->dumpDir().c_str(),
-			src_id.c_str(), mpath.c_str(), NULL, &is_thesame_path)))
-		return rc;
-
-	if (is_thesame_path) {
-		logger(LOG_DEBUG, MIG_MSG_THESAME_CLUSTER,
-				"dumpdirs", src_id.c_str());
-		os << "1";
-	}
-	else
-		os << "0";
-
-	return 0;
-}
-
 int MigrateStateDstRemote::cmdCheckSharedFile(
 		istringstream &is, ostringstream &os)
 {
@@ -563,29 +536,6 @@ int MigrateStateDstRemote::cmdCheckSharedPriv(
 	addCleaner(clean_unregister, dstVE);
 	os << "1";
 
-	return 0;
-}
-
-/* the same for shared dumpdir */
-int MigrateStateDstRemote::cmdCheckSharedDump(
-			istringstream &is,
-			ostringstream & os)
-{
-	string name;
-	char path[PATH_MAX+1];
-	struct stat st;
-
-	if ((is >> name) == NULL)
-		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
-
-	snprintf(path, sizeof(path), "%s/%s",
-		dstVE->dumpDir().c_str(), name.c_str());
-	if (stat(path, &st) == 0) {
-		logger(LOG_DEBUG, MIG_MSG_THESAME_SHARED, "dumpdirs");
-		os << "1";
-	} else {
-		os << "0";
-	}
 	return 0;
 }
 

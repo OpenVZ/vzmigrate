@@ -322,17 +322,11 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 	} else if (strcmp(cmd, CMD_CHECK_CLUSTER) == 0) {
 		// checking - all added in 4.0
 		return state->cmdCheckClusterID(is, os);
-	} else if (strcmp(cmd, CMD_CHECK_CLUSTER_DUMP) == 0) {
-		// checking - all added in 4.0
-		return state->cmdCheckClusterDump(is, os);
 	} else if (strcmp(cmd, CMD_CHECK_SHARED_PRIV) == 0) {
 		// checking - all added in 4.0
 		return state->cmdCheckSharedPriv(is, os);
 	} else if (strcmp(cmd, CMD_CHECK_SHARED_FILE) == 0) {
 		return state->cmdCheckSharedFile(is, os);
-	} else if (strcmp(cmd, CMD_CHECK_SHARED_DUMP) == 0) {
-		// checking - all added in 4.0
-		return state->cmdCheckSharedDump(is, os);
 	} else if (strcmp(cmd, CMD_CHECK_CLUSTER_TMPL) == 0) {
 		// checking - all added in 4.0
 		return state->cmdCheckClusterTmpl(is, os);

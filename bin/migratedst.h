@@ -82,10 +82,8 @@ public:
 	   compare in success, and send '1' if it the same cluster */
 	int cmdCheckClusterID(istringstream &is, ostringstream & os);
 	/* The same for vzcache */
-	int cmdCheckClusterDump(istringstream &is, ostringstream & os);
 	int cmdCheckSharedPriv(istringstream &is, ostringstream & os);
 	int cmdCheckSharedFile(istringstream &is, ostringstream &os);
-	int cmdCheckSharedDump(istringstream &is, ostringstream & os);
 	int cmdCheckSharedTmpl(istringstream &is, ostringstream & os);
 	int cmdCheckClusterTmpl(istringstream &is, ostringstream & os);
 	int cmdClusterDumpCopy(istringstream &is);

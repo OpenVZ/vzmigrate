@@ -685,18 +685,8 @@ int MigrateStateRemote::checkClusterID()
 
 	/* for dump dir */
 	if (isOptSet(OPT_ONLINE)) {
-		if (srcVE->layout < VZCTL_LAYOUT_4)
-		{
-			if ((rc = checkSharedDir(
-				CMD_CHECK_CLUSTER_DUMP, CMD_CHECK_SHARED_DUMP,
-				srcVE->dumpDir().c_str(), "dumpdir", NULL,
-				&shared, &is_thesame_shared)))
-			return rc;
-		} else {
-			// on layout > 3 dumpdir is placed at private
-			is_thesame_shared = m_nFlags & VZMSRC_SHARED_PRIV;
-		}
-		if (is_thesame_shared)
+		/* dumpdir is placed at private, so just check is private shared */
+		if (m_nFlags & VZMSRC_SHARED_PRIV)
 			m_nFlags |= VZMSRC_SHARED_DUMP;
 	}
 
