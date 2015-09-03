@@ -239,70 +239,9 @@ int MigrateStateDstRemote::initMigration()
 	return initVEMigration(dstVE);
 }
 
-/* check vzlicense ve_total parameter on destination node */
 int MigrateStateDstRemote::cmdCheckLicense()
 {
-	char cmd[MAX_CMD_SIZE+1];
-	char buf[BUFSIZ];
-	FILE *fd;
-	int status;
-	char *p;
-	char *token = (char *)"ct_total=";
-	char *out = NULL;
-	char *binary = (char *)"vzlicview";
-	int retcode;
-
-	snprintf(cmd, sizeof(cmd), "%s --active --class VZSRV", binary);
-	logger(LOG_DEBUG, cmd);
-	if ((fd = popen(cmd, "r")) == NULL)
-		return putErr(MIG_ERR_LICENSE, "popen('%s') : %m", cmd);
-
-	while(fgets(buf, sizeof(buf), fd)) {
-		if ((p = strchr(buf, '\n')))
-			*p = '\0';
-		for (p = buf; isblank(*p); p++) ;
-		if (strncmp(p, token, strlen(token)) == 0) {
-			out = p + strlen(token);
-			break;
-		}
-	}
-	status = pclose(fd);
-	if (WIFEXITED(status)) {
-		retcode = WEXITSTATUS(status);
-		if (retcode) {
-			return putErr(MIG_ERR_LICENSE,
-				"%s exit with retcode %d", binary, retcode);
-		}
-	} else if (WIFSIGNALED(status)) {
-		return putErr(MIG_ERR_LICENSE,
-			"%s got signal %d", binary, WTERMSIG(status));
-	} else {
-		return putErr(MIG_ERR_LICENSE,
-			"%s exited with status %d", binary, status);
-	}
-	if (out == NULL)
-		return putErr(MIG_ERR_LICENSE,
-			"Can't get ct_total from active license");
-
-	char *unlimited = (char *)"\"unlimited\"";
-	if (strncasecmp(out, unlimited, strlen(unlimited)) == 0) {
-		logger(LOG_DEBUG, "checkLicense: unlimited");
-		return 0;
-	}
-
-	unsigned long limit, used;
-	retcode = sscanf(out, "%lu (%lu)", &limit, &used);
-	if (retcode != 2)
-		return putErr(MIG_ERR_LICENSE,
-			"Can't get ct_total limit and current value from active license : '%s'",
-			buf);
-
-	logger(LOG_DEBUG, "checkLicense: limit=%lu use=%lu", limit, used);
-	if (used >= limit)
-		return putErr(MIG_ERR_LICENSE,
-			"The destination node license does not "
-			"allow to increase the number of Containers: "
-			"limit=%lu, use=%lu", limit, used);
+	// obsoleted, licensing removed starting from Vz7
 	return 0;
 }
 

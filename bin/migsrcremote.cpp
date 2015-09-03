@@ -110,7 +110,9 @@ int MigrateStateRemote::checkRate()
 //check avail license
 int MigrateStateRemote::checkAvailLicense()
 {
-	if (VZMoptions.remote_version < MIGRATE_VERSION_400)
+	// skip license check for old versions and starting from Vz7
+	if ((VZMoptions.remote_version < MIGRATE_VERSION_400) ||
+		(VZMoptions.remote_version >= MIGRATE_VERSION_700))
 		return 0;
 
 	logger(LOG_INFO, "Checking license restrictions");
