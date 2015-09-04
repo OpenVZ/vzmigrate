@@ -810,12 +810,7 @@ int MigrateStateRemote::preMigrateStage()
 		if ((rc = keepVE->init_existed()))
 			return rc;
 	}
-/*
-	// bug 57973 (but in agent mode source don't call ssh).
-	// ssh connection kill moved to main function (#79439)
-	if (!isOptSet(OPT_AGENT))
-		addCleaner(clean_channel, &channel, NULL, ANY_CLEANER);
-*/
+
 	if ((rc = srcVE->init_existed()))
 		return rc;
 
@@ -838,7 +833,6 @@ int MigrateStateRemote::preMigrateStage()
 	if ((rc = checkRemoteVersion()))
 		return rc;
 
-
 	// do not use --sparse option for ploop image copy
 	use_sparse_opt = (srcVE->layout < VZCTL_LAYOUT_5);
 
@@ -848,8 +842,7 @@ int MigrateStateRemote::preMigrateStage()
 	// Use iterative scheme by default
 	use_iteration = (isOptSet(OPT_NOITER) || isOptSet(OPT_CONVERT_VZFS)) ? false : true;
 
-	/* check on the same cluster migration case -
-	   before config migration only */
+	/* check on the same cluster migration case */
 	if ((rc = checkClusterID()))
 		return rc;
 	if (m_nFlags & VZMSRC_SHARED_PRIV) {
@@ -915,8 +908,7 @@ int MigrateStateRemote::preMigrateStage()
 
 	if (isOptSet(OPT_ONLINE))
 	{
-		/* check and load kernel modules on dst side,
-		   but skip check (do not load modules on target) if opt is specified */
+		/* check and load kernel modules on dst side */
 		if (!isOptSet(OPT_SKIP_KERNEL_MODULES) && !isOptSet(OPT_FORCE)) {
 			rc = checkKernelModules();
 			if (rc)
