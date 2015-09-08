@@ -1075,21 +1075,14 @@ int MigrateStateDstRemote::h_copy_remote_tar(const char *dst)
 	if (isOptSet(OPT_AGENT)) {
 		rc = vza_recv_data(&channel.ctx, channel.conn, args);
 	} else if (isOptSet(OPT_PS_MODE)) {
-		int *sock;
-		if (VZMoptions.data_sock == -1) {
-			if (VZMoptions.tmpl_data_sock == -1) {
-				rc = putErr(MIG_ERR_VZSOCK, "data_sock and tmpl_data_sock are closed");
-				goto cleanup;
-			} else {
-				sock = &VZMoptions.tmpl_data_sock;
-			}
-		} else {
-			sock = &VZMoptions.data_sock;
+		int sock = PSMode::get_socket();
+		if (sock < 0) {
+			rc = putErr(MIG_ERR_VZSOCK, "data_sock and tmpl_data_sock are closed");
+			goto cleanup;
 		}
-		do_block(*sock);
-		rc = vzm_execve(args, NULL, *sock, *sock, NULL);
-		close(*sock);
-		*sock = -1;
+		do_block(sock);
+		rc = vzm_execve(args, NULL, sock, sock, NULL);
+		PSMode::finish_socket();
 	} else if (isOptSet(OPT_SOCKET)) {
 		if ((rc = vzsock_recv_data(&channel.ctx, channel.conn, (char * const *)args)))
 			rc = putErr(MIG_ERR_VZSOCK, "vzsock_recv_data() return %d", rc);

@@ -1507,29 +1507,17 @@ static int copy_remote_tar(
 			goto cleanup_0;
 	} else if (isOptSet(OPT_PS_MODE)) {
 		int retcode = 0;
-		int *sock;
-		/* for pcs-based CT migration we use tar twice for private migration,
-		   but it is not needs copy temlate area for such CT. So will use tmpl_data_sock
-		   for second step of copy of private area (https://jira.sw.ru/browse/PSBM-13684) */
-		if (VZMoptions.data_sock == -1) {
-			if (VZMoptions.tmpl_data_sock == -1) {
-				rc = putErr(MIG_ERR_VZSOCK, "data_sock and tmpl_data_sock are closed");
-				goto cleanup_0;
-			} else {
-				sock = &VZMoptions.tmpl_data_sock;
-			}
-		} else {
-			sock = &VZMoptions.data_sock;
+		int sock = PSMode::get_socket();
+		if (sock < 0) {
+			rc = putErr(MIG_ERR_VZSOCK, "data_sock and tmpl_data_sock are closed");
+			goto cleanup_0;
 		}
 		if ((rc = ch_send_str(&ch->ctx, ch->conn, cmd)))
 			goto cleanup_0;
 
-		do_block(*sock);
-		rc = vzm_execve(args, NULL, *sock, *sock, &retcode);
-		/* it's obligatory to close socket -
-		   otherwise tar on destination node will not exit */
-		close(*sock);
-		*sock = -1;
+		do_block(sock);
+		rc = vzm_execve(args, NULL, sock, sock, &retcode);
+		PSMode::finish_socket();
 		if ((rc) && (retcode == 1)) {
 			/* https://jira.sw.ru/browse/PCLIN-29957
 			   note : this function calls for tar only */

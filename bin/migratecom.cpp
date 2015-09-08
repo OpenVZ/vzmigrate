@@ -1153,3 +1153,70 @@ int check_free_space(const char *path, unsigned long long r_bytes, unsigned long
 
 	return 0;
 }
+
+namespace PSMode {
+namespace {
+
+namespace Reuse {
+
+static int get_socket()
+{
+	return VZMoptions.data_sock;
+}
+
+} // namespace Reuse
+
+namespace Oneshot {
+
+/* before pcs6 update11 we have to close socket */
+/* after it is used by tar, thus we have to use */
+/* all available sockets one by one */
+static int *find_socket()
+{
+	if (VZMoptions.data_sock != -1)
+		return &VZMoptions.data_sock;
+	else if (VZMoptions.tmpl_data_sock != -1)
+		return &VZMoptions.tmpl_data_sock;
+	else
+		return NULL;
+}
+
+static int get_socket()
+{
+	int *sock = find_socket();
+	if (sock != NULL)
+		return *sock;
+	else
+		return -1;
+}
+
+/* before pcs6 update11 socket have to be closed */
+/* after having being used by vztar as its peer waits for EOF */
+/* to finish its job */
+static void close_socket()
+{
+	int *sock = find_socket();
+	if (sock != NULL) {
+		close(*sock);
+		*sock = -1;
+	}
+}
+
+} // namespace Oneshot
+} // namespace
+
+int get_socket()
+{
+	if (VZMoptions.remote_version < MIGRATE_VERSION_611)
+		return Oneshot::get_socket();
+	else
+		return Reuse::get_socket();
+}
+
+void finish_socket()
+{
+	if (VZMoptions.remote_version < MIGRATE_VERSION_611)
+		Oneshot::close_socket();
+}
+
+} // namespace PSMode

@@ -191,5 +191,12 @@ std::string convert_root_path(const char *root);
 std::string convert_bindmount_path(const char *root);
 int check_free_space(const char *path, unsigned long long r_bytes, unsigned long long r_inodes);
 
+namespace PSMode {
+
+int get_socket();
+void finish_socket();
+
+} // namespace PSMode
+
 #endif
 
