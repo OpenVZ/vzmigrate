@@ -60,7 +60,6 @@ MigrateStateRemote::MigrateStateRemote(
 	m_bIsPrivOnShared(false)
 {
 	use_iteration = true;
-	cpu_flags = 0;
 
 	is_keep_dir = 0;
 	swapch = NULL;
@@ -914,14 +913,10 @@ int MigrateStateRemote::preMigrateStage()
 			if (rc)
 				return rc;
 		}
+
 		// Check CPT image version
 		rc = checkCPTImageVersion();
 		if (rc && !isOptSet(OPT_SKIP_CPT_IMAGE_VERSION) && !isOptSet(OPT_FORCE))
-			return rc;
-		//check Capabilities
-		//TODO: check error inside checkCapabilities
-		rc = checkCapabilities();
-		if (rc && !isOptSet(OPT_SKIP_CAPABILITIES) && !isOptSet(OPT_FORCE))
 			return rc;
 	}
 
@@ -1043,11 +1038,12 @@ int MigrateStateRemote::copyDumpFile()
 int MigrateStateRemote::suspendVEOnline()
 {
 	int rc;
+	unsigned int dummy_cpu_flags = 0;
 
 	if ((rc = memoryCopyOnline()))
 		return rc;
 
-	if ((rc = srcVE->suspend(cpu_flags, use_iteration)))
+	if ((rc = srcVE->suspend(dummy_cpu_flags, use_iteration)))
 		return putErr(rc, MIG_MSG_SUSPEND, srcVE->ctid(), getError());
 	addCleaner(clean_resumeVE, srcVE);
 
@@ -1252,111 +1248,6 @@ int MigrateStateRemote::invertLazyFlag()
 		   try to do not send it and continue */
 		return 0;
 	return channel.sendCommand(CMD_INVERTLAZY);
-}
-
-int MigrateStateRemote::checkCapabilities()
-{
-	/* logger(LOG_INFO, "Checking capabilities for online migration"); */
-	/* int errcode = 0; */
-	/* int rc = 0; */
-	/* int retcode = 0; */
-	/* unsigned unsupported; */
-
-	/* channel.sendPkt(PACKET_SEPARATOR, CMD_CAPS); */
-	/* const char * reply = channel.readReply(&errcode); */
-	/* if (reply == NULL) */
-	/* 	return putErr(MIG_ERR_CONN_BROKEN, MIG_MSG_REPLY); */
-	/* if (errcode != 0) */
-	/* 	return putErr(errcode, "%s", reply); */
-
-	/* istringstream is(reply); */
-	/* string cmd; */
-
-	/* if ((is >> cmd >> cpu_flags) == NULL) */
-	/* 	return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL); */
-
-	/* if (cmd.compare("CAPS") != 0) */
-	/* { */
-	/* 	logger(LOG_ERR, MIG_MSG_GET_CPU_CAPS); */
-	/* 	if (isOptSet(OPT_FORCE)) */
-	/* 	{ */
-	/* 		logger(LOG_WARNING, MSG_FORCE_USED); */
-	/* 		return 0; */
-	/* 	} */
-	/* 	else */
-	/* 		return putErr(MIG_ERR_SYSTEM, MIG_MSG_GET_CPU_CAPS); */
-	/* } */
-
-	/* if (VZMoptions.remote_version <= MIGRATE_VERSION_460) { */
-	/* 	  /1* See https://jira.sw.ru/browse/PSBM-11558 and *1/ */
-	/* 	  /1* https://jira.sw.ru/browse/PCLIN-30480. *1/ */
-	/* 	  /1* 13th bit is NO_IPV6 flag for 2.6.18 kernel *1/ */
-	/* 	  /1* move it to 28th bit and clean *1/ */
-	/* 	if (cpu_flags & (1U << CPT18_NO_IPV6)) */
-	/* 		cpu_flags |= 1U << CPT32_NO_IPV6; */
-	/* 	else */
-	/* 		cpu_flags &= ~(1U << CPT32_NO_IPV6); */
-	/* 	cpu_flags &= ~(1U << CPT18_NO_IPV6); */
-	/* } */
-
-	/* if (test_caps(srcVE->veid(), cpu_flags, &retcode, &unsupported)) */
-	/* 	return putErr(MIG_ERR_SYSTEM, MIG_MSG_CHECK_CAPS); */
-
-	/* switch (retcode) { */
-	/* case 0: */
-	/* 	return 0; */
-	/* case VECAPS_UNSUPPORTED_FEATURE: */
-	/* 	if (unsupported & (1 << CPT_EXTERNAL_PROCESS)) */
-	/* 		return putErr(MIG_ERR_EXTERNAL_PROCESS, */
-	/* 			"External process is in the container. " */
-	/* 			"Probably 'vzctl exec' or 'vzctl enter' is active. " */
-	/* 				); */
-	/* 	rc = putErr(MIG_ERR_UNSUPP_CPU_CAPS, MIG_MSG_UNSUPPORTED); */
-	/* 	logger(LOG_ERR, MIG_MSG_TRYOFFLINE); */
-	/* 	return rc; */
-	/* case VECAPS_NO_CPU_FEATURE: */
-	/* 	if (!isOptSet(OPT_SKIP_CHECKCPU) && !isOptSet(OPT_FORCE)) { */
-	/* 		//bug #65099 */
-	/* 		rc = putErr(MIG_ERR_INSUFF_CPU_CAPS, MIG_MSG_INSUFF_CPU); */
-	/* 		logger(LOG_ERR, MIG_MSG_VECAPS_FORCE); */
-	/* 		return rc; */
-	/* 	} */
-	/* 	logger(LOG_ERR, MIG_MSG_INSUFF_CPU); */
-	/* 	return 0; */
-	/* case VECAPS_NO_IPV6_MODULE: */
-	/* 	if (!isOptSet(OPT_FORCE)) { */
-	/* 		rc = putErr(MIG_ERR_NO_IPV6_MODULE_CAPS, */
-	/* 				MIG_MSG_NO_IPV6_MODULE_CAPS); */
-	/* 		logger(LOG_ERR, MIG_MSG_VECAPS_FORCE); */
-	/* 		return rc; */
-	/* 	} */
-	/* 	logger(LOG_ERR, MIG_MSG_NO_IPV6_MODULE_CAPS); */
-	/* 	return 0; */
-	/* case VECAPS_NO_SLM_MODULE: */
-	/* 	if (!isOptSet(OPT_FORCE)) { */
-	/* 		rc = putErr(MIG_ERR_NO_SLM_MODULE_CAPS, */
-	/* 				MIG_MSG_NO_SLM_MODULE_CAPS); */
-	/* 		logger(LOG_ERR, MIG_MSG_VECAPS_FORCE); */
-	/* 		return rc; */
-	/* 	} */
-	/* 	logger(LOG_ERR, MIG_MSG_NO_SLM_MODULE_CAPS); */
-	/* 	return 0; */
-	/* case VECAPS_NO_MNT_NAMESPACES: */
-	/* 	if (!isOptSet(OPT_FORCE)) { */
-	/* 		rc = putErr(MIG_ERR_NO_MNT_NAMESPACES_CAPS, */
-	/* 				MIG_MSG_NO_MNT_NAMESPACES_CAPS); */
-	/* 		logger(LOG_ERR, MIG_MSG_VECAPS_FORCE); */
-	/* 		return rc; */
-	/* 	} */
-	/* 	logger(LOG_ERR, MIG_MSG_NO_MNT_NAMESPACES_CAPS); */
-	/* 	return 0; */
-	/* default: */
-	/* 	return putErr(MIG_ERR_SYSTEM, */
-	/* 		"CT capabilities check returned %d", retcode); */
-	/* } */
-
-	/* return 0; */
-	return -1;
 }
 
 /* https://jira.sw.ru/browse/PSBM-7314 */

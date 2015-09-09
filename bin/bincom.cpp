@@ -780,8 +780,6 @@ void parse_options (int argc, char **argv)
 					setOpt(OPT_SKIP_TEMPLATE_AREA_SYNC);
 				else if (!strcmp(tmp_tok, "cpt_image_version"))
 					setOpt(OPT_SKIP_CPT_IMAGE_VERSION);
-				else if (!strcmp(tmp_tok, "capabilities"))
-					setOpt(OPT_SKIP_CAPABILITIES);
 				else if (!strcmp(tmp_tok, "kernel_modules"))
 					setOpt(OPT_SKIP_KERNEL_MODULES);
 				else
@@ -1008,7 +1006,6 @@ void parse_options (int argc, char **argv)
 			isOptSet(OPT_SKIP_EXT_BINDMOUNT) ||
 			isOptSet(OPT_SKIP_TEMPLATE_AREA_SYNC) ||
 			isOptSet(OPT_SKIP_CPT_IMAGE_VERSION) ||
-			isOptSet(OPT_SKIP_CAPABILITIES) ||
 			isOptSet(OPT_SKIP_KERNEL_MODULES) ))
 			usage();
 	}

@@ -24,7 +24,6 @@ public:
 	int checkAvailLicense();
 	int checkTechnologies();
 	int checkRate();
-	int checkCapabilities();
 	int checkKernelModules();
 	int checkCPTImageVersion();
 	int checkBindMounts();
@@ -63,7 +62,6 @@ protected:
 	int sockfd;
 //	MigrateSshChannel * ch;
 	bool use_iteration;
-	unsigned int cpu_flags;
 	long is_keep_dir;
 	bool m_bIsPrivOnShared;
 	long m_isTargetInHaCluster;

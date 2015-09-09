@@ -262,7 +262,6 @@ unsigned long long floor2digit(unsigned long long v);
 unsigned long long ceil2digit(unsigned long long v);
 
 void copy_cstr(const char *str, char *buf, size_t buf_size);
-int test_caps(unsigned veid, unsigned int flags, int *ret, unsigned *features);
 int pfcache_set(const char *path, int on);
 
 #ifdef __cplusplus

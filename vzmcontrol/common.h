@@ -148,15 +148,15 @@ extern const char * getError();
 #define MIG_ERR_TASK_EXITED	-54
 //#define MIG_ERR_ISCSI_STORAGE	-55 - not used
 
-#define MIG_ERR_INSUFF_CPU_CAPS	-56
-#define MIG_ERR_UNSUPP_CPU_CAPS	-57
+#define MIG_ERR_INSUFF_CPU_CAPS	-56 /* unused */
+#define MIG_ERR_UNSUPP_CPU_CAPS	-57 /* unused */
 
 #define MIG_ERR_PLOOP		-58
 #define MIG_ERR_CONVERT_VZFS	-59
 #define MIG_ERR_INCOMPAT_CPT_VER	-60
-#define MIG_ERR_NO_IPV6_MODULE_CAPS	-61
-#define MIG_ERR_NO_SLM_MODULE_CAPS	-62
-#define MIG_ERR_NO_MNT_NAMESPACES_CAPS	-63
+#define MIG_ERR_NO_IPV6_MODULE_CAPS	-61 /* unused */
+#define MIG_ERR_NO_SLM_MODULE_CAPS	-62 /* unused */
+#define MIG_ERR_NO_MNT_NAMESPACES_CAPS	-63 /* unused */
 #define MIG_ERR_VZFS_ON_PSTORAGE	-64
 #define MIG_ERR_PLOOP_FORMAT		-65
 #define MIG_ERR_CONVERT_BINDMOUNTS	-66
@@ -165,7 +165,7 @@ extern const char * getError();
 #define MIG_ERR_DST_BUNDLE_EXIST	-69
 #define MIG_ERR_EXTERNAL_DISKS_MIXED	-70
 #define MIG_ERR_SECOND_LEVEL_BUG        -71
-#define MIG_ERR_EXTERNAL_PROCESS        -72
+#define MIG_ERR_EXTERNAL_PROCESS        -72 /* unused */
 
 // internal error codes
 //#define MIG_ERR_SHARED_NOTFOUND	-101
@@ -192,18 +192,9 @@ extern const char * getError();
 #define MIG_MSG_NOSTATUS	"failed to get CT status"
 
 #define MSG_FORCE_USED		"Force option is used"
-#define MIG_MSG_GET_CPU_CAPS	"Can't get destination cpu capabilities, seems you need to check versions of packages on destination node"
-#define MIG_MSG_CHECK_CAPS	"Can't check source cpu capabilities, seems you need to load CPT modules or check versions of packages on source node"
 #define MIG_MSG_CHECK_CPT_VER	"Can't check CPT image version, seems you need to load CPT modules or check versions of packages on source node"
 #define MIG_MSG_CHECK_KERNEL_MODULES	"Can't load kernel module %s on target node"
-#define MIG_MSG_INSUFF_CPU	"Insufficient cpu capabilities on destination node"
-#define MIG_MSG_NO_IPV6_MODULE_CAPS	"The IPv6 module is not loaded on the destination node"
-#define MIG_MSG_NO_SLM_MODULE_CAPS	"The SLM module is not loaded on the destination node"
-#define MIG_MSG_NO_MNT_NAMESPACES_CAPS	"Mounting namespaces in the container is not allowed by the destination node kernel"
-#define MIG_MSG_VECAPS_FORCE	"You can use the '-f' option to force migration,\n"\
-"but in this case some applications may fail after migration."
 #define MIG_MSG_INCOMPAT_CPT_VER	"CPT image cannot be restored"
-#define MIG_MSG_UNSUPPORTED	"CT has unsupported features"
 #define MIG_MSG_PAGEIN_EXEC	"Can't execute vzpageind"
 #define MIG_MSG_PAGEIN_STATE	"vzpageind is not running"
 #define MIG_MSG_PKTDEPS_COM	"Destination node has not got required packages [%s]"

@@ -143,7 +143,7 @@ typedef vector<string> TemplOptEntries;
 #define OPT_PS_MODE	(1ULL << 36)
 #define OPT_KEEP_SRC	(1ULL << 37) /* Keep source CT - internal option for OPT_PS_MODE */
 #define OPT_SKIP_CPT_IMAGE_VERSION	(1ULL << 38)
-#define OPT_SKIP_CAPABILITIES		(1ULL << 39)
+#define OPT_SKIP_CAPABILITIES		(1ULL << 39) /* unused */
 #define OPT_SKIP_KERNEL_MODULES		(1ULL << 40)
 /* do not compress disk image data on online ploop migration */
 #define OPT_NOCOMPRESS	(1ULL << 41)

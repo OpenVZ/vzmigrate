@@ -25,9 +25,6 @@ using namespace std;
 		snprintf((path), sizeof(path),\
 		"%s/" VZCTL_VE_ROOTHDD_DIR "/" DISKDESCRIPTOR_XML, (private));
 
-#define CPT18_NO_IPV6             13
-#define CPT32_NO_IPV6             28
-
 class MigrateSshChannel;
 int get_real_tmpl_path(
 		const char *vztemplate,

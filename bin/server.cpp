@@ -56,60 +56,6 @@ static int cmdVersion(istringstream & is, ostringstream & os)
 	return 0;
 }
 
-static int cmdCapabilities(ostringstream & os)
-{
-	char buf[BUFSIZ];
-	const char *cmd = "/usr/libexec/vztestcaps";
-	FILE *fd;
-	char *p;
-	const char *hdr = "CAPS ";
-
-	logger(LOG_DEBUG, cmd);
-	if ((fd = popen(cmd, "r")) == NULL)
-		return putErr(MIG_ERR_SYSTEM, "popen('%s') : %m", cmd);
-
-	if (fgets(buf, sizeof(buf), fd) == NULL) {
-		pclose(fd);
-		return putErr(MIG_ERR_SYSTEM,
-			"can't get capabilities (%s) : %m", cmd);
-	}
-	pclose(fd);
-
-	if (strncmp(buf, hdr, strlen(hdr)))
-		return putErr(MIG_ERR_SYSTEM,
-			"can't get capabilities : %s reply is '%s'", cmd, buf);
-
-	if ((p = strchr(buf, '\n')))
-		*p = '\0';
-
-	if (VZMoptions.remote_version <= MIGRATE_VERSION_460) {
-		/*
-		  See https://jira.sw.ru/browse/PSBM-11558 and
-		  https://jira.sw.ru/browse/PCLIN-30480.
-		  - copy the 28th bit into 13th bit
-		  - clear 28th bit
-		*/
-		unsigned int flags;
-		char *ep;
-		for (p = buf + strlen(hdr); *p == ' '; p++);
-		flags = strtoul(p, &ep, 10);
-		if (*ep != '\0')
-			return putErr(MIG_ERR_SYSTEM,
-				"invalid capabilities value : '%s'", p);
-
-		if (flags & (1U << CPT32_NO_IPV6))
-			flags |= 1U << CPT18_NO_IPV6;
-		else
-			flags &= ~(1U << CPT18_NO_IPV6);
-		flags &= ~(1U << CPT32_NO_IPV6);
-		os << hdr << flags;
-	} else {
-		os << buf;
-	}
-
-	return 0;
-}
-
 static int cmdCreateSwapChannel(void)
 {
 	return putErr(MIG_ERR_SYSTEM, "Lazy migration is not supported");
@@ -357,9 +303,6 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 	} else if (strcmp(cmd, CMD_CPT_VER) == 0) {
 		// check cpt image version
 		return state->cmdCheckCPTVersion(is);
-	} else if (strcmp(cmd, CMD_CAPS) == 0) {
-		// check capabilities
-		return cmdCapabilities(os);
 	} else if (strcmp(cmd, CMD_SLMONLY) == 0) {
 		/* will receive slm-only containers from Vz <= 4.6
 		   (https://jira.sw.ru/browse/PCLIN-29285) */
