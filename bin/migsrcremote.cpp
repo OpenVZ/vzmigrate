@@ -771,18 +771,15 @@ int MigrateStateRemote::sendInitCmd()
 int MigrateStateRemote::checkRemoteVersion()
 {
 	if (VZMoptions.remote_version < MIGRATE_VERSION_400) {
-		return putErr(MIG_ERR_LAYOUT, MIG_MSG_LAYOUT, \
-			srcVE->layout);
-	} else if (VZMoptions.remote_version < MIGRATE_VERSION_460) {
-		/* online migration 4.6 -> 4.0 is impossible
-		   (https://jira.sw.ru/browse/PCLIN-28082) */
-		if (isOptSet(OPT_ONLINE) && !isOptSet(OPT_FORCE))
-			return putErr(MIG_ERR_ONLINE_ELDER, MIG_MSG_ONLINE_ELDER);
+		return putErr(MIG_ERR_LAYOUT, MIG_MSG_LAYOUT, srcVE->layout);
 	} else if (VZMoptions.remote_version < MIGRATE_VERSION_550) {
 		/* check new layout */
 		if (srcVE->layout >= VZCTL_LAYOUT_5)
-			return putErr(MIG_ERR_LAYOUT, MIG_MSG_LAYOUT, \
-				srcVE->layout);
+			return putErr(MIG_ERR_LAYOUT, MIG_MSG_LAYOUT, srcVE->layout);
+	} else if (VZMoptions.remote_version < MIGRATE_VERSION_700) {
+		/* online migration from 7.0 to lower version is not supported */
+		if (isOptSet(OPT_ONLINE))
+			return putErr(MIG_ERR_ONLINE_ELDER, MIG_MSG_ONLINE_ELDER);
 	}
 
 	if (VZMoptions.remote_version < MIGRATE_VERSION_608 &&

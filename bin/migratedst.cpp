@@ -128,8 +128,9 @@ int MigrateStateDstRemote::initVEMigration(VEObj * ve)
 	logger(LOG_INFO, "Start of CT %s migration (private %s, root %s, opt=%d)",
 			ve->ctid(), ve->priv, ve->root, m_initOptions);
 
+	/* online migration to 7.0 from lower version is not supported */
 	if (!isOptSet(OPT_AGENT) && isOptSet(OPT_ONLINE) &&
-				(VZMoptions.remote_version < MIGRATE_VERSION_400))
+		(VZMoptions.remote_version < MIGRATE_VERSION_700))
 		return putErr(MIG_ERR_ONLINE_ELDER, MIG_MSG_ONLINE_ELDER);
 
 	if (!isOptSet(OPT_AGENT) &&
