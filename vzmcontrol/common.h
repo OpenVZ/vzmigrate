@@ -192,7 +192,8 @@ extern const char * getError();
 #define MIG_MSG_NOSTATUS	"failed to get CT status"
 
 #define MSG_FORCE_USED		"Force option is used"
-#define MIG_MSG_CHECK_CPT_VER	"Can't check CPT image version, seems you need to load CPT modules or check versions of packages on source node"
+#define MIG_MSG_SRC_IDENTIFY_CRIU	"Online migration is not supported, can't identify criu version."
+#define MIG_MSG_DST_IDENTIFY_CRIU	"Can't identify criu version"
 #define MIG_MSG_CHECK_KERNEL_MODULES	"Can't load kernel module %s on target node"
 #define MIG_MSG_INCOMPAT_CPT_VER	"CPT image cannot be restored"
 #define MIG_MSG_PAGEIN_EXEC	"Can't execute vzpageind"

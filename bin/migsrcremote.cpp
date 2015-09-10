@@ -1299,35 +1299,24 @@ int MigrateStateRemote::checkKernelModules()
 
 int MigrateStateRemote::checkCPTImageVersion()
 {
+	char version[BUFSIZ];
 	int rc;
 
-	if (VZMoptions.remote_version < MIGRATE_VERSION_460)
-		return 0;
+	logger(LOG_INFO, "Checking criu version for online migration");
 
-	logger(LOG_INFO, "Checking CPT image version for online migration");
-	char buf[BUFSIZ];
-	const char *cmd = BIN_VZTESTVER;
-	FILE *fd;
+	rc = get_criu_version(version, BUFSIZ);
+	if (rc != 0)
+		return putErr(rc, MIG_MSG_SRC_IDENTIFY_CRIU);
 
-	if ((fd = popen(cmd, "r")) == NULL)
-		return putErr(MIG_ERR_SYSTEM, "popen('%s') : %m", cmd);
-
-	if (fgets(buf, sizeof(buf), fd) == NULL) {
-		pclose(fd);
-		return putErr(MIG_ERR_SYSTEM,
-			"can't get CPT image version (%s) : %m", cmd);
-	}
-	pclose(fd);
-
-	rc = channel.sendCommand(CMD_CPT_VER " %s", buf);
-	if ((VZMoptions.remote_version < MIGRATE_VERSION_550) || (rc == MIG_ERR_INCOMPAT_CPT_VER))
-	{
+	rc = channel.sendCommand(CMD_CPT_VER " %s", version);
+	if (rc == MIG_ERR_INCOMPAT_CPT_VER) {
 		return putErr(rc, "Online migration is not supported.\n"
 			"You are trying to migrate a running Container"
-			" to the destination server with an old kernel.\n"
-			"To migrate the Container, first update the kernel on"
+			" to the destination server with an old criu.\n"
+			"To migrate the Container, first update the criu on"
 			" the destination server or stop the Container before migration.");
 	}
+
 	return rc;
 }
 

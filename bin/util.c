@@ -1400,3 +1400,32 @@ int pfcache_set(const char *path, int on)
 		logger(LOG_ERR, PFCACHE_BIN " %s %s failed", on ? "set" : "clear", path);
 	return rc;
 }
+
+/* extract criu version string */
+int get_criu_version(char *version, size_t version_size)
+{
+	const char CMD[] = CRIU_BIN " --version";
+	const char TOKEN[] = "Version: ";
+	const int TOKEN_LEN = sizeof(TOKEN) - 1;
+	FILE *fd;
+	char buf[BUFSIZ];
+	char *p = NULL;
+	int rc = -1;
+
+	if ((fd = popen(CMD, "r")) == NULL)
+		return putErr(MIG_ERR_SYSTEM, "popen('%s') : %m", CMD);
+
+	while (fgets(buf, sizeof(buf), fd)) {
+		if (strncasecmp(buf, TOKEN, TOKEN_LEN))
+			continue;
+		if ((p = strchr(buf, '\n')))
+			*p = '\0';
+		snprintf(version, version_size, "%s", buf + TOKEN_LEN);
+		rc = 0;
+		break;
+	}
+
+	pclose(fd);
+
+	return rc;
+}
