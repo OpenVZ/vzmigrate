@@ -300,9 +300,6 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 		return 0;
 	} else if (strcmp(cmd, CMD_VERSION) == 0) {
 		return cmdVersion(is, os);
-	} else if (strcmp(cmd, CMD_CPT_VER) == 0) {
-		// check cpt image version
-		return state->cmdCheckCPTVersion(is);
 	} else if (strcmp(cmd, CMD_SLMONLY) == 0) {
 		/* will receive slm-only containers from Vz <= 4.6
 		   (https://jira.sw.ru/browse/PCLIN-29285) */

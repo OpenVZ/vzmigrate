@@ -25,7 +25,6 @@ public:
 	int checkTechnologies();
 	int checkRate();
 	int checkKernelModules();
-	int checkCPTImageVersion();
 	int checkBindMounts();
 	/* check cluster id */
 	int checkClusterID();

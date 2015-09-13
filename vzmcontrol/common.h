@@ -153,7 +153,7 @@ extern const char * getError();
 
 #define MIG_ERR_PLOOP		-58
 #define MIG_ERR_CONVERT_VZFS	-59
-#define MIG_ERR_INCOMPAT_CPT_VER	-60
+#define MIG_ERR_INCOMPAT_CPT_VER	-60 /* unused */
 #define MIG_ERR_NO_IPV6_MODULE_CAPS	-61 /* unused */
 #define MIG_ERR_NO_SLM_MODULE_CAPS	-62 /* unused */
 #define MIG_ERR_NO_MNT_NAMESPACES_CAPS	-63 /* unused */
@@ -192,10 +192,7 @@ extern const char * getError();
 #define MIG_MSG_NOSTATUS	"failed to get CT status"
 
 #define MSG_FORCE_USED		"Force option is used"
-#define MIG_MSG_SRC_IDENTIFY_CRIU	"Online migration is not supported, can't identify criu version."
-#define MIG_MSG_DST_IDENTIFY_CRIU	"Can't identify criu version"
 #define MIG_MSG_CHECK_KERNEL_MODULES	"Can't load kernel module %s on target node"
-#define MIG_MSG_INCOMPAT_CPT_VER	"CPT image cannot be restored"
 #define MIG_MSG_PAGEIN_EXEC	"Can't execute vzpageind"
 #define MIG_MSG_PAGEIN_STATE	"vzpageind is not running"
 #define MIG_MSG_PKTDEPS_COM	"Destination node has not got required packages [%s]"

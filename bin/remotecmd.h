@@ -50,7 +50,7 @@
 #define CMD_SCRIPTSET		"scriptset"
 #define CMD_PING		"ping"
 #define CMD_CAPS		"caps" /* unused */
-#define CMD_CPT_VER		"cpt_ver"
+#define CMD_CPT_VER		"cpt_ver" /* unused */
 #define CMD_SLMONLY		"slmonly"
 #define CMD_SWAPCH		"swapch"
 #define CMD_ITERCH		"iterch"

@@ -621,31 +621,6 @@ int MigrateStateDstRemote::cmdCheckOptions(istringstream & is, ostringstream & o
 	return 0;
 }
 
-/* Test checkpoint/restore utility version. This check at the present moment
-   just compare criu versions on source and destination and fails in the case
-   source version greater than destination version. */
-int MigrateStateDstRemote::cmdCheckCPTVersion(istringstream & is)
-{
-	std::string src_version;
-	char dst_version[BUFSIZ];
-	int rc;
-
-	// get source criu version
-	if ((is >> src_version) == NULL)
-		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
-
-	// get destination criu version
-	rc = get_criu_version(dst_version, BUFSIZ);
-	if (rc != 0)
-		return putErr(rc, MIG_MSG_DST_IDENTIFY_CRIU);
-
-	// check that source version of criu not greater than destination version
-	if (strverscmp(src_version.c_str(), dst_version) > 0)
-		return putErr(MIG_ERR_INCOMPAT_CPT_VER, MIG_MSG_INCOMPAT_CPT_VER);
-
-	return 0;
-}
-
 /* check and load kernel modules */
 int MigrateStateDstRemote::cmdCheckKernelModules(istringstream &is)
 {

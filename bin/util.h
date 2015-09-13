@@ -54,7 +54,6 @@
 
 #define VE_PLOOP_BINDMOUNT_DIR	"/.bindmount"
 #define PFCACHE_BIN "/usr/libexec/vztt_pfcache_xattr"
-#define CRIU_BIN	"/usr/sbin/criu"
 
 #define fl_prls_release	"/etc/parallels-release"
 
@@ -264,8 +263,6 @@ unsigned long long ceil2digit(unsigned long long v);
 
 void copy_cstr(const char *str, char *buf, size_t buf_size);
 int pfcache_set(const char *path, int on);
-
-int get_criu_version(char *version, size_t version_size);
 
 #ifdef __cplusplus
 }

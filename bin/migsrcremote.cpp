@@ -904,20 +904,15 @@ int MigrateStateRemote::preMigrateStage()
 
 	if (isOptSet(OPT_ONLINE))
 	{
-		/* check and load kernel modules on dst side */
+		// check and load kernel modules on dst side
 		if (!isOptSet(OPT_SKIP_KERNEL_MODULES) && !isOptSet(OPT_FORCE)) {
 			rc = checkKernelModules();
 			if (rc)
 				return rc;
 		}
-
-		// Check CPT image version
-		rc = checkCPTImageVersion();
-		if (rc && !isOptSet(OPT_SKIP_CPT_IMAGE_VERSION) && !isOptSet(OPT_FORCE))
-			return rc;
 	}
 
-	//check Technologies
+	// check technologies
 	rc = checkTechnologies();
 	if (rc == MIG_ERR_TECHNOLOGIES)
 	{
@@ -1292,29 +1287,6 @@ int MigrateStateRemote::checkKernelModules()
 		return 0;
 
 	return channel.sendCommand(CMD_CHECK_KERNEL_MODULES" %s", out_list.str().c_str());
-}
-
-int MigrateStateRemote::checkCPTImageVersion()
-{
-	char version[BUFSIZ];
-	int rc;
-
-	logger(LOG_INFO, "Checking criu version for online migration");
-
-	rc = get_criu_version(version, BUFSIZ);
-	if (rc != 0)
-		return putErr(rc, MIG_MSG_SRC_IDENTIFY_CRIU);
-
-	rc = channel.sendCommand(CMD_CPT_VER " %s", version);
-	if (rc == MIG_ERR_INCOMPAT_CPT_VER) {
-		return putErr(rc, "Online migration is not supported.\n"
-			"You are trying to migrate a running Container"
-			" to the destination server with an old criu.\n"
-			"To migrate the Container, first update the criu on"
-			" the destination server or stop the Container before migration.");
-	}
-
-	return rc;
 }
 
 int MigrateStateRemote::checkBindMounts()

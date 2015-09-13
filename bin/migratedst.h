@@ -89,7 +89,6 @@ public:
 	int cmdClusterDumpCopy(istringstream &is);
 	int cmdCheckKeepDir(ostringstream & os);
 	int cmdCheckOptions(istringstream & is, ostringstream & os);
-	int cmdCheckCPTVersion(istringstream & is);
 	int cmdCheckKernelModules(istringstream &is);
 	int cmdTemplateSync(istringstream &is);
 	int cmdCopyPloopPrivate() { return h_copy_remote_tar(dstVE->priv); }
