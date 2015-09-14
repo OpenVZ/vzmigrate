@@ -1139,6 +1139,48 @@ int VEObj::renewMAC()
 	return vzm_execve(args, NULL, -1, -1, NULL);
 }
 
+static
+int ploop_get_spec_path(const char *dd_path, struct ploop_spec *spec)
+{
+	struct ploop_disk_images_data *di;
+	int rc;
+
+	if ((rc = ploop_read_disk_descr(&di, dd_path))) {
+		rc = putErr(MIG_ERR_PLOOP, "ploop_read_diskdescriptor(%s) : %s [%d]",
+				dd_path, ploop_get_last_error(), rc);
+		goto cleanup;
+	}
+	memset((void *)spec, 0, sizeof(*spec));
+	if ((rc = ploop_get_spec(di, spec))) {
+		rc = putErr(MIG_ERR_PLOOP,
+			"ploop_get_spec() : %s [%d]", ploop_get_last_error(), rc);
+		goto cleanup;
+	}
+
+cleanup:
+	if (di != NULL)
+		ploop_free_diskdescriptor(di);
+
+	return rc;
+}
+
+int VEObj::getPloopMaxVersion(int &version)
+{
+	int rc = 0;
+	struct ploop_spec spec;
+
+	version = 0;
+	for (ct_disk::const_iterator it = m_disks.begin(); it != m_disks.end(); ++it) {
+		if ((rc = ploop_get_spec_path(get_dd_xml(it->image.c_str()).c_str(), &spec)))
+			break;
+
+		if (spec.fmt_version > version)
+			version = spec.fmt_version;
+	}
+
+	return rc;
+}
+
 static string & chomp(string & str, const char * dlm)
 {
 	string::size_type it = str.find_last_not_of(dlm);

@@ -348,49 +348,28 @@ int MigrateStateRemote::checkNewTemPackageDependencies()
 int MigrateStateRemote::checkPloopFormat()
 {
 	int rc;
-	int ret;
-	char path[PATH_MAX+1];
-	struct ploop_spec spec;
-	struct ploop_disk_images_data *di;
+	int version;
 	ostringstream outStr;
 
 	if (srcVE->layout < VZCTL_LAYOUT_5)
 		return 0;
 
-	GET_DISKDESCRIPTOR_XML(srcVE->priv, path)
-	ret = ploop_read_disk_descr(&di, path);
-	if (ret) {
-		rc = putErr(MIG_ERR_PLOOP, "ploop_read_diskdescriptor(%s) : %s [%d]",
-				path, ploop_get_last_error(), ret);
-		goto cleanup;
-	}
-	memset((void *)&spec, 0, sizeof(spec));
-	ret = ploop_get_spec(di, &spec);
-	if (ret)
-		rc = putErr(MIG_ERR_PLOOP,
-			"ploop_get_spec() : %s [%d]", ploop_get_last_error(), ret);
+	if ((rc = srcVE->getPloopMaxVersion(version)))
+		return rc;
 
 	// 0 - raw, 1 - old, 2 -new formats
 	// 0 & 1 are supports by psbm-6
-	if (spec.fmt_version < 2) {
-		rc = 0;
-		goto cleanup;
-	}
+	if (version < 2)
+		return 0;
 
-	if (VZMoptions.remote_version < MIGRATE_VERSION_604) {
-		rc = putErr(MIG_ERR_PLOOP_FORMAT, MIG_MSG_PLOOP_FORMAT, spec.fmt_version);
-		goto cleanup;
-	}
+	if (VZMoptions.remote_version < MIGRATE_VERSION_604)
+		return putErr(MIG_ERR_PLOOP_FORMAT, MIG_MSG_PLOOP_FORMAT, version);
 
-	logger(LOG_INFO, "Checking ploop format %d", spec.fmt_version);
-	outStr << CMD_CHECK_PLOOP_FORMAT << " " << spec.fmt_version;
+	logger(LOG_INFO, "Checking ploop format %d", version);
+	outStr << CMD_CHECK_PLOOP_FORMAT << " " << version;
 	logger(LOG_DEBUG, "%s",  outStr.str().c_str());
 
 	return channel.sendCommand(outStr.str().c_str());
-
-cleanup:
-	ploop_free_diskdescriptor(di);
-	return rc;
 }
 
 int MigrateStateRemote::establishSshChannel()

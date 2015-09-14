@@ -201,6 +201,9 @@ public:
 	int resume_restore(int use_context);
 	int undump(int use_context);
 	int renewMAC();
+	/* returns maximum ploop format version among
+	   all CT disks */
+	int getPloopMaxVersion(int &version);
 
 
 	int loadConfig();
