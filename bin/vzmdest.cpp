@@ -308,7 +308,7 @@ int main(int argc, char **argv)
 		if (VZMoptions.remote_version < MIGRATE_VERSION_250)
 		{
 			MigrateStateCommon::channel.sendReply(MIG_ERR_CANT_CONNECT, "%s",
-			                                      MIG_MSG_UNCOMPATIBILITY_SRC);
+				MIG_MSG_UNCOMPATIBILITY_SRC);
 			exitM(MIG_ERR_CANT_CONNECT);
 		}
 

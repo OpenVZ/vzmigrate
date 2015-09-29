@@ -28,9 +28,7 @@ public:
 	int createChannel();
 
 	int getFd(int std); // 0 - input, 1 - output, return -1 on error
-	int setChannel(int in, int out);
 
-//	int createSslChannel(const char * args[]);
 	int createSshChannel(const char * ssh_args[], const char * const args[]);
 	int closeChannel();
 

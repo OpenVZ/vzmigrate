@@ -1391,15 +1391,15 @@ int MigrateStateDstRemote::cmdMountPloop(unsigned long ploop_size,
 
 int MigrateStateDstRemote::cmdCopyExternalDisk(istringstream &is)
 {
-       std::string path;
+	std::string path;
 
-       is >> path;
+	is >> path;
 
-       logger(LOG_DEBUG, "cmdCopyExternalDisk '%s'", path.c_str());
-       addCleanerRemove(clean_removeDir, path.c_str());
+	logger(LOG_DEBUG, "cmdCopyExternalDisk '%s'", path.c_str());
+	addCleanerRemove(clean_removeDir, path.c_str());
 
-       /* absolute path is used */
-       return h_copy_remote_tar("/");
+	/* absolute path is used */
+	return h_copy_remote_tar("/");
 }
 
 // vzfs -> ploop conversion

@@ -67,10 +67,7 @@ int MigrateChannel::createSockChannel(const char * args[])
 	int ret;
 	int debug = (debug_level == LOG_DEBUG)?1:0;
 
-//	if (VZMoptions.transport != VZSOCK_SOCK)
-//		return 0;
-
-        if ((ret = vzsock_init(VZSOCK_SOCK, &ctx)))
+	if ((ret = vzsock_init(VZSOCK_SOCK, &ctx)))
 		return putErr(MIG_ERR_VZSOCK, "vzsock_init() return %d", ret);
 
 	vzsock_set(&ctx, VZSOCK_DATA_DEBUG, (void *)&debug, sizeof(debug));
@@ -173,16 +170,13 @@ int MigrateChannel::createSshChannel(
 	int debug = (debug_level == LOG_DEBUG)?1:0;
 	char dst[BUFSIZ];
 
-//	if (VZMoptions.transport == VZSOCK_SSH)
-//		return 0;
-
 	if (VZMoptions.dst_user)
 		snprintf(dst, sizeof(dst), "%s@%s",
 			VZMoptions.dst_user, VZMoptions.dst_addr);
 	else
 		strncpy(dst, VZMoptions.dst_addr, sizeof(dst));
 
-        if ((ret = vzsock_init(VZSOCK_SSH, &ctx)))
+	if ((ret = vzsock_init(VZSOCK_SSH, &ctx)))
 		return putErr(MIG_ERR_CONN_BROKEN,
 			"vzsock_init() return %d", ret);
 
@@ -239,9 +233,6 @@ int MigrateChannel::createChannel()
 	int fds[2];
 	int ret;
 	int debug = (debug_level == LOG_DEBUG)?1:0;
-
-//	if (VZMoptions.transport == VZSOCK_FD)
-//		return 0;
 
 	if ((ret = vzsock_init(VZSOCK_FD, &ctx)))
 		return putErr(MIG_ERR_CONN_BROKEN,

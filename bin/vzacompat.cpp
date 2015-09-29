@@ -235,7 +235,7 @@ static int _vza_init_srv(
 
 	snprintf(name, sizeof(name), "%s" VZA_SSH_MAIN_SFX, VZMoptions.bigname.c_str());
 
-        if ((ret = vzsock_init(VZSOCK_SSH, ctx)))
+	if ((ret = vzsock_init(VZSOCK_SSH, ctx)))
 		return putErr(MIG_ERR_CONN_BROKEN, "vzsock_init() return %d", ret);
 
 	vzsock_set(ctx, VZSOCK_DATA_DEBUG, (void *)&debug, sizeof(debug));
