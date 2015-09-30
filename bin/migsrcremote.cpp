@@ -624,13 +624,13 @@ int MigrateStateRemote::checkClusterID()
 				"which private directory resides on the\n"
 				"shared partition is not supported, change "
 				"ID manually, e.g. by using vzmlocal.\n"
-				"Or use --nonsharedfs option to force copying"
+				"Or use --nonsharedfs option to force copying "
 				"CT private data.");
 		} else if (dstVE->priv != srcVE->priv) {
 			return putErr(MIG_ERR_NONSHAREDFS,
 				"Changing private area for CT on the "
 				"shared partition is not supported, use\n"
-				"--nonsharedfs option to force copying"
+				"--nonsharedfs option to force copying "
 				"CT private data.");
 		} else {
 			return putErr(MIG_ERR_NONSHAREDFS,

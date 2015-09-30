@@ -121,6 +121,9 @@ int MigrateStateDstRemote::initVEMigration(VEObj * ve)
 	START_STAGE();
 	assert(ve && ve->priv && ve->root);
 
+	if ((rc = checkDstIDFree(*ve)))
+		return rc;
+
 	ve->clean();
 	ve->setLayout(option_to_vzlayout(m_initOptions));
 	ve->veformat = option_to_veformat(m_initOptions);
@@ -143,9 +146,6 @@ int MigrateStateDstRemote::initVEMigration(VEObj * ve)
 		logger(LOG_DEBUG, "The file system of a Container will be converted to ext4.");
 		setOpt(OPT_CONVERT_VZFS);
 	}
-
-	if ((rc = checkDstIDFree(*ve)))
-		return rc;
 
 	if ((rc = checkCommonDst(*ve)))
 		return rc;
