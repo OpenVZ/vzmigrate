@@ -110,7 +110,11 @@ private:
 
 	int doOfflinePloopCtMigration();
 	int doOnlinePloopCtMigration();
+	int doLegacyOnlinePloopCtMigration();
 	int doOnlinePloopSharedCtMigration();
+
+	int establishRemotePhaulConnection();
+	int runPhaulMigration(string_list *active_delta);
 
 	int createDiskDescriptorXmlCopy(const char *basedir, const char *delta,
 			char *dd_copy, size_t size, int cleaner);

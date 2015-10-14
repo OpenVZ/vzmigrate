@@ -1183,6 +1183,28 @@ int MigrateStateDstRemote::cmdCheckPloopFormat(istringstream &is)
 	return 0;
 }
 
+/*
+ * Destination side part of additional connections establishment needed for
+ * communication between p.haul and p.haul-service. Current method of
+ * connections establishment is unsafe and will be replaced with some better
+ * implementation (e.g. tunneling through master connection) in near future.
+ */
+int MigrateStateDstRemote::cmdEstablishPhaulConnection(istringstream &is)
+{
+	// Not implemented
+	return -1;
+}
+
+/*
+ * Run p.haul-service over existing connections established previously
+ * to handle online migration of container on destination side.
+ */
+int MigrateStateDstRemote::cmdStartPhaulService()
+{
+	// Not implemented
+	return -1;
+}
+
 int MigrateStateDstRemote::clean_umountImage(const void *arg, const void *)
 {
 	VEObj * ve = (VEObj *) arg;

@@ -1465,3 +1465,13 @@ int option_to_veformat(int options)
 		return VZ_T_VZFS4;
 	return VZ_T_VZFS3;
 }
+
+StringListWrapper::StringListWrapper()
+{
+	string_list_init(&m_list);
+}
+
+StringListWrapper::~StringListWrapper()
+{
+	string_list_clean(&m_list);
+}

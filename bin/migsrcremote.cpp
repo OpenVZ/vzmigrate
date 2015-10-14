@@ -700,10 +700,15 @@ int MigrateStateRemote::doCtMigrationDefault()
 	int rc = 0;
 
 	if (srcVE->isrun()) {
-		rc = doOnlinePloopCtMigration();
+		if (VZMoptions.remote_version < MIGRATE_VERSION_700) {
+			rc = doLegacyOnlinePloopCtMigration();
+		} else {
+			rc = doOnlinePloopCtMigration();
+		}
 	} else {
 		rc = doOfflinePloopCtMigration();
 	}
+
 	if (rc)
 		return rc;
 
@@ -2081,23 +2086,67 @@ int MigrateStateRemote::doOfflinePloopCtMigration()
 	return copy_ct(NULL);
 }
 
+/* Handle online migration using p.haul */
 int MigrateStateRemote::doOnlinePloopCtMigration()
 {
+	StringListWrapper active_delta;
 	int rc;
-	struct string_list active_delta;
 
-	string_list_init(&active_delta);
+	if (!isOptSet(OPT_ONLINE))
+		return putErr(-1, "Not implemented");
 
 	rc = getActivePloopDelta(srcVE->m_disks.get(disk_is_non_shared),
-			&active_delta);
+		&active_delta.getList());
 	if (rc)
 		return rc;
 
-	rc = open_active_deltas(&active_delta);
+	if (string_list_size(&active_delta.getList()) > 1)
+		return putErr(-1, "Not implemented");
+
+	// Copy static data of container to destination
+	rc = copy_ct(&active_delta.getList());
+	if (rc)
+		return rc;
+
+	// Establish additional connections for p.haul-p.haul-service communication
+	rc = establishRemotePhaulConnection();
+	if (rc)
+		return rc;
+
+	// Start p.haul service on destination
+	rc = channel.sendCommand(CMD_START_PHAUL_SERVICE);
+	if (rc)
+		return rc;
+
+	// Run p.haul iterative memory and fs migration
+	rc = runPhaulMigration(&active_delta.getList());
+	if (rc)
+		return rc;
+
+	return stopVE();
+}
+
+/*
+ * Handle online migration to old vzmigrate versions (less than 700). Only
+ * iterative ploop disks migration avaliable for such scenario, container
+ * will be stopped finally anyway since checkpoint/restore technology in Vz7
+ * and in older versions incompatible.
+ */
+int MigrateStateRemote::doLegacyOnlinePloopCtMigration()
+{
+	StringListWrapper active_delta;
+	int rc;
+
+	rc = getActivePloopDelta(srcVE->m_disks.get(disk_is_non_shared),
+			&active_delta.getList());
+	if (rc)
+		return rc;
+
+	rc = open_active_deltas(&active_delta.getList());
 	if (rc)
 		goto err;
 
-	rc = copy_ct(&active_delta);
+	rc = copy_ct(&active_delta.getList());
 	if (rc)
 		goto err;
 
@@ -2123,6 +2172,28 @@ err:
 	close_active_deltas();
 
 	return rc;
+}
+
+/*
+ * Source side part of additional connections establishment needed for
+ * communication between p.haul and p.haul-service. Current method of
+ * connections establishment is unsafe and will be replaced with some better
+ * implementation (e.g. tunneling through master connection) in near future.
+ */
+int MigrateStateRemote::establishRemotePhaulConnection()
+{
+	// Not implemented
+	return -1;
+}
+
+/*
+ * Run p.haul over existing connections established previously to handle
+ * online migration of container on source side.
+ */
+int MigrateStateRemote::runPhaulMigration(string_list *active_delta)
+{
+	// Not implemented
+	return -1;
 }
 
 bool MigrateStateRemote::isSameLocation()

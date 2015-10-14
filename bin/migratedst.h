@@ -112,6 +112,8 @@ public:
 	int cmdMountPloop(unsigned long ploop_size, unsigned long create_size, int lmounted);
 	int cmdHaClusterNodeID(istringstream &is, ostringstream &os);
 	int cmdCheckPloopFormat(istringstream &is);
+	int cmdEstablishPhaulConnection(istringstream &is);
+	int cmdStartPhaulService();
 
 	int initVEMigration(VEObj * ve);
 	int initMigration();

@@ -276,5 +276,18 @@ enum {
 	FASTCOPY_TRACKER = 6,
 };
 
-#endif
+/* Helper class to simplify string_list construction and destruction */
+class StringListWrapper {
+public:
+	StringListWrapper();
+	~StringListWrapper();
+	string_list& getList() { return m_list; }
+private:
+	// Forbidden class methods
+	StringListWrapper(const StringListWrapper&);
+	StringListWrapper& operator =(const StringListWrapper&);
+private:
+	string_list m_list;
+};
 
+#endif
