@@ -493,3 +493,40 @@ int MigrateChannel::sendCommand(const char * str, ...)
 		return rc;
 	return readReply();
 }
+
+PhaulConnection::PhaulConnection()
+	: m_channelFds(CHANNELS_COUNT, -1)
+{
+}
+
+PhaulConnection::~PhaulConnection()
+{
+	for (size_t i = 0; i < m_channelFds.size(); ++i) {
+		if (m_channelFds[i] != -1) {
+			close(m_channelFds[i]);
+		}
+	}
+}
+
+void PhaulConnection::setChannelFd(size_t index, int fd)
+{
+	if (m_channelFds[index] != -1) {
+		close(m_channelFds[index]);
+	}
+	m_channelFds[index] = fd;
+}
+
+int PhaulConnection::getChannelFd(size_t index) const
+{
+	return m_channelFds[index];
+}
+
+int PhaulConnection::isEstablished() const
+{
+	for (size_t i = 0; i < m_channelFds.size(); ++i) {
+		if (m_channelFds[i] == -1) {
+			return -1;
+		}
+	}
+	return 0;
+}

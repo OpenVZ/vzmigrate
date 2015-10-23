@@ -8,7 +8,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-
+#include <vector>
 #include <vz/libvzsock.h>
 
 #define PACKET_SEPARATOR '\0'
@@ -47,6 +47,32 @@ public:
 
 	MigrateChannel();
 	~MigrateChannel();
+};
+
+/*
+ * Phaul connection manage additional connections needed for p.haul and
+ * p.haul-service on source and destination sides respectively. Three
+ * additional sockets needed for p.haul - socket for rpc calls, socket for
+ * memory transfer and socket for disk transfer.
+ */
+class PhaulConnection {
+public:
+	PhaulConnection();
+	~PhaulConnection();
+	void setChannelFd(size_t index, int fd);
+	int getChannelFd(size_t index) const;
+	int isEstablished() const;
+private:
+	// Forbidden class methods
+	PhaulConnection(const PhaulConnection&);
+	PhaulConnection& operator =(const PhaulConnection&);
+public:
+	static const size_t RPC_CHANNEL_INDEX = 0;
+	static const size_t MEM_CHANNEL_INDEX = 1;
+	static const size_t FS_CHANNEL_INDEX = 2;
+	static const size_t CHANNELS_COUNT = 3;
+private:
+	std::vector<int> m_channelFds;
 };
 
 #endif
