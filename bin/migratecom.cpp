@@ -880,7 +880,7 @@ int MigrateStateCommon::ploopGetTopImageFileName(const char *xmlconf, char *path
 	int ret;
 	struct ploop_disk_images_data *di;
 
-	ret = ploop_read_disk_descr(&di, xmlconf);
+	ret = ploop_open_dd(&di, xmlconf);
 	if (ret) {
 		rc = putErr(MIG_ERR_PLOOP, "ploop_read_diskdescriptor(%s) : %s [%d]",
 				xmlconf, ploop_get_last_error(), ret);
@@ -891,7 +891,7 @@ int MigrateStateCommon::ploopGetTopImageFileName(const char *xmlconf, char *path
 		rc = putErr(MIG_ERR_PLOOP,
 			"ploop_get_top_delta_fname() : %s [%d]", ploop_get_last_error(), ret);
 cleanup:
-	ploop_free_diskdescriptor(di);
+	ploop_close_dd(di);
 
 	return rc;
 }

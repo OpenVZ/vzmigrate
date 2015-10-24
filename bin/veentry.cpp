@@ -1145,7 +1145,7 @@ int ploop_get_spec_path(const char *dd_path, struct ploop_spec *spec)
 	struct ploop_disk_images_data *di;
 	int rc;
 
-	if ((rc = ploop_read_disk_descr(&di, dd_path))) {
+	if ((rc = ploop_open_dd(&di, dd_path))) {
 		rc = putErr(MIG_ERR_PLOOP, "ploop_read_diskdescriptor(%s) : %s [%d]",
 				dd_path, ploop_get_last_error(), rc);
 		goto cleanup;
@@ -1159,7 +1159,7 @@ int ploop_get_spec_path(const char *dd_path, struct ploop_spec *spec)
 
 cleanup:
 	if (di != NULL)
-		ploop_free_diskdescriptor(di);
+		ploop_close_dd(di);
 
 	return rc;
 }
