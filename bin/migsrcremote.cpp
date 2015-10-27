@@ -2103,13 +2103,13 @@ int MigrateStateRemote::doOnlinePloopCtMigration()
 	if (string_list_size(&active_delta.getList()) > 1)
 		return putErr(-1, "Not implemented");
 
-	// Copy static data of container to destination
-	rc = copy_ct(&active_delta.getList());
+	// Establish additional connections for p.haul-p.haul-service communication
+	rc = establishRemotePhaulConn();
 	if (rc)
 		return rc;
 
-	// Establish additional connections for p.haul-p.haul-service communication
-	rc = establishRemotePhaulConnection();
+	// Copy static data of container to destination
+	rc = copy_ct(&active_delta.getList());
 	if (rc)
 		return rc;
 
@@ -2180,10 +2180,37 @@ err:
  * connections establishment is unsafe and will be replaced with some better
  * implementation (e.g. tunneling through master connection) in near future.
  */
-int MigrateStateRemote::establishRemotePhaulConnection()
+int MigrateStateRemote::establishRemotePhaulConn()
 {
-	// Not implemented
-	return -1;
+	int rc = channel.sendCommand(CMD_PRE_ESTABLISH_PHAUL_CONN);
+	if (rc)
+		return rc;
+
+	// Send CMD_ESTABLISH_PHAUL_CONN command to destination. ATTENTION!, have
+	// to read reply further in this function unconditionally!
+	std::ostringstream cmdStr;
+	cmdStr << CMD_ESTABLISH_PHAUL_CONN << " " << PhaulConn::CHANNELS_COUNT;
+	rc = channel.sendPkt(PACKET_SEPARATOR, cmdStr.str().c_str());
+	if (rc)
+		return rc;
+
+	// Create and establish phaul connection
+	std::auto_ptr<PhaulSockClient> sockClient(new PhaulSockClient());
+	std::auto_ptr<PhaulConn> conn;
+	if (sockClient->init() == 0)
+		conn.reset(sockClient->establishConn());
+
+	// Read CMD_ESTABLISH_PHAUL_CONN command reply
+	rc = channel.readReply();
+	if (rc)
+		return rc;
+
+	if ((conn.get() == NULL) || (conn->isEstablished() != 0))
+		return putErr(MIG_ERR_EST_SRC_PHAUL_CONN, MIG_MSG_EST_SRC_PHAUL_CONN);
+
+	// Transfer connection ownership from local object to class object
+	m_phaulConn = conn;
+	return 0;
 }
 
 /*

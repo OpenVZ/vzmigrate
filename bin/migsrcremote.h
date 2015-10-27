@@ -6,8 +6,11 @@
 #ifndef __MIGSRCREMOTE__
 #define __MIGSRCREMOTE__
 
+#include <memory>
 #include "migratesrc.h"
 #include "ploop.h"
+
+class PhaulConn;
 
 class MigrateStateRemote : public MigrateStateSrc
 {
@@ -58,14 +61,14 @@ public:
 	~MigrateStateRemote();
 
 protected:
-	int sockfd;
-//	MigrateSshChannel * ch;
 	bool use_iteration;
 	long is_keep_dir;
 	bool m_bIsPrivOnShared;
 	long m_isTargetInHaCluster;
 	typedef std::list<struct ploop_delta_desc *> listDeltaDesc_t;
 	listDeltaDesc_t m_deltas;
+
+	std::auto_ptr<PhaulConn> m_phaulConn;
 
 protected:
 	int establishSshChannel();
@@ -113,7 +116,7 @@ private:
 	int doLegacyOnlinePloopCtMigration();
 	int doOnlinePloopSharedCtMigration();
 
-	int establishRemotePhaulConnection();
+	int establishRemotePhaulConn();
 	int runPhaulMigration(string_list *active_delta);
 
 	int createDiskDescriptorXmlCopy(const char *basedir, const char *delta,

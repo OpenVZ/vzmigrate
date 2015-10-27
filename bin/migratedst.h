@@ -12,6 +12,7 @@
 #include "ploop.h"
 
 #include <sstream>
+#include <memory>
 
 enum {
     SCRIPT_TYPE		= 0,
@@ -19,10 +20,10 @@ enum {
     SCRIPT_TYPE_QUOTA
 };
 
-//typedef vector<string> UseIPList;
-
 class VEObj;
 class MigrateSshChannel;
+class PhaulSockServer;
+class PhaulConn;
 
 class MigrateStateDstRemote : public MigrateStateCommon
 {
@@ -37,6 +38,9 @@ protected:
 	int is_keepdir_exist;
 	struct ploop_online_copy_data *m_pPloopData;
 	char m_convertQuota2[PATH_MAX];
+
+	std::auto_ptr<PhaulSockServer> m_phaulSockServer;
+	std::auto_ptr<PhaulConn> m_phaulConn;
 
 protected:
 	static int clean_restoreKill(const void * arg, const void *);
@@ -112,7 +116,8 @@ public:
 	int cmdMountPloop(unsigned long ploop_size, unsigned long create_size, int lmounted);
 	int cmdHaClusterNodeID(istringstream &is, ostringstream &os);
 	int cmdCheckPloopFormat(istringstream &is);
-	int cmdEstablishPhaulConnection(istringstream &is);
+	int cmdPreEstablishPhaulConn();
+	int cmdEstablishPhaulConn(istringstream &is);
 	int cmdStartPhaulService();
 
 	int initVEMigration(VEObj * ve);

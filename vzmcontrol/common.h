@@ -166,6 +166,9 @@ extern const char * getError();
 #define MIG_ERR_EXTERNAL_DISKS_MIXED	-70
 #define MIG_ERR_SECOND_LEVEL_BUG        -71
 #define MIG_ERR_EXTERNAL_PROCESS        -72 /* unused */
+#define MIG_ERR_PRE_EST_PHAUL_CONN	-73
+#define MIG_ERR_EST_DST_PHAUL_CONN	-74
+#define MIG_ERR_EST_SRC_PHAUL_CONN	-75
 
 // internal error codes
 //#define MIG_ERR_SHARED_NOTFOUND	-101
@@ -298,6 +301,10 @@ extern const char * getError();
 	"on the same cluster %s"
 #define MIG_MSG_THESAME_SHARED	"Source and target %s resides "\
 	"on the same shared partition"
+
+#define MIG_MSG_PRE_EST_PHAUL_CONN	"can not initialize phaul socket server"
+#define MIG_MSG_EST_DST_PHAUL_CONN	"can not establish phaul connection on destination"
+#define MIG_MSG_EST_SRC_PHAUL_CONN	"can not establish phaul connection on source"
 
 #define MSG_FUNC_COPY_DUMP		"Syncing dump file..."
 

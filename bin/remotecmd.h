@@ -85,8 +85,9 @@
 #define CMD_HA_CLUSTER_NODE_ID		"haclusternodeid"
 #define CMD_CHECK_PLOOP_FORMAT		"checkploopformat"
 
-#define CMD_ESTABLISH_PHAUL_CONN	"estphaulconn"
-#define CMD_START_PHAUL_SERVICE		"startphaulservice"
+#define CMD_PRE_ESTABLISH_PHAUL_CONN	"preestphaulconn"
+#define CMD_ESTABLISH_PHAUL_CONN		"estphaulconn"
+#define CMD_START_PHAUL_SERVICE			"startphaulservice"
 
 #endif
 

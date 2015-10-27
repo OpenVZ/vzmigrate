@@ -324,8 +324,10 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 		return state->cmdHaClusterNodeID(is, os);
 	} else if (strcmp(cmd, CMD_CHECK_PLOOP_FORMAT) == 0) {
 		return state->cmdCheckPloopFormat(is);
+	} else if (strcmp(cmd, CMD_PRE_ESTABLISH_PHAUL_CONN) == 0) {
+		return state->cmdPreEstablishPhaulConn();
 	} else if (strcmp(cmd, CMD_ESTABLISH_PHAUL_CONN) == 0) {
-		return state->cmdEstablishPhaulConnection(is);
+		return state->cmdEstablishPhaulConn(is);
 	} else if (strcmp(cmd, CMD_START_PHAUL_SERVICE) == 0) {
 		return state->cmdStartPhaulService();
 	}

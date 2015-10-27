@@ -9,6 +9,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <vector>
+#include <memory>
 #include <vz/libvzsock.h>
 
 #define PACKET_SEPARATOR '\0'
@@ -49,30 +50,74 @@ public:
 	~MigrateChannel();
 };
 
+int init_sock_server(struct vzsock_ctx *ctx, int *sock);
+int init_sock_server_client(struct vzsock_ctx *ctx);
+
 /*
  * Phaul connection manage additional connections needed for p.haul and
  * p.haul-service on source and destination sides respectively. Three
  * additional sockets needed for p.haul - socket for rpc calls, socket for
  * memory transfer and socket for disk transfer.
  */
-class PhaulConnection {
+class PhaulConn {
 public:
-	PhaulConnection();
-	~PhaulConnection();
-	void setChannelFd(size_t index, int fd);
+	PhaulConn();
+	~PhaulConn();
+	int initServer(vzsock_ctx* ctx, int serverSocket);
+	int initClient(vzsock_ctx* ctx);
 	int getChannelFd(size_t index) const;
 	int isEstablished() const;
 private:
 	// Forbidden class methods
-	PhaulConnection(const PhaulConnection&);
-	PhaulConnection& operator =(const PhaulConnection&);
+	PhaulConn(const PhaulConn&);
+	PhaulConn& operator =(const PhaulConn&);
 public:
-	static const size_t RPC_CHANNEL_INDEX = 0;
-	static const size_t MEM_CHANNEL_INDEX = 1;
-	static const size_t FS_CHANNEL_INDEX = 2;
-	static const size_t CHANNELS_COUNT = 3;
+	enum {
+		RPC_CHANNEL_INDEX = 0,
+		MEM_CHANNEL_INDEX = 1,
+		FS_CHANNEL_INDEX = 2,
+		CHANNELS_COUNT = 3,
+	};
 private:
-	std::vector<int> m_channelFds;
+	std::auto_ptr<vzsock_ctx> m_ctx;
+	std::vector<void*> m_channelConns;
+};
+
+/*
+ * Phaul socket server handle additional connections establishment needed for
+ * phaul on destination side.
+ */
+class PhaulSockServer {
+public:
+	PhaulSockServer();
+	~PhaulSockServer();
+	int init();
+	PhaulConn* acceptConn();
+private:
+	// Forbidden class methods
+	PhaulSockServer(const PhaulSockServer&);
+	PhaulSockServer& operator =(const PhaulSockServer&);
+private:
+	std::auto_ptr<vzsock_ctx> m_ctx;
+	int m_serverSocket;
+};
+
+/*
+ * Client of phaul socket server handle additional connections establishment
+ * needed for phaul on source side.
+ */
+class PhaulSockClient {
+public:
+	PhaulSockClient();
+	~PhaulSockClient();
+	int init();
+	PhaulConn* establishConn();
+private:
+	// Forbidden class methods
+	PhaulSockClient(const PhaulSockClient&);
+	PhaulSockClient& operator =(const PhaulSockClient&);
+private:
+	std::auto_ptr<vzsock_ctx> m_ctx;
 };
 
 #endif

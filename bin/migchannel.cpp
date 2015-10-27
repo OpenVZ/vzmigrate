@@ -494,39 +494,325 @@ int MigrateChannel::sendCommand(const char * str, ...)
 	return readReply();
 }
 
-PhaulConnection::PhaulConnection()
-	: m_channelFds(CHANNELS_COUNT, -1)
+/*
+ * Initialize socket server needed to accept incoming connections on
+ * destination.
+ */
+int init_sock_server(struct vzsock_ctx *ctx, int *sock)
+{
+	int rc = 0;
+	int ret;
+	int debug = (debug_level == LOG_DEBUG) ? 1 : 0;
+	struct addrinfo hints, *res, *ressave;
+
+	if ((ret = vzsock_init(VZSOCK_SOCK, ctx)))
+		return putErr(MIG_ERR_VZSOCK, "vzsock_init() return %d", ret);
+
+	vzsock_set(ctx, VZSOCK_DATA_DEBUG, (void *)&debug, sizeof(debug));
+
+	if ((ret = vzsock_open(ctx))) {
+		rc = putErr(MIG_ERR_VZSOCK, "vzsock_open() return %d", ret);
+		goto cleanup_0;
+	}
+
+	if ((*sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
+		rc = putErr(MIG_ERR_SYSTEM, "socket() : %m");
+		goto cleanup_0;
+	}
+
+	memset(&hints, 0, sizeof(struct addrinfo));
+	/*
+	   AI_PASSIVE flag: the resulting address is used to bind
+	   to a socket for accepting incoming connections.
+	   So, when the hostname==NULL, getaddrinfo function will
+	   return one entry per allowed protocol family containing
+	   the unspecified address for that family.
+	*/
+	hints.ai_flags    = AI_PASSIVE;
+	hints.ai_family   = AF_INET6;
+	hints.ai_socktype = SOCK_STREAM;
+
+	if ((ret = getaddrinfo(NULL, VZMD_DEF_PORT, &hints, &ressave))) {
+		rc = putErr(MIG_ERR_SYSTEM, "getaddrinfo error: [%s]\n", gai_strerror(ret));
+		goto cleanup_0;
+	}
+
+	/*
+	   Try open socket with each address getaddrinfo returned,
+	   until getting a valid listening socket.
+	*/
+	*sock = -1;
+	for (res = ressave; res; res = res->ai_next) {
+		*sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+		if (*sock < 0)
+			continue;
+		if (bind(*sock, res->ai_addr, res->ai_addrlen) == 0)
+			break;
+		close(*sock);
+		*sock = -1;
+	}
+	if (*sock < 0) {
+		rc = putErr(MIG_ERR_SYSTEM, "socket error:: could not open socket\n");
+		goto cleanup_1;
+	}
+	if ((ret = vzsock_set(ctx, VZSOCK_DATA_SOCK_TYPE, (void *)&res->ai_socktype, sizeof(res->ai_socktype)))) {
+		rc = putErr(MIG_ERR_VZSOCK, "vzsock_set() return %d", ret);
+		goto cleanup_2;
+	}
+	if ((ret = vzsock_set(ctx, VZSOCK_DATA_SOCK_PROTO, (void *)&res->ai_protocol, sizeof(res->ai_protocol)))) {
+		rc = putErr(MIG_ERR_VZSOCK, "vzsock_set() return %d", ret);
+		goto cleanup_2;
+	}
+
+	if (listen(*sock, SOMAXCONN)) {
+		rc = putErr(MIG_ERR_SYSTEM, "listen() : %m");
+		goto cleanup_2;
+	}
+
+	logger(LOG_INFO, "server started");
+
+	return 0;
+
+cleanup_2:
+	close(*sock);
+
+cleanup_1:
+	freeaddrinfo(ressave);
+
+cleanup_0:
+	vzsock_close(ctx);
+
+	return rc;
+}
+
+/*
+ * Initialize client of socket server needed to establish connections from
+ * source to destination.
+ */
+int init_sock_server_client(struct vzsock_ctx *ctx)
+{
+	int rc = 0;
+	int ret;
+	int debug = (debug_level == LOG_DEBUG) ? 1 : 0;
+
+	if ((ret = vzsock_init(VZSOCK_SOCK, ctx)))
+		return putErr(MIG_ERR_VZSOCK, "vzsock_init() return %d", ret);
+
+	vzsock_set(ctx, VZSOCK_DATA_DEBUG, (void *)&debug, sizeof(debug));
+
+	if ((ret = vzsock_set(ctx, VZSOCK_DATA_TMO, (void *)&VZMoptions.tmo.val, sizeof(VZMoptions.tmo.val)))) {
+		rc = putErr(MIG_ERR_CONN_BROKEN, "vzsock_set() return %d", ret);
+		goto cleanup_0;
+	}
+	if ((ret = vzsock_set(ctx, VZSOCK_DATA_HOSTNAME, (void *)VZMoptions.dst_addr, strlen(VZMoptions.dst_addr)))) {
+		rc = putErr(MIG_ERR_VZSOCK, "vzsock_set() return %d", ret);
+		goto cleanup_0;
+	}
+	if ((ret = vzsock_set(ctx, VZSOCK_DATA_SERVICE, (void *)VZMD_DEF_PORT, strlen(VZMD_DEF_PORT)))) {
+		rc = putErr(MIG_ERR_VZSOCK, "vzsock_set() return %d", ret);
+		goto cleanup_0;
+	}
+
+	if ((ret = vzsock_open(ctx))) {
+		rc = putErr(MIG_ERR_VZSOCK, "vzsock_open() return %d", ret);
+		goto cleanup_0;
+	}
+
+	return 0;
+
+cleanup_0:
+	vzsock_close(ctx);
+	return rc;
+}
+
+PhaulConn::PhaulConn()
+	: m_channelConns(CHANNELS_COUNT, NULL)
 {
 }
 
-PhaulConnection::~PhaulConnection()
+PhaulConn::~PhaulConn()
 {
-	for (size_t i = 0; i < m_channelFds.size(); ++i) {
-		if (m_channelFds[i] != -1) {
-			close(m_channelFds[i]);
+	if (m_ctx.get() == NULL)
+		return;
+
+	for (size_t i = 0; i < m_channelConns.size(); ++i) {
+		if (m_channelConns[i] != NULL) {
+			vzsock_close_conn(m_ctx.get(), m_channelConns[i]);
 		}
 	}
+
+	vzsock_close(m_ctx.get());
 }
 
-void PhaulConnection::setChannelFd(size_t index, int fd)
+int PhaulConn::initServer(vzsock_ctx* ctx, int serverSocket)
 {
-	if (m_channelFds[index] != -1) {
-		close(m_channelFds[index]);
+	sockaddr_storage addr;
+	socklen_t addrsize = sizeof(addr);
+	int connSocket;
+	void* conn = NULL;
+	int isBlocking = 1;
+
+	if ((ctx == NULL) || (m_ctx.get() != NULL))
+		return -1;
+
+	m_ctx.reset(ctx);
+
+	for (size_t i = 0; i < PhaulConn::CHANNELS_COUNT; ++i) {
+
+		connSocket = accept(serverSocket, (sockaddr*)&addr, &addrsize);
+		if (connSocket == -1) {
+			return -1;
+		}
+
+		if (vzsock_accept_conn(m_ctx.get(), (void*)&connSocket, &conn) != 0) {
+			close(connSocket);
+			return -1;
+		}
+
+		m_channelConns[i] = conn;
+
+		if (vzsock_set_conn(m_ctx.get(), m_channelConns[i],
+			VZSOCK_DATA_BLOCKING, &isBlocking, sizeof(int)) != 0) {
+			return -1;
+		}
 	}
-	m_channelFds[index] = fd;
+
+	return 0;
 }
 
-int PhaulConnection::getChannelFd(size_t index) const
+int PhaulConn::initClient(vzsock_ctx* ctx)
 {
-	return m_channelFds[index];
+	void* conn = NULL;
+	int isBlocking = 1;
+
+	if ((ctx == NULL) || (m_ctx.get() != NULL))
+		return -1;
+
+	m_ctx.reset(ctx);
+
+	for (size_t i = 0; i < PhaulConn::CHANNELS_COUNT; ++i) {
+
+		if (vzsock_open_conn(m_ctx.get(), NULL, &conn) != 0) {
+			return -1;
+		}
+
+		m_channelConns[i] = conn;
+
+		if (vzsock_set_conn(m_ctx.get(), m_channelConns[i],
+			VZSOCK_DATA_BLOCKING, &isBlocking, sizeof(int)) != 0) {
+			return -1;
+		}
+	}
+
+	return 0;
 }
 
-int PhaulConnection::isEstablished() const
+int PhaulConn::getChannelFd(size_t index) const
 {
-	for (size_t i = 0; i < m_channelFds.size(); ++i) {
-		if (m_channelFds[i] == -1) {
+	int fd = -1;
+	size_t fdSize = sizeof(int);
+
+	if ((m_ctx.get() == NULL) || (m_channelConns[index] == NULL))
+		return -1;
+
+	if (vzsock_get_conn(m_ctx.get(), m_channelConns[index],
+		VZSOCK_DATA_FDSOCK, &fd, &fdSize) != 0) {
+		return -1;
+	}
+
+	return fd;
+}
+
+int PhaulConn::isEstablished() const
+{
+	for (size_t i = 0; i < m_channelConns.size(); ++i) {
+		if (getChannelFd(i) == -1) {
 			return -1;
 		}
 	}
 	return 0;
+}
+
+PhaulSockServer::PhaulSockServer()
+	: m_serverSocket(-1)
+{
+}
+
+PhaulSockServer::~PhaulSockServer()
+{
+	if (m_serverSocket != -1)
+		close(m_serverSocket);
+
+	if (m_ctx.get() != NULL)
+		vzsock_close(m_ctx.get());
+}
+
+/*
+ * Initialize phaul socket server to make it possible to accept incoming
+ * connections. Code from vzmd reused.
+ */
+int PhaulSockServer::init()
+{
+	assert(m_ctx.get() == NULL);
+	m_ctx.reset(new vzsock_ctx());
+
+	if (init_sock_server(m_ctx.get(), &m_serverSocket) != 0) {
+		m_ctx.reset(NULL);
+		return -1;
+	}
+
+	return 0;
+}
+
+/*
+ * Accept required count of additional connections for phaul.
+ */
+PhaulConn* PhaulSockServer::acceptConn()
+{
+	if ((m_ctx.get() == NULL) || (m_serverSocket == -1))
+		return NULL;
+
+	std::auto_ptr<PhaulConn> conn(new PhaulConn());
+	if (conn->initServer(m_ctx.release(), m_serverSocket) != 0)
+		return NULL;
+
+	return conn.release();
+}
+
+PhaulSockClient::PhaulSockClient()
+{
+}
+
+PhaulSockClient::~PhaulSockClient()
+{
+	if (m_ctx.get() != NULL)
+		vzsock_close(m_ctx.get());
+}
+
+int PhaulSockClient::init()
+{
+	assert(m_ctx.get() == NULL);
+	m_ctx.reset(new vzsock_ctx());
+
+	if (init_sock_server_client(m_ctx.get())) {
+		m_ctx.reset(NULL);
+		return -1;
+	}
+
+	return 0;
+}
+
+/*
+ * Establish required count of additional connections for phaul.
+ */
+PhaulConn* PhaulSockClient::establishConn()
+{
+	if (m_ctx.get() == NULL)
+		return NULL;
+
+	std::auto_ptr<PhaulConn> phaulConn(new PhaulConn());
+	if (phaulConn->initClient(m_ctx.release()) != 0)
+		return NULL;
+
+	return phaulConn.release();
 }

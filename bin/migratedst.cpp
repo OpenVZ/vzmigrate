@@ -22,6 +22,7 @@
 #include "veentry.h"
 #include "vzacompat.h"
 #include "channel.h"
+#include "migchannel.h"
 
 extern struct vz_data *vzcnf;
 extern void *istorage_ctx;
@@ -1184,15 +1185,59 @@ int MigrateStateDstRemote::cmdCheckPloopFormat(istringstream &is)
 }
 
 /*
- * Destination side part of additional connections establishment needed for
- * communication between p.haul and p.haul-service. Current method of
- * connections establishment is unsafe and will be replaced with some better
- * implementation (e.g. tunneling through master connection) in near future.
+ * Create phaul socket server and start listening on incoming connections.
+ *
+ * Current implementation permit only single running vzmdest binary at a time
+ * at destination node (since VZMD_DEF_PORT port used to establish
+ * connections). It is temporary solution which will be replaced with some
+ * better implementation in near future.
  */
-int MigrateStateDstRemote::cmdEstablishPhaulConnection(istringstream &is)
+int MigrateStateDstRemote::cmdPreEstablishPhaulConn()
 {
-	// Not implemented
-	return -1;
+	if (m_phaulSockServer.get() != NULL)
+		return putErr(MIG_ERR_PRE_EST_PHAUL_CONN, MIG_MSG_PRE_EST_PHAUL_CONN);
+
+	// Create and initialize phaul sock server
+	std::auto_ptr<PhaulSockServer> sockServer(new PhaulSockServer());
+	if (sockServer->init() != 0)
+		return putErr(MIG_ERR_PRE_EST_PHAUL_CONN, MIG_MSG_PRE_EST_PHAUL_CONN);
+
+	// Transfer socket server ownership from local object to class object
+	m_phaulSockServer = sockServer;
+	return 0;
+}
+
+/*
+ * Destination side part of additional connections establishment needed for
+ * communication between p.haul and p.haul-service.
+ *
+ * Current method of connections establishment is unsafe and will be replaced
+ * with some better implementation (e.g. tunneling through master connection)
+ * in near future.
+ */
+int MigrateStateDstRemote::cmdEstablishPhaulConn(istringstream &is)
+{
+	// Transfer phaul socket server ownership to local smart pointer to destroy
+	// socket server on return unconditionally.
+	std::auto_ptr<PhaulSockServer> sockServer(m_phaulSockServer);
+	if (sockServer.get() == NULL)
+		return putErr(MIG_ERR_EST_DST_PHAUL_CONN, MIG_MSG_EST_DST_PHAUL_CONN);
+
+	int count;
+	if (!(is >> count))
+		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
+
+	if (count != PhaulConn::CHANNELS_COUNT)
+		return putErr(MIG_ERR_EST_DST_PHAUL_CONN, MIG_MSG_EST_DST_PHAUL_CONN);
+
+	// Establish phaul connection
+	std::auto_ptr<PhaulConn> conn(sockServer->acceptConn());
+	if ((conn.get() == NULL) || (conn->isEstablished() != 0))
+		return putErr(MIG_ERR_EST_DST_PHAUL_CONN, MIG_MSG_EST_DST_PHAUL_CONN);
+
+	// Transfer connection ownership from local object to class object
+	m_phaulConn = conn;
+	return 0;
 }
 
 /*
