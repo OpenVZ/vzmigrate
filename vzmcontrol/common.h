@@ -166,9 +166,6 @@ extern const char * getError();
 #define MIG_ERR_EXTERNAL_DISKS_MIXED	-70
 #define MIG_ERR_SECOND_LEVEL_BUG        -71
 #define MIG_ERR_EXTERNAL_PROCESS        -72 /* unused */
-#define MIG_ERR_PRE_EST_PHAUL_CONN	-73
-#define MIG_ERR_EST_DST_PHAUL_CONN	-74
-#define MIG_ERR_EST_SRC_PHAUL_CONN	-75
 
 // internal error codes
 //#define MIG_ERR_SHARED_NOTFOUND	-101

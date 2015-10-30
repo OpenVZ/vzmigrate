@@ -1195,12 +1195,12 @@ int MigrateStateDstRemote::cmdCheckPloopFormat(istringstream &is)
 int MigrateStateDstRemote::cmdPreEstablishPhaulConn()
 {
 	if (m_phaulSockServer.get() != NULL)
-		return putErr(MIG_ERR_PRE_EST_PHAUL_CONN, MIG_MSG_PRE_EST_PHAUL_CONN);
+		return putErr(-1, MIG_MSG_PRE_EST_PHAUL_CONN);
 
 	// Create and initialize phaul sock server
 	std::auto_ptr<PhaulSockServer> sockServer(new PhaulSockServer());
 	if (sockServer->init() != 0)
-		return putErr(MIG_ERR_PRE_EST_PHAUL_CONN, MIG_MSG_PRE_EST_PHAUL_CONN);
+		return putErr(-1, MIG_MSG_PRE_EST_PHAUL_CONN);
 
 	// Transfer socket server ownership from local object to class object
 	m_phaulSockServer = sockServer;
@@ -1221,19 +1221,19 @@ int MigrateStateDstRemote::cmdEstablishPhaulConn(istringstream &is)
 	// socket server on return unconditionally.
 	std::auto_ptr<PhaulSockServer> sockServer(m_phaulSockServer);
 	if (sockServer.get() == NULL)
-		return putErr(MIG_ERR_EST_DST_PHAUL_CONN, MIG_MSG_EST_DST_PHAUL_CONN);
+		return putErr(-1, MIG_MSG_EST_DST_PHAUL_CONN);
 
 	int count;
 	if (!(is >> count))
 		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
 
 	if (count != PhaulConn::CHANNELS_COUNT)
-		return putErr(MIG_ERR_EST_DST_PHAUL_CONN, MIG_MSG_EST_DST_PHAUL_CONN);
+		return putErr(-1, MIG_MSG_EST_DST_PHAUL_CONN);
 
 	// Establish phaul connection
 	std::auto_ptr<PhaulConn> conn(sockServer->acceptConn());
 	if ((conn.get() == NULL) || (conn->isEstablished() != 0))
-		return putErr(MIG_ERR_EST_DST_PHAUL_CONN, MIG_MSG_EST_DST_PHAUL_CONN);
+		return putErr(-1, MIG_MSG_EST_DST_PHAUL_CONN);
 
 	// Transfer connection ownership from local object to class object
 	m_phaulConn = conn;
