@@ -328,7 +328,7 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 		return state->cmdPreEstablishPhaulConn();
 	} else if (strcmp(cmd, CMD_ESTABLISH_PHAUL_CONN) == 0) {
 		return state->cmdEstablishPhaulConn(is);
-	} else if (strcmp(cmd, CMD_START_PHAUL_SERVICE) == 0) {
+	} else if (strcmp(cmd, CMD_START_PHAUL_SRV) == 0) {
 		return state->cmdStartPhaulService();
 	}
 

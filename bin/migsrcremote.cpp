@@ -2114,7 +2114,7 @@ int MigrateStateRemote::doOnlinePloopCtMigration()
 		return rc;
 
 	// Start p.haul service on destination
-	rc = channel.sendCommand(CMD_START_PHAUL_SERVICE);
+	rc = channel.sendCommand(CMD_START_PHAUL_SRV);
 	if (rc)
 		return rc;
 
