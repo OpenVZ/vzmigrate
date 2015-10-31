@@ -2205,7 +2205,7 @@ int MigrateStateRemote::establishRemotePhaulConn()
 	if (rc)
 		return rc;
 
-	if ((conn.get() == NULL) || (conn->isEstablished() != 0))
+	if ((conn.get() == NULL) || (conn->checkEstablished() != 0))
 		return putErr(-1, MIG_MSG_EST_SRC_PHAUL_CONN);
 
 	// Transfer connection ownership from local object to class object

@@ -66,7 +66,7 @@ public:
 	int initServer(vzsock_ctx* ctx, int serverSocket);
 	int initClient(vzsock_ctx* ctx);
 	int getChannelFd(size_t index) const;
-	int isEstablished() const;
+	int checkEstablished() const;
 private:
 	// Forbidden class methods
 	PhaulConn(const PhaulConn&);

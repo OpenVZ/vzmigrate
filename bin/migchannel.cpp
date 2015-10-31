@@ -723,7 +723,7 @@ int PhaulConn::getChannelFd(size_t index) const
 	return fd;
 }
 
-int PhaulConn::isEstablished() const
+int PhaulConn::checkEstablished() const
 {
 	for (size_t i = 0; i < m_channelConns.size(); ++i) {
 		if (getChannelFd(i) == -1) {

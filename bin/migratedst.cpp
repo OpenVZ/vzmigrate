@@ -1232,7 +1232,7 @@ int MigrateStateDstRemote::cmdEstablishPhaulConn(istringstream &is)
 
 	// Establish phaul connection
 	std::auto_ptr<PhaulConn> conn(sockServer->acceptConn());
-	if ((conn.get() == NULL) || (conn->isEstablished() != 0))
+	if ((conn.get() == NULL) || (conn->checkEstablished() != 0))
 		return putErr(-1, MIG_MSG_EST_DST_PHAUL_CONN);
 
 	// Transfer connection ownership from local object to class object
