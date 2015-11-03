@@ -182,7 +182,6 @@ int string_list_copy(struct string_list *dst, struct string_list *src);
 		(el) != NULL; \
 		(el) = (el)->e.tqe_next)
 
-
 /* run argv[0] with argv and envp, stderr redirect to log */
 int vzm_execve(
 		char *const argv[],
@@ -190,6 +189,17 @@ int vzm_execve(
 		int in,
 		int out,
 		int *retcode);
+
+/*
+ * run argv[0] with argv and envp, don't wait for process termination. stderr
+ * and stdout redirect to /dev/null and do not print any error messages
+ */
+int vzm_execve_quiet_nowait(
+		char *const argv[],
+		char *const envp[],
+		int in,
+		pid_t *child);
+
 /*
  * run argv[0] with argv and envp, stderr and stdout redirect to /dev/null
  * and do not print any error messages
@@ -199,6 +209,7 @@ int vzm_execve_quiet(
 		char *const envp[],
 		int in,
 		int *retcode);
+
 /* run arglist[0] with arglist and envlist, stderr redirect to log */
 int vzml_execve(
 		struct string_list *arglist,

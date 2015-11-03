@@ -760,29 +760,20 @@ int vzm_execve(
 	return 0;
 }
 
-/*
- * run argv[0] with argv and envp, stderr and stdout redirect to /dev/null
- *
- * and do not print any error messages
- */
-int vzm_execve_quiet(
+int vzm_execve_quiet_nowait(
 		char *const argv[],
 		char *const envp[],
 		int in,
-		int *retcode)
+		pid_t *childpid)
 {
-	pid_t pid, chpid;
-	int status;
-	char path[PATH_MAX+1];
+	*childpid = -1;
 
 	if (terminated)
 		return MIG_ERR_TERM;
 
-	strncpy(path, argv[0], sizeof(path));
-
-	if ((chpid = fork()) < 0) {
+	if ((*childpid = fork()) < 0) {
 		return MIG_ERR_SYSTEM;
-	} else if (chpid == 0) {
+	} else if (*childpid == 0) {
 		/* redirect stdout and stderr to /dev/null */
 		int fd;
 		if (in != -1) {
@@ -804,6 +795,28 @@ int vzm_execve_quiet(
 			execvp(argv[0], argv);
 		exit(MIG_ERR_SYSTEM);
 	}
+
+	return 0;
+}
+
+/*
+ * run argv[0] with argv and envp, stderr and stdout redirect to /dev/null
+ *
+ * and do not print any error messages
+ */
+int vzm_execve_quiet(
+		char *const argv[],
+		char *const envp[],
+		int in,
+		int *retcode)
+{
+	pid_t pid, chpid;
+	int status;
+	int rc;
+
+	rc = vzm_execve_quiet_nowait(argv, envp, in, &chpid);
+	if (rc)
+		return rc;
 
 	while ((pid = waitpid(chpid, &status, 0)) == -1)
 		if (errno != EINTR)
