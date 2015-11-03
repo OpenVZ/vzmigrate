@@ -19,6 +19,7 @@ public:
 
 	virtual int doCtMigration();
 	int doCtMigrationDefault();
+	int doCtMigrationPhaul();
 
 	virtual int startVE();
 

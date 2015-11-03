@@ -684,6 +684,8 @@ int MigrateStateRemote::doCtMigration()
 
 	if (srcVE->isrun() && is_shared() && isOptSet(OPT_ONLINE))
 		rc = doOnlinePloopSharedCtMigration();
+	else if ((srcVE->isrun()) && (VZMoptions.remote_version >= MIGRATE_VERSION_700))
+		rc = doCtMigrationPhaul();
 	else
 		rc = doCtMigrationDefault();
 
@@ -702,11 +704,7 @@ int MigrateStateRemote::doCtMigrationDefault()
 	int rc = 0;
 
 	if (srcVE->isrun()) {
-		if (VZMoptions.remote_version < MIGRATE_VERSION_700) {
-			rc = doLegacyOnlinePloopCtMigration();
-		} else {
-			rc = doOnlinePloopCtMigration();
-		}
+		rc = doLegacyOnlinePloopCtMigration();
 	} else {
 		rc = doOfflinePloopCtMigration();
 	}
@@ -722,6 +720,24 @@ int MigrateStateRemote::doCtMigrationDefault()
 	rc = postFinalStage();
 
 	return rc;
+}
+
+int MigrateStateRemote::doCtMigrationPhaul()
+{
+	int rc = doOnlinePloopCtMigration();
+	if (rc != 0)
+		return rc;
+
+	// phaul handle containers start, so if phaul migration return success
+	// container already running on destination; just send finish command
+	// from here
+	rc = channel.sendCommand(CMD_FINAL " %d", DSTACT_NOTHING);
+
+	// VE final cleaning
+	if (rc == 0)
+		postFinalStage();
+
+	return 0;
 }
 
 int MigrateStateRemote::sendVersionCmd()
@@ -2125,7 +2141,7 @@ int MigrateStateRemote::doOnlinePloopCtMigration()
 	if (rc)
 		return rc;
 
-	return stopVE();
+	return 0;
 }
 
 /*
