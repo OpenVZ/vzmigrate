@@ -14,6 +14,8 @@
 #include <sys/un.h>
 #include <sys/wait.h>
 
+#include <sstream>
+
 #include "migchannel.h"
 #include "common.h"
 #include "bincom.h"
@@ -721,6 +723,13 @@ int PhaulConn::getChannelFd(size_t index) const
 	}
 
 	return fd;
+}
+
+std::string PhaulConn::getChannelFdStr(size_t index) const
+{
+	std::ostringstream fdStr;
+	fdStr << getChannelFd(index);
+	return fdStr.str();
 }
 
 int PhaulConn::checkEstablished() const

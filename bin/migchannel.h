@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <vector>
 #include <memory>
+#include <string>
 #include <vz/libvzsock.h>
 
 #define PACKET_SEPARATOR '\0'
@@ -66,6 +67,7 @@ public:
 	int initServer(vzsock_ctx* ctx, int serverSocket);
 	int initClient(vzsock_ctx* ctx);
 	int getChannelFd(size_t index) const;
+	std::string getChannelFdStr(size_t index) const;
 	int checkEstablished() const;
 private:
 	// Forbidden class methods
