@@ -24,6 +24,8 @@
 #include <vzctl/libvzctl.h>
 
 #include <sstream>
+#include <vector>
+#include <string>
 
 #include "migsrcremote.h"
 #include "migssh.h"
@@ -2217,10 +2219,56 @@ int MigrateStateRemote::establishRemotePhaulConn()
  * Run p.haul over existing connections established previously to handle
  * online migration of container on source side.
  */
-int MigrateStateRemote::runPhaulMigration(string_list *active_delta)
+int MigrateStateRemote::runPhaulMigration(string_list *activeDelta)
 {
-	// Not implemented
-	return -1;
+	if (m_phaulConn.get() == NULL)
+		return putErr(MIG_ERR_RUN_PHAUL, MIG_MSG_RUN_PHAUL);
+
+	std::vector<std::string> phaulArgs = getPhaulArgs(activeDelta);
+	if (execPhaul(phaulArgs) != 0)
+		return putErr(MIG_ERR_RUN_PHAUL, MIG_MSG_RUN_PHAUL_LOG,
+			PHAUL_LOG_FILE);
+
+	return 0;
+}
+
+std::vector<std::string> MigrateStateRemote::getPhaulArgs(string_list *activeDelta)
+{
+	assert(m_phaulConn.get() != NULL);
+
+	std::vector<std::string> args;
+	args.push_back(BIN_PHAUL);
+	args.push_back("vz");
+	args.push_back(srcVE->ctid());
+
+	// Pass phaul connections as socket file descriptors
+	args.push_back("--fdrpc");
+	args.push_back(m_phaulConn->getChannelFdStr(PhaulConn::RPC_CHANNEL_INDEX));
+
+	args.push_back("--fdmem");
+	args.push_back(m_phaulConn->getChannelFdStr(PhaulConn::MEM_CHANNEL_INDEX));
+
+	args.push_back("--fdfs");
+	args.push_back(m_phaulConn->getChannelFdStr(PhaulConn::FS_CHANNEL_INDEX));
+
+	// Specify path to phaul log
+	args.push_back("--log-file");
+	args.push_back(PHAUL_LOG_FILE);
+
+	// Force predump (iterations)
+	args.push_back("--pre-dump");
+
+	return args;
+}
+
+int MigrateStateRemote::execPhaul(const std::vector<std::string>& args)
+{
+	ExecveArrayWrapper argsArray(args);
+
+	if (vzm_execve_quiet(argsArray.getArray(), NULL, -1, NULL) != 0)
+		return -1;
+
+	return 0;
 }
 
 bool MigrateStateRemote::isSameLocation()

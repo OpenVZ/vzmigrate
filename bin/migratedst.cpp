@@ -10,6 +10,8 @@
 #include <sys/stat.h>
 #include <sys/mount.h>
 #include <fcntl.h>
+#include <vector>
+#include <string>
 
 #include <vz/vztt.h>
 #include <vzctl/libvzctl.h>
@@ -28,7 +30,10 @@ extern struct vz_data *vzcnf;
 extern void *istorage_ctx;
 
 MigrateStateDstRemote::MigrateStateDstRemote(VEObj * ve, int options)
-		: MigrateStateCommon(), dstVE(ve), m_initOptions(options)
+	: MigrateStateCommon()
+	, dstVE(ve)
+	, m_initOptions(options)
+	, m_phaulSrvPid(-1)
 {
 	assert(dstVE != NULL);
 
@@ -110,6 +115,18 @@ int MigrateStateDstRemote::clean_unregisterOnHaCluster(const void * arg1, const 
 	free(sHaClusterNodeID);
 	return 0;
 };
+
+int MigrateStateDstRemote::clean_termPhaulSrv(const void * arg, const void *)
+{
+	const int TERM_TIMEOUT = 3;
+	pid_t* srvPid = (pid_t*)arg;
+
+	if (*srvPid > 0)
+		term_clean(*srvPid, TERM_TIMEOUT);
+
+	delete srvPid;
+	return 0;
+}
 
 // on Freebsd: VE private overwriting doesn't supported now
 // 'cause migrate knows nothing about uid/gidbase for this directory
@@ -990,6 +1007,43 @@ int MigrateStateDstRemote::registerOnHaCluster()
 	return 0;
 }
 
+std::vector<std::string> MigrateStateDstRemote::getPhaulSrvArgs()
+{
+	assert(m_phaulConn.get() != NULL);
+
+	std::vector<std::string> args;
+	args.push_back(BIN_PHAUL_SRV);
+
+	// Pass phaul connections as socket file descriptors
+	args.push_back("--fdrpc");
+	args.push_back(m_phaulConn->getChannelFdStr(PhaulConn::RPC_CHANNEL_INDEX));
+
+	args.push_back("--fdmem");
+	args.push_back(m_phaulConn->getChannelFdStr(PhaulConn::MEM_CHANNEL_INDEX));
+
+	args.push_back("--fdfs");
+	args.push_back(m_phaulConn->getChannelFdStr(PhaulConn::FS_CHANNEL_INDEX));
+
+	// Specify path to phaul-service log
+	args.push_back("--log-file");
+	args.push_back(PHAUL_SRV_LOG_FILE);
+
+	return args;
+}
+
+int MigrateStateDstRemote::execPhaulSrv(const std::vector<std::string>& args)
+{
+	ExecveArrayWrapper argsArray(args);
+
+	if (vzm_execve_quiet_nowait(argsArray.getArray(), NULL, -1, &m_phaulSrvPid) != 0)
+		return -1;
+
+	// Add cleanup routine to terminate phaul service in the end
+	addCleaner(clean_termPhaulSrv, (new pid_t(m_phaulSrvPid)), NULL, ANY_CLEANER);
+
+	return 0;
+}
+
 /******************************
  * Data transfer functionality
  ******************************/
@@ -1244,10 +1298,20 @@ int MigrateStateDstRemote::cmdEstablishPhaulConn(istringstream &is)
  * Run p.haul-service over existing connections established previously
  * to handle online migration of container on destination side.
  */
-int MigrateStateDstRemote::cmdStartPhaulService()
+int MigrateStateDstRemote::cmdStartPhaulSrv()
 {
-	// Not implemented
-	return -1;
+	if (m_phaulConn.get() == NULL)
+		return putErr(MIG_ERR_START_PHAUL_SRV, MIG_MSG_START_PHAUL_SRV);
+
+	// Check phaul service not already running
+	if (m_phaulSrvPid != -1)
+		return putErr(MIG_ERR_START_PHAUL_SRV, MIG_MSG_START_PHAUL_SRV);
+
+	std::vector<std::string> phaulArgs = getPhaulSrvArgs();
+	if (execPhaulSrv(phaulArgs) != 0)
+		return putErr(MIG_ERR_START_PHAUL_SRV, MIG_MSG_START_PHAUL_SRV);
+
+	return 0;
 }
 
 int MigrateStateDstRemote::clean_umountImage(const void *arg, const void *)

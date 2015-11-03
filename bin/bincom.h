@@ -225,6 +225,11 @@ extern const char * ssh_test[];
 
 #define BIN_TAR "/bin/tar"
 
+#define BIN_PHAUL				"/usr/libexec/phaul/p.haul"
+#define BIN_PHAUL_SRV			"/usr/libexec/phaul/p.haul-service"
+#define PHAUL_LOG_FILE			"/var/log/phaul.log"
+#define PHAUL_SRV_LOG_FILE		"/var/log/phaul-service.log"
+
 #ifndef GFS_MAGIC
 #define GFS_MAGIC               (0x01161970)
 #endif

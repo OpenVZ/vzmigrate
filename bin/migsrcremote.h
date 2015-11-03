@@ -117,7 +117,9 @@ private:
 	int doOnlinePloopSharedCtMigration();
 
 	int establishRemotePhaulConn();
-	int runPhaulMigration(string_list *active_delta);
+	int runPhaulMigration(string_list *activeDelta);
+	std::vector<std::string> getPhaulArgs(string_list *activeDelta);
+	int execPhaul(const std::vector<std::string>& args);
 
 	int createDiskDescriptorXmlCopy(const char *basedir, const char *delta,
 			char *dd_copy, size_t size, int cleaner);

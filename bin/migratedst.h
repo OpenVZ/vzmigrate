@@ -13,6 +13,8 @@
 
 #include <sstream>
 #include <memory>
+#include <vector>
+#include <string>
 
 enum {
     SCRIPT_TYPE		= 0,
@@ -41,6 +43,7 @@ protected:
 
 	std::auto_ptr<PhaulSockServer> m_phaulSockServer;
 	std::auto_ptr<PhaulConn> m_phaulConn;
+	pid_t m_phaulSrvPid;
 
 protected:
 	static int clean_restoreKill(const void * arg, const void *);
@@ -50,6 +53,7 @@ protected:
 	static int clean_deletePloopSnapshot(const void * arg, const void *);
 	static int clean_umountImage(const void * arg, const void *);
 	static int clean_unregisterOnHaCluster(const void * arg1, const void *arg2);
+	static int clean_termPhaulSrv(const void * arg, const void *);
 
 	/* copy data functions */
 	typedef int (MigrateStateDstRemote::*DataCopy) (const char *);
@@ -67,6 +71,10 @@ protected:
 	int h_copy_remote_tar(const char *dst);
 
 	int registerOnHaCluster();
+
+	std::vector<std::string> getPhaulSrvArgs();
+	int execPhaulSrv(const std::vector<std::string>& args);
+
 public:
 	int is_priv_on_shared;
 	string m_sHaClusterNodeID;
@@ -118,7 +126,7 @@ public:
 	int cmdCheckPloopFormat(istringstream &is);
 	int cmdPreEstablishPhaulConn();
 	int cmdEstablishPhaulConn(istringstream &is);
-	int cmdStartPhaulService();
+	int cmdStartPhaulSrv();
 
 	int initVEMigration(VEObj * ve);
 	int initMigration();
