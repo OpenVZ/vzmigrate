@@ -290,4 +290,22 @@ private:
 	string_list m_list;
 };
 
+/*
+ * Helper class to simplify construction of argv or envp arguments for execve
+ * and similar functions.
+ */
+class ExecveArrayWrapper {
+public:
+	ExecveArrayWrapper(const std::vector<std::string>& array);
+	~ExecveArrayWrapper();
+	char *const * getArray() const { return m_array; }
+private:
+	// Forbidden class methods
+	ExecveArrayWrapper(const ExecveArrayWrapper&);
+	ExecveArrayWrapper& operator =(const ExecveArrayWrapper&);
+private:
+	size_t m_count;
+	char** m_array;
+};
+
 #endif

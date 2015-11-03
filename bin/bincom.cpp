@@ -1475,3 +1475,23 @@ StringListWrapper::~StringListWrapper()
 {
 	string_list_clean(&m_list);
 }
+
+ExecveArrayWrapper::ExecveArrayWrapper(const std::vector<std::string>& array)
+{
+	m_count = (array.size() + 1);
+	m_array = new char* [m_count];
+
+	for (size_t i = 0; i < array.size(); ++i) {
+		m_array[i] = new char [array[i].size() + 1];
+		strncpy(m_array[i], array[i].c_str(), array[i].size() + 1);
+	}
+	m_array[array.size()] = NULL;
+}
+
+ExecveArrayWrapper::~ExecveArrayWrapper()
+{
+	for (size_t i = 0; i < m_count; ++i) {
+		delete [] m_array[i];
+	}
+	delete [] m_array;
+}
