@@ -2271,6 +2271,12 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(string_list *activeDel
 	args.push_back("--log-file");
 	args.push_back(PHAUL_LOG_FILE);
 
+	// Setup maximal phaul/criu verbosity level if debug output enabled
+	if (debug_level >= LOG_DEBUG) {
+		args.push_back("-v");
+		args.push_back("4");
+	}
+
 	// Force predump (iterations)
 	args.push_back("--pre-dump");
 
