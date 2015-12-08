@@ -1476,6 +1476,18 @@ StringListWrapper::~StringListWrapper()
 	string_list_clean(&m_list);
 }
 
+std::vector<std::string> StringListWrapper::toVector() const
+{
+	std::vector<std::string> vec;
+	string_list_el *e;
+
+	string_list_for_each(&m_list, e) {
+		vec.push_back(e->s);
+	}
+
+	return vec;
+}
+
 ExecveArrayWrapper::ExecveArrayWrapper(const std::vector<std::string>& array)
 {
 	m_count = (array.size() + 1);

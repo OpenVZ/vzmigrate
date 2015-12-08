@@ -287,6 +287,7 @@ public:
 	StringListWrapper();
 	~StringListWrapper();
 	string_list& getList() { return m_list; }
+	std::vector<std::string> toVector() const;
 private:
 	// Forbidden class methods
 	StringListWrapper(const StringListWrapper&);
