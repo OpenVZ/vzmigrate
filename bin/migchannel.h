@@ -62,27 +62,36 @@ int init_sock_server_client(struct vzsock_ctx *ctx);
  */
 class PhaulConn {
 public:
-	PhaulConn();
+	PhaulConn(const std::vector<std::string>& activeDeltas);
 	~PhaulConn();
 	int initServer(vzsock_ctx* ctx, int serverSocket);
 	int initClient(vzsock_ctx* ctx);
+	std::string getFdrpcArg() const;
+	std::string getFdmemArg() const;
+	std::string getFdfsArg() const;
+	int checkEstablished() const;
+
+private:
 	int getChannelFd(size_t index) const;
 	std::string getChannelFdStr(size_t index) const;
-	int checkEstablished() const;
+	std::string getActiveDeltaFdStr(size_t nDelta) const;
+
 private:
 	// Forbidden class methods
 	PhaulConn(const PhaulConn&);
 	PhaulConn& operator =(const PhaulConn&);
-public:
+
+private:
 	enum {
 		RPC_CHANNEL_INDEX = 0,
 		MEM_CHANNEL_INDEX = 1,
-		FS_CHANNEL_INDEX = 2,
-		CHANNELS_COUNT = 3,
+		FS_CHANNELS_START_INDEX = 2,
 	};
+
 private:
 	std::auto_ptr<vzsock_ctx> m_ctx;
 	std::vector<void*> m_channelConns;
+	std::vector<std::string> m_activeDeltas;
 };
 
 /*
@@ -94,7 +103,7 @@ public:
 	PhaulSockServer();
 	~PhaulSockServer();
 	int init();
-	PhaulConn* acceptConn();
+	PhaulConn* acceptConn(const std::vector<std::string>& activeDeltas);
 private:
 	// Forbidden class methods
 	PhaulSockServer(const PhaulSockServer&);
@@ -113,7 +122,7 @@ public:
 	PhaulSockClient();
 	~PhaulSockClient();
 	int init();
-	PhaulConn* establishConn();
+	PhaulConn* establishConn(const std::vector<std::string>& activeDeltas);
 private:
 	// Forbidden class methods
 	PhaulSockClient(const PhaulSockClient&);

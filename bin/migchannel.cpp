@@ -627,8 +627,14 @@ cleanup_0:
 	return rc;
 }
 
-PhaulConn::PhaulConn()
-	: m_channelConns(CHANNELS_COUNT, NULL)
+/*
+ * Suppose we have N channels for phaul - one rpc channel, one memory
+ * channel and zero or more fs channels (channel per active ploop delta).
+ * So we have (2 + active deltas count) channels in total.
+ */
+PhaulConn::PhaulConn(const std::vector<std::string>& activeDeltas)
+	: m_channelConns(FS_CHANNELS_START_INDEX + activeDeltas.size(), NULL)
+	, m_activeDeltas(activeDeltas)
 {
 }
 
@@ -659,7 +665,7 @@ int PhaulConn::initServer(vzsock_ctx* ctx, int serverSocket)
 
 	m_ctx.reset(ctx);
 
-	for (size_t i = 0; i < PhaulConn::CHANNELS_COUNT; ++i) {
+	for (size_t i = 0; i < m_channelConns.size(); ++i) {
 
 		connSocket = accept(serverSocket, (sockaddr*)&addr, &addrsize);
 		if (connSocket == -1) {
@@ -692,7 +698,7 @@ int PhaulConn::initClient(vzsock_ctx* ctx)
 
 	m_ctx.reset(ctx);
 
-	for (size_t i = 0; i < PhaulConn::CHANNELS_COUNT; ++i) {
+	for (size_t i = 0; i < m_channelConns.size(); ++i) {
 
 		if (vzsock_open_conn(m_ctx.get(), NULL, &conn) != 0) {
 			return -1;
@@ -709,12 +715,63 @@ int PhaulConn::initClient(vzsock_ctx* ctx)
 	return 0;
 }
 
+/*
+ * Return value of --fdrpc phaul argument.
+ */
+std::string PhaulConn::getFdrpcArg() const
+{
+	return getChannelFdStr(RPC_CHANNEL_INDEX);
+}
+
+/*
+ * Return value of --fdmem phaul argument.
+ */
+std::string PhaulConn::getFdmemArg() const
+{
+	return getChannelFdStr(MEM_CHANNEL_INDEX);
+}
+
+/*
+ * Return value of --fdfs phaul argument. It contain list of active ploop
+ * delta paths with corresponding socket file descriptors in format
+ * %path1%:%socket1%[,%path2%:%socket2%[,...]]. Expect path can't contain ','
+ * character.
+ */
+std::string PhaulConn::getFdfsArg() const
+{
+	std::ostringstream fdfs;
+	for (size_t nDelta = 0; nDelta < m_activeDeltas.size(); ++nDelta) {
+
+		// Append deltas separator
+		if (nDelta != 0)
+			fdfs << ",";
+
+		// Append %path%:%socket% pair
+		fdfs << m_activeDeltas[nDelta] << ":" << getActiveDeltaFdStr(nDelta);
+	}
+
+	return fdfs.str();
+}
+
+int PhaulConn::checkEstablished() const
+{
+	for (size_t i = 0; i < m_channelConns.size(); ++i) {
+		if (getChannelFd(i) == -1) {
+			return -1;
+		}
+	}
+	return 0;
+}
+
 int PhaulConn::getChannelFd(size_t index) const
 {
 	int fd = -1;
 	size_t fdSize = sizeof(int);
 
-	if ((m_ctx.get() == NULL) || (m_channelConns[index] == NULL))
+	if (m_ctx.get() == NULL)
+		return -1;
+
+	if ((index >= m_channelConns.size()) || (m_channelConns[index] == NULL))
 		return -1;
 
 	if (vzsock_get_conn(m_ctx.get(), m_channelConns[index],
@@ -732,14 +789,9 @@ std::string PhaulConn::getChannelFdStr(size_t index) const
 	return fdStr.str();
 }
 
-int PhaulConn::checkEstablished() const
+std::string PhaulConn::getActiveDeltaFdStr(size_t nDelta) const
 {
-	for (size_t i = 0; i < m_channelConns.size(); ++i) {
-		if (getChannelFd(i) == -1) {
-			return -1;
-		}
-	}
-	return 0;
+	return getChannelFdStr(FS_CHANNELS_START_INDEX + nDelta);
 }
 
 PhaulSockServer::PhaulSockServer()
@@ -776,12 +828,12 @@ int PhaulSockServer::init()
 /*
  * Accept required count of additional connections for phaul.
  */
-PhaulConn* PhaulSockServer::acceptConn()
+PhaulConn* PhaulSockServer::acceptConn(const std::vector<std::string>& activeDeltas)
 {
 	if ((m_ctx.get() == NULL) || (m_serverSocket == -1))
 		return NULL;
 
-	std::auto_ptr<PhaulConn> conn(new PhaulConn());
+	std::auto_ptr<PhaulConn> conn(new PhaulConn(activeDeltas));
 	if (conn->initServer(m_ctx.release(), m_serverSocket) != 0)
 		return NULL;
 
@@ -814,12 +866,12 @@ int PhaulSockClient::init()
 /*
  * Establish required count of additional connections for phaul.
  */
-PhaulConn* PhaulSockClient::establishConn()
+PhaulConn* PhaulSockClient::establishConn(const std::vector<std::string>& activeDeltas)
 {
 	if (m_ctx.get() == NULL)
 		return NULL;
 
-	std::auto_ptr<PhaulConn> phaulConn(new PhaulConn());
+	std::auto_ptr<PhaulConn> phaulConn(new PhaulConn(activeDeltas));
 	if (phaulConn->initClient(m_ctx.release()) != 0)
 		return NULL;
 

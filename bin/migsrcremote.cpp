@@ -2118,11 +2118,8 @@ int MigrateStateRemote::doOnlinePloopCtMigration()
 	if (rc)
 		return rc;
 
-	if (string_list_size(&active_delta.getList()) > 1)
-		return putErr(-1, "Not implemented");
-
 	// Establish additional connections for p.haul-p.haul-service communication
-	rc = establishRemotePhaulConn();
+	rc = establishRemotePhaulConn(active_delta.toVector());
 	if (rc)
 		return rc;
 
@@ -2137,7 +2134,7 @@ int MigrateStateRemote::doOnlinePloopCtMigration()
 		return rc;
 
 	// Run p.haul iterative memory and fs migration
-	rc = runPhaulMigration(&active_delta.getList());
+	rc = runPhaulMigration();
 	if (rc)
 		return rc;
 
@@ -2197,17 +2194,28 @@ err:
  * communication between p.haul and p.haul-service. Current method of
  * connections establishment is unsafe and will be replaced with some better
  * implementation (e.g. tunneling through master connection) in near future.
+ *
+ * Command CMD_ESTABLISH_PHAUL_CONN has following format:
+ * %count%\n[%delta_path1%\n[%delta_path2%\n[...]]] (count of active ploop
+ * deltas and list of deltas paths separated by '\n').
  */
-int MigrateStateRemote::establishRemotePhaulConn()
+int MigrateStateRemote::establishRemotePhaulConn(
+	const std::vector<std::string>& activeDeltas)
 {
 	int rc = channel.sendCommand(CMD_PRE_ESTABLISH_PHAUL_CONN);
 	if (rc)
 		return rc;
 
+	// Prepare CMD_ESTABLISH_PHAUL_CONN command string
+	std::ostringstream cmdStr;
+	cmdStr << CMD_ESTABLISH_PHAUL_CONN << " ";
+	cmdStr << activeDeltas.size() << "\n";
+	for (size_t i = 0; i < activeDeltas.size(); ++i) {
+		cmdStr << activeDeltas[i] << "\n";
+	}
+
 	// Send CMD_ESTABLISH_PHAUL_CONN command to destination. ATTENTION!, have
 	// to read reply further in this function unconditionally!
-	std::ostringstream cmdStr;
-	cmdStr << CMD_ESTABLISH_PHAUL_CONN << " " << PhaulConn::CHANNELS_COUNT;
 	rc = channel.sendPkt(PACKET_SEPARATOR, cmdStr.str().c_str());
 	if (rc)
 		return rc;
@@ -2216,7 +2224,7 @@ int MigrateStateRemote::establishRemotePhaulConn()
 	std::auto_ptr<PhaulSockClient> sockClient(new PhaulSockClient());
 	std::auto_ptr<PhaulConn> conn;
 	if (sockClient->init() == 0)
-		conn.reset(sockClient->establishConn());
+		conn.reset(sockClient->establishConn(activeDeltas));
 
 	// Read CMD_ESTABLISH_PHAUL_CONN command reply
 	rc = channel.readReply();
@@ -2235,12 +2243,12 @@ int MigrateStateRemote::establishRemotePhaulConn()
  * Run p.haul over existing connections established previously to handle
  * online migration of container on source side.
  */
-int MigrateStateRemote::runPhaulMigration(string_list *activeDelta)
+int MigrateStateRemote::runPhaulMigration()
 {
 	if (m_phaulConn.get() == NULL)
 		return putErr(MIG_ERR_RUN_PHAUL, MIG_MSG_RUN_PHAUL);
 
-	std::vector<std::string> phaulArgs = getPhaulArgs(activeDelta);
+	std::vector<std::string> phaulArgs = getPhaulArgs();
 	if (execPhaul(phaulArgs) != 0)
 		return putErr(MIG_ERR_RUN_PHAUL, MIG_MSG_RUN_PHAUL_LOG,
 			PHAUL_LOG_FILE);
@@ -2248,7 +2256,10 @@ int MigrateStateRemote::runPhaulMigration(string_list *activeDelta)
 	return 0;
 }
 
-std::vector<std::string> MigrateStateRemote::getPhaulArgs(string_list *activeDelta)
+/*
+ * Return vector of command line arguments for p.haul exec.
+ */
+std::vector<std::string> MigrateStateRemote::getPhaulArgs()
 {
 	assert(m_phaulConn.get() != NULL);
 
@@ -2259,13 +2270,16 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(string_list *activeDel
 
 	// Pass phaul connections as socket file descriptors
 	args.push_back("--fdrpc");
-	args.push_back(m_phaulConn->getChannelFdStr(PhaulConn::RPC_CHANNEL_INDEX));
+	args.push_back(m_phaulConn->getFdrpcArg());
 
 	args.push_back("--fdmem");
-	args.push_back(m_phaulConn->getChannelFdStr(PhaulConn::MEM_CHANNEL_INDEX));
+	args.push_back(m_phaulConn->getFdmemArg());
 
-	args.push_back("--fdfs");
-	args.push_back(m_phaulConn->getChannelFdStr(PhaulConn::FS_CHANNEL_INDEX));
+	std::string fdfsArg = m_phaulConn->getFdfsArg();
+	if (!fdfsArg.empty()) {
+		args.push_back("--fdfs");
+		args.push_back(fdfsArg);
+	}
 
 	// Specify path to phaul log
 	args.push_back("--log-file");

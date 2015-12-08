@@ -1007,6 +1007,9 @@ int MigrateStateDstRemote::registerOnHaCluster()
 	return 0;
 }
 
+/*
+ * Return vector of command line arguments for p.haul-service exec.
+ */
 std::vector<std::string> MigrateStateDstRemote::getPhaulSrvArgs()
 {
 	assert(m_phaulConn.get() != NULL);
@@ -1016,13 +1019,16 @@ std::vector<std::string> MigrateStateDstRemote::getPhaulSrvArgs()
 
 	// Pass phaul connections as socket file descriptors
 	args.push_back("--fdrpc");
-	args.push_back(m_phaulConn->getChannelFdStr(PhaulConn::RPC_CHANNEL_INDEX));
+	args.push_back(m_phaulConn->getFdrpcArg());
 
 	args.push_back("--fdmem");
-	args.push_back(m_phaulConn->getChannelFdStr(PhaulConn::MEM_CHANNEL_INDEX));
+	args.push_back(m_phaulConn->getFdmemArg());
 
-	args.push_back("--fdfs");
-	args.push_back(m_phaulConn->getChannelFdStr(PhaulConn::FS_CHANNEL_INDEX));
+	std::string fdfsArg = m_phaulConn->getFdfsArg();
+	if (!fdfsArg.empty()) {
+		args.push_back("--fdfs");
+		args.push_back(fdfsArg);
+	}
 
 	// Specify path to phaul-service log
 	args.push_back("--log-file");
@@ -1263,11 +1269,13 @@ int MigrateStateDstRemote::cmdPreEstablishPhaulConn()
 
 /*
  * Destination side part of additional connections establishment needed for
- * communication between p.haul and p.haul-service.
+ * communication between p.haul and p.haul-service. Current method of
+ * connections establishment is unsafe and will be replaced with some better
+ * implementation (e.g. tunneling through master connection) in near future.
  *
- * Current method of connections establishment is unsafe and will be replaced
- * with some better implementation (e.g. tunneling through master connection)
- * in near future.
+ * Command CMD_ESTABLISH_PHAUL_CONN has following format:
+ * %count%\n[%delta_path1%\n[%delta_path2%\n[...]]] (count of active ploop
+ * deltas and list of deltas paths separated by '\n').
  */
 int MigrateStateDstRemote::cmdEstablishPhaulConn(istringstream &is)
 {
@@ -1277,15 +1285,29 @@ int MigrateStateDstRemote::cmdEstablishPhaulConn(istringstream &is)
 	if (sockServer.get() == NULL)
 		return putErr(-1, MIG_MSG_EST_DST_PHAUL_CONN);
 
-	int count;
-	if (!(is >> count))
+
+	// Read active deltas count
+	std::string bufStr;
+	if (!std::getline(is, bufStr))
 		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
 
-	if (count != PhaulConn::CHANNELS_COUNT)
-		return putErr(-1, MIG_MSG_EST_DST_PHAUL_CONN);
+	std::istringstream bufIs(bufStr);
+	int deltasCount;
+	if (!(bufIs >> deltasCount))
+		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
+
+	// Read active deltas paths
+	std::vector<std::string> activeDeltas;
+	for (int i = 0; i < deltasCount; ++i) {
+		std::string delta;
+		if (!std::getline(is, delta)) {
+			return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
+		}
+		activeDeltas.push_back(delta);
+	}
 
 	// Establish phaul connection
-	std::auto_ptr<PhaulConn> conn(sockServer->acceptConn());
+	std::auto_ptr<PhaulConn> conn(sockServer->acceptConn(activeDeltas));
 	if ((conn.get() == NULL) || (conn->checkEstablished() != 0))
 		return putErr(-1, MIG_MSG_EST_DST_PHAUL_CONN);
 
