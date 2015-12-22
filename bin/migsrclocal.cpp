@@ -643,20 +643,6 @@ int MigrateStateLocal::suspendVEOnline()
 	return 0;
 }
 
-int MigrateStateLocal::suspendVEOffline()
-{
-	int rc;
-
-	if ((rc = suspendVE()))
-		return rc;
-
-	if ((rc = srcVE->kill_chkpnt()))
-		return rc;
-	addCleaner(clean_restoreVE, srcVE);
-
-	return 0;
-}
-
 /* start VE stage: restore on online mode */
 int MigrateStateLocal::startVE()
 {

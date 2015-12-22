@@ -213,11 +213,6 @@ static bool isExternalBindmount(const std::string &bstr)
 	return bstr.find(":") != std::string::npos;
 }
 
-static bool isInternalBindmount(const std::string &bstr)
-{
-	return !isExternalBindmount(bstr);
-}
-
 bool VEObj::findInBindmounts(bool (*func)(const std::string &bstr))
 {
 	if (ve_data.bindmount == NULL)
@@ -236,11 +231,6 @@ bool VEObj::findInBindmounts(bool (*func)(const std::string &bstr))
 int VEObj::hasExternalBindmounts()
 {
 	return findInBindmounts(isExternalBindmount);
-}
-
-int VEObj::hasInternalBindmounts()
-{
-	return findInBindmounts(isInternalBindmount);
 }
 
 std::string VEObj::templatePath() const

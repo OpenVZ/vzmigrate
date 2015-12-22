@@ -764,7 +764,6 @@ int MigrateStateRemote::sendInitCmd()
 
 	options |= vzlayout_to_option(srcVE->layout);
 	options |= veformat_to_option(srcVE->veformat);
-	options |= isOptSet(OPT_CONVERT_VZFS) ? MIGINIT_CONVERT_VZFS : 0;
 	options |= isOptSet(OPT_KEEP_DST) ? MIGINIT_KEEP_DST : 0;
 
 	return channel.sendCommand(CMD_INIT " %s %d", dstVE->ctid(), options);
@@ -783,10 +782,6 @@ int MigrateStateRemote::checkRemoteVersion()
 		if (isOptSet(OPT_ONLINE))
 			return putErr(MIG_ERR_ONLINE_ELDER, MIG_MSG_ONLINE_ELDER);
 	}
-
-	if (VZMoptions.remote_version < MIGRATE_VERSION_608 &&
-			isOptSet(OPT_CONVERT_VZFS) && srcVE->isrun())
-		return putErr(MIG_ERR_SECOND_LEVEL_BUG, MIG_MSG_SECOND_LEVEL_BUG);
 
 	if (VZMoptions.remote_version < MIGRATE_VERSION_607 &&
 			srcVE->m_disks.size() > 1)
@@ -838,7 +833,7 @@ int MigrateStateRemote::preMigrateStage()
 		return rc;
 
 	// Use iterative scheme by default
-	use_iteration = (isOptSet(OPT_NOITER) || isOptSet(OPT_CONVERT_VZFS)) ? false : true;
+	use_iteration = (isOptSet(OPT_NOITER)) ? false : true;
 
 	/* check on the same cluster migration case */
 	if ((rc = checkClusterID()))
@@ -884,10 +879,8 @@ int MigrateStateRemote::preMigrateStage()
 		return rc;
 
 	if (VZMoptions.remote_version >= MIGRATE_VERSION_400) {
-		if (!isOptSet(OPT_CONVERT_VZFS)) {
-			if ((rc = checkKeepDir()))
-				return rc;
-		}
+		if ((rc = checkKeepDir()))
+			return rc;
 	}
 
 	// check license if target VE will be running
@@ -1045,11 +1038,6 @@ int MigrateStateRemote::suspendVEOnline()
 		return putErr(rc, MIG_MSG_DUMP, srcVE->ctid(), getError());
 
 	return 0;
-}
-
-int MigrateStateRemote::suspendVEOffline()
-{
-	return suspendVE();
 }
 
 int MigrateStateRemote::memoryCopyOnline()
@@ -1222,11 +1210,6 @@ int MigrateStateRemote::startVE()
 	                           ? 0 : action);
 		if (rc)
 			return rc;
-
-		if (isOptSet(OPT_CONVERT_VZFS)) {
-			srcVE->kill_chkpnt();
-			srcVE->umount();
-		}
 	}
 
 	unregisterHA();
@@ -1305,11 +1288,6 @@ int MigrateStateRemote::checkBindMounts()
 		logger(LOG_WARNING, MIG_MSG_EXT_BINDMOUNT, getError());
 		setOpt(OPT_NOSTART);
 	}
-
-	if (srcVE->hasInternalBindmounts() &&
-		VZMoptions.remote_version < MIGRATE_VERSION_605 &&
-		isOptSet(OPT_CONVERT_VZFS))
-		return putErr(MIG_ERR_CONVERT_BINDMOUNTS, MIG_MSG_CONVERT_BINDMOUNTS);
 
 	return 0;
 }

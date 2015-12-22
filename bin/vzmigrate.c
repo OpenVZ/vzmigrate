@@ -161,7 +161,6 @@ static int call_pmigrate(char *src_ct, char *dst_hn, char *dst_ct, char **narg)
 "      --no-ssl               Do not use ssl transport\n" \
 "  -t, --timeout              Connection timeout in seconds\n" \
 "      --nocompress           Do not compress disk image data on online ploop migration\n" \
-"      --convert-vzfs         Convert the file system of a Container from VZFS to ext4\n" \
 "  -v, --verbose              Print verbose information.\n\n" \
 "Online option: \n" 									\
 "      --online               Perform online (zero-downtime) migration.\n"		\
@@ -220,7 +219,6 @@ int main(int argc, char **argv)
 		{"ciphers", required_argument, NULL, CIPHERS_OPTS},
 		{"keep-dump", no_argument, NULL, KEEP_DUMP_OPTS},
 		{"nocompress", no_argument, NULL, NOCOMPRESS_OPTS},
-		{"convert-vzfs", no_argument, NULL, CONVERT_VZFS_OPTS},
 		{"ignore-backup-disk", no_argument, NULL, IGNORE_BACKUP_DISK_OPTS},
 		{"noevent", no_argument, NULL, NOEVENT_OPTS},
 		{0, 0, 0, 0}
@@ -276,7 +274,6 @@ int main(int argc, char **argv)
 			CHECK_NOOPT_ARG(KEEP_DUMP_OPTS, "--keep-dump");
 			CHECK_NOOPT_ARG('b', "--batch");
 			CHECK_NOOPT_ARG(NOCOMPRESS_OPTS, "--nocompress");
-			CHECK_NOOPT_ARG(CONVERT_VZFS_OPTS, "--convert-vzfs");
 			CHECK_NOOPT_ARG(NOEVENT_OPTS, "--noevent");
 
 			CHECK_MOPT_ARG(TIMEOUT_OPTS, "--timeout");

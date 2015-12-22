@@ -99,14 +99,9 @@ int MigrateStateSrc::stopVE()
 	}
 	else if (srcVE->isrun())
 	{
-		if (isOptSet(OPT_CONVERT_VZFS)) {
-			if ((rc = suspendVEOffline()))
-				return rc;
-		} else {
-			if ((rc = srcVE->stop(isOptSet(OPT_SKIP_UMOUNT))))
-				return rc;
-			addCleaner(clean_startVE, srcVE);
-		}
+		if ((rc = srcVE->stop(isOptSet(OPT_SKIP_UMOUNT))))
+			return rc;
+		addCleaner(clean_startVE, srcVE);
 	}
 
 	return rc;

@@ -144,7 +144,6 @@ private:
 
 	int copyDumpFile();
 	int suspendVEOnline();
-	int suspendVEOffline();
 	int memoryCopyOnline();
 	int sendVersionCmd();
 	int sendInitCmd();

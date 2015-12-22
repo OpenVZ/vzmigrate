@@ -159,12 +159,12 @@ extern const char * getError();
 #define MIG_ERR_NO_MNT_NAMESPACES_CAPS	-63 /* unused */
 #define MIG_ERR_VZFS_ON_PSTORAGE	-64
 #define MIG_ERR_PLOOP_FORMAT		-65
-#define MIG_ERR_CONVERT_BINDMOUNTS	-66
+#define MIG_ERR_CONVERT_BINDMOUNTS	-66 /* unused */
 #define MIG_ERR_CHECKSUM_MIGRATE        -67
 #define MIG_ERR_MULTIPLOOP_IS_NOT_SUP	-68
 #define MIG_ERR_DST_BUNDLE_EXIST	-69
 #define MIG_ERR_EXTERNAL_DISKS_MIXED	-70
-#define MIG_ERR_SECOND_LEVEL_BUG        -71
+#define MIG_ERR_SECOND_LEVEL_BUG        -71 /* unused */
 #define MIG_ERR_EXTERNAL_PROCESS        -72 /* unused */
 #define MIG_ERR_RUN_PHAUL				-73
 #define MIG_ERR_START_PHAUL_SRV			-74
@@ -266,14 +266,10 @@ extern const char * getError();
 #define MIG_MSG_NAME_CONFLICT	"name %s already used by CT %s"
 #define MIG_MSG_PLOOP_FORMAT	"The following ploop format is not supported "\
 				"on the destination node: %d"
-#define MIG_MSG_CONVERT_BINDMOUNTS	"Migration CT with bindmounts does "\
-					"not supported on destination node"
 #define MIG_MSG_MULTIPLOOP_IS_NOT_SUP	"No secondary ploop support on destination"
 
 #define MIG_MSG_CLONE_FORBIDDEN_FOR_SUSPENDED        "Clone is forbidden for suspended CT"
 #define MIG_MSG_CHECKSUM_MIGRATE        "can't migrate on vzfs traker failure. Update vzmigrate package to 6.0.7 on destination"
-#define MIG_MSG_SECOND_LEVEL_BUG	"Update vmigrate package to 6.0.8 on destination to "\
-					"migrate online with vzfs to ploop conversion."
 #define MIG_MSG_SET_DST_NAME	"can not set name %s for container"
 
 //TODO: friendly message

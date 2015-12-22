@@ -62,7 +62,6 @@ protected:
 
 	int copyDumpFile();
 	int suspendVEOnline();
-	int suspendVEOffline();
 
 	static int clean_restoreVE(const void * arg1, const void * arg2);
 

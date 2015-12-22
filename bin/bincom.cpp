@@ -159,7 +159,6 @@ ctid_t g_keeperCTID = "\0";
 "      --whole-file           Use rsync --whole-file option\n" \
 "  -t, --timeout              Connection timeout in seconds\n" \
 "      --nocompress           Do not compress disk image data on online ploop migration\n" \
-"      --convert-vzfs         Convert the file system of a Container from VZFS to ext4\n" \
 "  -v, --verbose              Print verbose information.\n\n" \
 "Online option: \n" 									\
 "      --online               Perform online (zero-downtime) migration.\n"		\
@@ -593,7 +592,6 @@ void parse_options (int argc, char **argv)
 		{"keep-src", no_argument, NULL, KEEP_SRC_OPTS},
 		{"new-uuid", required_argument, NULL, NEW_UUID_OPTS},
 		{"nocompress", no_argument, NULL, NOCOMPRESS_OPTS},
-		{"convert-vzfs", no_argument, NULL, CONVERT_VZFS_OPTS},
 		{"ignore-backup-disk", no_argument, NULL, IGNORE_BACKUP_DISK_OPTS},
 		{"noevent", no_argument, NULL, NOEVENT_OPTS},
 		{0, 0, 0, 0}
@@ -874,9 +872,6 @@ void parse_options (int argc, char **argv)
 			break;
 		case NOCOMPRESS_OPTS:
 			setOpt(OPT_NOCOMPRESS);
-			break;
-		case CONVERT_VZFS_OPTS:
-			setOpt(OPT_CONVERT_VZFS);
 			break;
 		case IGNORE_BACKUP_DISK_OPTS:
 			setOpt(OPT_IGNORE_BACKUP_DISK);

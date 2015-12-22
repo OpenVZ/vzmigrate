@@ -61,7 +61,6 @@ public:
 	virtual bool isSameLocation() = 0;
 	virtual int copyDumpFile() = 0;
 	virtual int suspendVEOnline() = 0;
-	virtual int suspendVEOffline() = 0;
 
 	MigrateStateSrc(const char * src_ctid, const char * dst_ctid,
 		const char * priv, const char * root, const char *name);

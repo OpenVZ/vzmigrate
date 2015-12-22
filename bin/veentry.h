@@ -178,7 +178,6 @@ public:
 	std::string getRootConf();
 	int prepareConfig();
 	int hasExternalBindmounts();
-	int hasInternalBindmounts();
 	std::string templatePath() const;
 	std::string bindmountPath() const;
 
