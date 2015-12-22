@@ -1890,6 +1890,8 @@ finish
 */
 int MigrateStateRemote::doOnlinePloopSharedCtMigration()
 {
+// need to adjust to new c/r technology
+#if 0
 	int rc;
 	char path[PATH_MAX+1];
 	// create copy of DiskDescription.xml
@@ -2094,6 +2096,9 @@ err1:
 	close_active_deltas();
 
 	return rc;
+#endif
+
+	return putErr(-1, "Online migration of containers with shared ploop disks not implemented");
 }
 
 /* Offline migration with shared VE_PRIVATE
