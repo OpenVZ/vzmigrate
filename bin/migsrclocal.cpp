@@ -643,7 +643,51 @@ int MigrateStateLocal::suspendVEOnline()
 	return 0;
 }
 
-/* start VE stage: restore on online mode */
+/*
+ * Stage of src VE stopping.
+ */
+int MigrateStateLocal::stopVE()
+{
+	int rc = 0;
+
+	if (isOptSet(OPT_KEEPER))
+		if ((rc = exchangeKeeperIPs()))
+			return rc;
+
+	if (isOptSet(OPT_ONLINE))
+	{
+		if ((rc = srcVE->stopVpsd()))
+			return rc;
+
+		if (!isOptSet(OPT_COPY)) {
+			if ((rc = srcVE->createDumpFile()))
+				return rc;
+			addCleanerRemove(clean_removeFile, srcVE->dumpfile, ERROR_CLEANER);
+
+			if ((rc = suspendVEOnline()))
+				return rc;
+
+			rc = copyDumpFile();
+
+		} else {
+			if ((rc = suspendVE()))
+				return rc;
+			addCleaner(clean_resumeVE, srcVE);
+		}
+	}
+	else if (srcVE->isrun())
+	{
+		if ((rc = srcVE->stop(isOptSet(OPT_SKIP_UMOUNT))))
+			return rc;
+		addCleaner(clean_startVE, srcVE);
+	}
+
+	return rc;
+}
+
+/*
+ * Stage of dst VE starting.
+ */
 int MigrateStateLocal::startVE()
 {
 	int rc = 0;

@@ -1104,6 +1104,33 @@ void MigrateStateRemote::unregisterHA()
 	}
 }
 
+/*
+ * Stage of src VE stopping. Function handle only legacy migration scenarios
+ * since most part of live migration logic moved to p.haul.
+ */
+int MigrateStateRemote::stopVE()
+{
+	int rc = 0;
+
+	assert(!isOptSet(OPT_ONLINE));
+
+	if (isOptSet(OPT_KEEPER))
+		if ((rc = exchangeKeeperIPs()))
+			return rc;
+
+	if (srcVE->isrun())
+	{
+		if ((rc = srcVE->stop(isOptSet(OPT_SKIP_UMOUNT))))
+			return rc;
+		addCleaner(clean_startVE, srcVE);
+	}
+
+	return rc;
+}
+
+/*
+ * Stage of dst VE starting.
+ */
 int MigrateStateRemote::startVE()
 {
 	int rc = 0;
@@ -1987,10 +2014,7 @@ int MigrateStateRemote::doOnlinePloopSharedCtMigration()
 
 	// Now we should restore (before dst VE starting) VEs IP from keeperVE
 	if (isOptSet(OPT_KEEPER))
-	{
-		assert(keepVE);
-		restoreIPs(*keepVE, *srcVE);
-	}
+		restoreKeeperIPs();
 
 	/* stop and umount CT _before_ merge on target */
 	if (srcVE->kill_chkpnt())

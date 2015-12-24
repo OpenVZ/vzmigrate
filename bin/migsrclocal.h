@@ -39,6 +39,7 @@ class MigrateStateLocal : public MigrateStateSrc
 public:
 	virtual int doCtMigration();
 
+	int stopVE();
 	virtual int startVE();
 
 	MigrateStateLocal(const char * src_ctid, const char * dst_ctid,

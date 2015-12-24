@@ -21,6 +21,7 @@ public:
 	int doCtMigrationDefault();
 	int doCtMigrationPhaul();
 
+	int stopVE();
 	virtual int startVE();
 
 	// checks

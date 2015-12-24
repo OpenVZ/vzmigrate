@@ -47,6 +47,30 @@ MigrateStateSrc::~MigrateStateSrc()
 		unlink(m_convertQuota2);
 }
 
+/*
+ * Transfer ip addresses of CT to some 'keeper' CT.
+ */
+int MigrateStateSrc::exchangeKeeperIPs()
+{
+	assert(keepVE);
+
+	int rc = exchangeIPs(*keepVE, *srcVE);
+	if (rc != 0)
+		return rc;
+
+	addCleaner(clean_rollbackIPs, keepVE, srcVE, ERROR_CLEANER);
+	return 0;
+}
+
+/*
+ * Restore ip addresses of CT from 'keeper' CT.
+ */
+int MigrateStateSrc::restoreKeeperIPs()
+{
+	assert(keepVE);
+	return restoreIPs(*keepVE, *srcVE);
+}
+
 int MigrateStateSrc::suspendVE()
 {
 	int rc;
@@ -58,65 +82,13 @@ int MigrateStateSrc::suspendVE()
 	return 0;
 }
 
-int MigrateStateSrc::stopVE()
-{
-	// Stop source VE
-	// checking is needed on case of stopping VE during migration
-	// by kernel license verification
-
-	int rc = 0;
-
-	// We transfer VE ip addresses to some 'keeper' VE
-	if (isOptSet(OPT_KEEPER))
-	{
-		assert(keepVE);
-		rc = exchangeIPs(*keepVE, *srcVE);
-		if (rc != 0)
-			return rc;
-		addCleaner(clean_restoreVE, keepVE, srcVE);
-	}
-
-	if (isOptSet(OPT_ONLINE))
-	{
-		if ((rc = srcVE->stopVpsd()))
-			return rc;
-
-
-		if (!isOptSet(OPT_COPY)) {
-			if ((rc = srcVE->createDumpFile()))
-				return rc;
-			addCleanerRemove(clean_removeFile, srcVE->dumpfile, ERROR_CLEANER);
-
-			if ((rc = suspendVEOnline()))
-				return rc;
-
-			rc = copyDumpFile();
-		} else {
-			if ((rc = suspendVE()))
-				return rc;
-			addCleaner(clean_resumeVE, srcVE);
-		}
-	}
-	else if (srcVE->isrun())
-	{
-		if ((rc = srcVE->stop(isOptSet(OPT_SKIP_UMOUNT))))
-			return rc;
-		addCleaner(clean_startVE, srcVE);
-	}
-
-	return rc;
-}
-
 int MigrateStateSrc::startVEStage()
 {
 	int rc = 0;
-	// Now we should restore (before dst VE starting) VEs IP from keeperVE
+
 	if (isOptSet(OPT_KEEPER))
-	{
-		assert(keepVE);
-		if ((rc = restoreIPs(*keepVE, *srcVE)))
+		if ((rc = restoreKeeperIPs()))
 			return rc;
-	}
 
 	// VE starting
 	rc = startVE();
@@ -177,7 +149,7 @@ int MigrateStateSrc::clean_closeSocket(const void * arg, const void *)
 };
 
 // Clean functions
-int MigrateStateSrc::clean_restoreVE(const void * arg1, const void *arg2)
+int MigrateStateSrc::clean_rollbackIPs(const void * arg1, const void *arg2)
 {
 	VEObj * k = (VEObj *) arg1;
 	VEObj * v = (VEObj *) arg2;

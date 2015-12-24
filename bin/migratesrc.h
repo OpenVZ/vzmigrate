@@ -36,12 +36,14 @@ protected:
 	static int clean_startVE(const void * arg, const void *);
 	static int clean_closeSocket(const void * arg, const void *);
 	static int clean_mountVE(const void * arg, const void *);
-	static int clean_restoreVE(const void * arg, const void *);
+	static int clean_rollbackIPs(const void * arg, const void *);
 	static int clean_deletePloopSnapshot(const void * arg, const void * arg2);
 	static int clean_registerVE(const void * arg1, const void * arg2);
 	static int clean_resumeVE(const void * arg1, const void * arg2);
 	static int clean_deleteSnapshot(const void * arg1, const void * arg2);
 
+	int exchangeKeeperIPs();
+	int restoreKeeperIPs();
 	int suspendVE();
 	int checkCommonSrc();
 
@@ -78,8 +80,6 @@ protected:
 
 	int startVEStage();
 
-	// stage of src VE stoping
-	int stopVE();
 	// stage of dst VE starting
 	virtual int startVE() = 0;
 

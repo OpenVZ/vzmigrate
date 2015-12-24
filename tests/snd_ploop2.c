@@ -166,13 +166,6 @@ int main(int argc, char **argv, char **envp)
 	rc = ploop_src_online_copy_image_1(root, sock, tmo, &data);
 	if (rc)
 		return rc;
-/*
-	rc = stopVE();
-	if (rc) {
-		ploop_data_close(&data);
-		return rc;
-	}
-*/
 
 	rc = ploop_src_online_copy_image_2(&data);
 	if (rc)
