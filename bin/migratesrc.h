@@ -83,8 +83,6 @@ protected:
 	// stage of dst VE starting
 	virtual int startVE() = 0;
 
-	int doDefaultCtMigration();
-
 	int excludeActiveDelta(const char *dd_xml, char *path,  size_t size);
 	int getActivePloopDelta(struct string_list *list);
 	int getActivePloopDelta(const ct_disk &disk, struct string_list *list);
