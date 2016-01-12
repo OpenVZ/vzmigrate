@@ -122,7 +122,7 @@ public:
 	int mount();
 	int umount();
 	int tsnapshot(const char *guid);
-	int snapshot_delete(const char *guid);
+	int tsnapshot_delete(const char *guid);
 	int dump();
 	int kill_chkpnt();
 	int kill_restore();

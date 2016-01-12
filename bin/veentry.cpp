@@ -576,7 +576,7 @@ int VEObj::tsnapshot(const char *guid)
 	return operateVE("tsnapshot", "Snapshoting", opt, 0);
 }
 
-int VEObj::snapshot_delete(const char *guid)
+int VEObj::tsnapshot_delete(const char *guid)
 {
 	const char *opt[] = {"--uuid", guid, NULL};
 

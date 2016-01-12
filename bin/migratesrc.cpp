@@ -153,7 +153,7 @@ int MigrateStateSrc::clean_deleteSnapshot(const void * arg1, const void * arg2)
 
 	assert(ve);
 
-	return ve->snapshot_delete(guid);
+	return ve->tsnapshot_delete(guid);
 }
 
 int MigrateStateSrc::getRelativePath(

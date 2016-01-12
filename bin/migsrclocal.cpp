@@ -1152,7 +1152,7 @@ int MigrateStateLocal::ploopCtMove()
 		}
 
 		// #TODO umount instead
-		srcVE->snapshot_delete(srcVE->snap_guid());
+		srcVE->tsnapshot_delete(srcVE->snap_guid());
 
 	} else {
 		rc = h_rename(srcVE->priv, dstVE->priv);
