@@ -608,41 +608,6 @@ int MigrateStateLocal::postFinalStage()
 	return 0;
 }
 
-int MigrateStateLocal::copyDumpFile()
-{
-	if (!isOptSet(OPT_KEEP_DUMP))
-		addCleanerRemove(clean_removeFile, srcVE->dumpfile, SUCCESS_CLEANER);
-
-	if (is_thesame_location)
-		dstVE->dumpfile = strdup(combine_path(dstVE->dumpDir(),
-			basename_str(srcVE->dumpfile)).c_str());
-	else
-		dstVE->dumpfile = strdup(srcVE->dumpfile);
-
-	if (dstVE->dumpfile == NULL)
-		return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
-
-	return 0;
-}
-
-int MigrateStateLocal::suspendVEOnline()
-{
-	int rc;
-
-	if ((rc = srcVE->suspend(0, false)))
-		return putErr(rc, MIG_MSG_SUSPEND, srcVE->ctid(), getError());
-	addCleaner(clean_resumeVE, srcVE);
-
-	if ((rc = srcVE->dump()))
-		return putErr(rc, MIG_MSG_DUMP, srcVE->ctid(), getError());
-
-	if ((rc = srcVE->kill_chkpnt()))
-		return rc;
-	addCleaner(clean_restoreVE, srcVE);
-
-	return 0;
-}
-
 /*
  * Stage of src VE stopping.
  */

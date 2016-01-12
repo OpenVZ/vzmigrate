@@ -1007,39 +1007,6 @@ int MigrateStateRemote::preMigrateStage()
 	return 0;
 }
 
-int MigrateStateRemote::copyDumpFile()
-{
-	int rc;
-
-	logger(LOG_INFO, MSG_FUNC_COPY_DUMP, srcVE->dumpfile);
-	if (m_nFlags & VZMSRC_SHARED_DUMP)
-		rc = h_copy_cluster_dump(srcVE->dumpfile);
-	else
-		rc = h_copy_remote_rsync_dump(srcVE->dumpfile);
-	if (!rc)
-		logger(LOG_INFO, "done");
-
-	return rc;
-}
-
-int MigrateStateRemote::suspendVEOnline()
-{
-	int rc;
-	unsigned int dummy_cpu_flags = 0;
-
-	if ((rc = memoryCopyOnline()))
-		return rc;
-
-	if ((rc = srcVE->suspend(dummy_cpu_flags, use_iteration)))
-		return putErr(rc, MIG_MSG_SUSPEND, srcVE->ctid(), getError());
-	addCleaner(clean_resumeVE, srcVE);
-
-	if ((rc = srcVE->dump()))
-		return putErr(rc, MIG_MSG_DUMP, srcVE->ctid(), getError());
-
-	return 0;
-}
-
 int MigrateStateRemote::memoryCopyOnline()
 {
 	int ret;

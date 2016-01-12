@@ -143,8 +143,6 @@ private:
 	int copy_active_deltas_dirty();
 	void close_active_deltas();
 
-	int copyDumpFile();
-	int suspendVEOnline();
 	int memoryCopyOnline();
 	int sendVersionCmd();
 	int sendInitCmd();

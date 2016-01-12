@@ -61,9 +61,6 @@ protected:
 
 	bool isSameLocation();
 
-	int copyDumpFile();
-	int suspendVEOnline();
-
 	static int clean_restoreVE(const void * arg1, const void * arg2);
 
 	/* HA cluster-related cleaner set */
