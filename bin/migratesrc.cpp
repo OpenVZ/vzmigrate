@@ -71,17 +71,6 @@ int MigrateStateSrc::restoreKeeperIPs()
 	return restoreIPs(*keepVE, *srcVE);
 }
 
-int MigrateStateSrc::suspendVE()
-{
-	int rc;
-
-	if ((rc = srcVE->suspend()))
-		return putErr(rc, MIG_MSG_SUSPEND, srcVE->ctid(), getError());
-	addCleaner(clean_resumeVE, srcVE);
-
-	return 0;
-}
-
 int MigrateStateSrc::startVEStage()
 {
 	int rc = 0;
@@ -208,18 +197,6 @@ int MigrateStateSrc::clean_registerVE(const void * arg1, const void *)
 	if (ve->registration())
 		return 0;
 	ve->operateVE("set", NULL, opts, 0);
-	return 0;
-}
-
-int MigrateStateSrc::clean_resumeVE(const void * arg1, const void *)
-{
-	VEObj * ve = (VEObj *) arg1;
-
-	assert(ve);
-	logger(LOG_DEBUG, MIG_MSG_RST_RESUME, ve->ctid());
-	// Resume source VE
-	if (ve->isfrozen())
-		ve->resume_chkpnt();
 	return 0;
 }
 

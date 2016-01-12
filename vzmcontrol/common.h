@@ -235,13 +235,13 @@ extern const char * getError();
 #define MIG_MSG_LAZY		"Can not perform lazy online migration"
 #define MIG_MSG_ONLINE_ELDER	"Can not perform online migration to/from elder version"
 #define MIG_MSG_VM_PREP		"can not prepare vm for CT %s : %s"
-#define MIG_MSG_SUSPEND		"can not suspend CT %s : %s"
+#define MIG_MSG_CMD_SUSPEND	"can not suspend CT %s : %s"
+#define MIG_MSG_CMD_RESTORE	"can not restore CT %s : %s"
 #define MIG_MSG_DUMP		"can not dump CT %s : %s" MIG_MSG_TRYOFFLINE
 #define MIG_MSG_UNDUMP		"can not undump CT %s : %s" MIG_MSG_TRYOFFLINE
 #define MIG_MSG_TRYOFFLINE	"\nThis CT can't be migrated online at the moment. Try offline migration."
 #define MIG_MSG_ITER		"can not prepare destination CT %s for iterative migration : %s"
 #define MIG_MSG_DST_RESUME	"can not resume destination CT %s : %s"
-#define MIG_MSG_RESUME		"can not resume CT %s : %s"
 #define MIG_MSG_SPECIAL		"CT %s is special CT type '%s'"
 #define MIG_MSG_DELETE		"can not delete '%s' : %s"
 #define MIG_MSG_CREATE_DIR	"can not create dir '%s' : %m "

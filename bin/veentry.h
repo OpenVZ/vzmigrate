@@ -78,8 +78,6 @@ class VEObj
 {
 private:
 	string m_snap_guid;
-	/* VE is frozen or not */
-	bool is_frozen;
 
 	ctid_t m_ctid;
 
@@ -123,7 +121,6 @@ public:
 	int stop(bool skip_umount = false);
 	int mount();
 	int umount();
-	int suspend(unsigned int flags = 0, bool use_context = false, bool stop_tracker = false);
 	int tsnapshot(const char *guid);
 	int snapshot_delete(const char *guid);
 	int dump();
@@ -148,7 +145,6 @@ public:
 	int isrun();
 	int ismount();
 	int issuspended();
-	bool isfrozen();
 
 	/* register ve with new layout */
 	int veRegister();

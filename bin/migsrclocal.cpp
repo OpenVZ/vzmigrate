@@ -661,20 +661,17 @@ int MigrateStateLocal::stopVE()
 		if ((rc = srcVE->stopVpsd()))
 			return rc;
 
-		if ((rc = srcVE->createDumpFile()))
-			return rc;
-		addCleanerRemove(clean_removeFile, srcVE->dumpfile, ERROR_CLEANER);
+		if ((rc = srcVE->cmd_suspend()))
+			return putErr(rc, MIG_MSG_CMD_SUSPEND, srcVE->ctid(), getError());
 
-		if ((rc = suspendVEOnline()))
-			return rc;
-
-		rc = copyDumpFile();
+		addCleaner(clean_restoreVE, srcVE, NULL, ERROR_CLEANER);
 	}
 	else if (srcVE->isrun())
 	{
 		if ((rc = srcVE->stop(isOptSet(OPT_SKIP_UMOUNT))))
 			return rc;
-		addCleaner(clean_startVE, srcVE);
+
+		addCleaner(clean_startVE, srcVE, NULL, ERROR_CLEANER);
 	}
 
 	return rc;
@@ -687,28 +684,23 @@ int MigrateStateLocal::startVE()
 {
 	int rc = 0;
 
-	if (isOptSet(OPT_ONLINE)) {
-		if (isOptSet(OPT_COPY)) {
-			if ((rc = srcVE->resume_chkpnt()))
-				return putErr(rc, MIG_MSG_DST_RESUME, srcVE->ctid(), getError());
-		} else {
-			if ((rc = dstVE->cmd_restore()))
-				return putErr(rc, MIG_MSG_DST_RESUME, dstVE->ctid(), getError());
-		}
-	} else {
-		VEObj * ve = isOptSet(OPT_COPY) ? (VEObj *) srcVE : (VEObj *) dstVE;
+	assert(!isOptSet(OPT_COPY));
 
+	if (isOptSet(OPT_ONLINE)) {
+		if ((rc = dstVE->cmd_restore()))
+			return putErr(rc, MIG_MSG_CMD_RESTORE, dstVE->ctid(), getError());
+
+	} else {
 		if (isOptSet(OPT_NOSTART))
 			return 0;
 
-		// start/mount VE if this is needed.
 		if (m_srcInitStatus & ENV_STATUS_RUNNING)
-			rc = ve->start();
+			rc = dstVE->start();
 		else if (m_srcInitStatus & ENV_STATUS_MOUNTED)
-			rc = ve->mount();
+			rc = dstVE->mount();
+
 		if (rc)
 			return rc;
-		return 0;
 	}
 
 	return 0;
@@ -788,11 +780,6 @@ int MigrateStateLocal::checkDiskSpaceValues(
 	return check_free_space(dstVE->priv, bytes, inodes);
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *	Next functions provide 'copy' functionality for different cases
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- */
-
 static int doCopy(const char * const args[], ...)
 {
 	int rc;
@@ -818,11 +805,11 @@ int MigrateStateLocal::clean_restoreVE(const void * arg1, const void *)
 	logger(LOG_DEBUG, MIG_MSG_RST_RESUME, ve->ctid());
 
 	// Resume source VE
-	if (ve->dumpfile == NULL && !ve->issuspended())
+	if (!ve->issuspended())
 		return 0;
 
 	if (ve->cmd_restore())
-		return putErr(MIG_ERR_STARTVE, MIG_MSG_RESUME,
+		return putErr(MIG_ERR_STARTVE, MIG_MSG_CMD_RESTORE,
 			ve->ctid(), getError());
 	return 0;
 }
@@ -1146,10 +1133,10 @@ static bool disk_is_internal(const struct disk_entry &d)
 /*
 create snapshot
 copy private area exclude active delta and link to base image
-vzctl suspend 5002 --dumpfile /vz/dump/dumpfile.JONqYn
+vzctl suspend 5002
 copy active delta
 vzctl2_env_register(/vz/private/test5002, 5002, 1)
-vzctl restore 5002 --dumpfile /vz/dump/dumpfile.JONqYn
+vzctl restore 5002
 merge snapshot
 */
 int MigrateStateLocal::ploopCtMove()

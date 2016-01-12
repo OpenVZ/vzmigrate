@@ -36,7 +36,6 @@ void VEObj::priv_init()
 
 	lock_fd = -1;
 	layout = VZCTL_LAYOUT_5;
-	is_frozen = false;
 }
 
 VEObj::VEObj(const char *ctid)
@@ -482,11 +481,6 @@ int VEObj::issuspended()
 	return status & ENV_STATUS_SUSPENDED;
 }
 
-bool VEObj::isfrozen()
-{
-	return is_frozen;
-}
-
 static const char *get_lock_status()
 {
 	if (VZMoptions.bintype != BIN_LOCAL)
@@ -573,29 +567,6 @@ int VEObj::destroy()
 	return operateVE("destroy", NULL, NULL, 1);
 }
 
-int VEObj::suspend(unsigned int flags, bool use_context, bool stop_tracker)
-{
-// obsolete, c/r support removed from vzctl
-#if 0
-	int rc;
-	char buf[ITOA_BUF_SIZE];
-	char veid_hex[10];
-	const char * opt[MAX_ARGS] = {"--suspend", "--flags", buf, NULL};
-
- 	snprintf(buf, sizeof(buf), "%u", flags);
-	snprintf(veid_hex, sizeof(veid_hex), "%x", veid());
-	if (use_context)
-		arrangeArgs(opt, sizeof(opt)/sizeof(char *), opt, "--context", veid_hex, (void *)NULL);
-	if (stop_tracker)
-		arrangeArgs(opt, sizeof(opt)/sizeof(char *), opt, "--stop-tracker", (void *)NULL);
-	if ((rc = operateVE("chkpnt", "Suspending", opt, 0)))
-		return rc;
-	is_frozen = true;
-	return 0;
-#endif
-	return -1;
-}
-
 int VEObj::tsnapshot(const char *guid)
 {
 	const char *opt[] = {
@@ -614,30 +585,12 @@ int VEObj::snapshot_delete(const char *guid)
 
 int VEObj::cmd_suspend()
 {
-// obsolete, c/r support removed from vzctl
-#if 0
-	const char * opts[] = {"--dumpfile", dumpfile, NULL };
-
-	if (dumpfile == NULL)
-		 opts[0] = NULL;
-
-	return operateVE("suspend", "Suspending", opts, 0);
-#endif
-	return -1;
+	return operateVE("suspend", "Suspending", NULL, 0);
 }
 
 int VEObj::cmd_restore()
 {
-// obsolete, c/r support removed from vzctl
-#if 0
-	const char * opts[] = {"--dumpfile", dumpfile, NULL };
-
-	if (dumpfile == NULL)
-		 opts[0] = NULL;
-
-	return operateVE("restore", "Restoring", opts, 0);
-#endif
-	return -1;
+	return operateVE("restore", "Restoring", NULL, 0);
 }
 
 int VEObj::dump()
