@@ -650,6 +650,8 @@ int MigrateStateLocal::stopVE()
 {
 	int rc = 0;
 
+	assert(!isOptSet(OPT_COPY));
+
 	if (isOptSet(OPT_KEEPER))
 		if ((rc = exchangeKeeperIPs()))
 			return rc;
@@ -659,21 +661,14 @@ int MigrateStateLocal::stopVE()
 		if ((rc = srcVE->stopVpsd()))
 			return rc;
 
-		if (!isOptSet(OPT_COPY)) {
-			if ((rc = srcVE->createDumpFile()))
-				return rc;
-			addCleanerRemove(clean_removeFile, srcVE->dumpfile, ERROR_CLEANER);
+		if ((rc = srcVE->createDumpFile()))
+			return rc;
+		addCleanerRemove(clean_removeFile, srcVE->dumpfile, ERROR_CLEANER);
 
-			if ((rc = suspendVEOnline()))
-				return rc;
+		if ((rc = suspendVEOnline()))
+			return rc;
 
-			rc = copyDumpFile();
-
-		} else {
-			if ((rc = suspendVE()))
-				return rc;
-			addCleaner(clean_resumeVE, srcVE);
-		}
+		rc = copyDumpFile();
 	}
 	else if (srcVE->isrun())
 	{
