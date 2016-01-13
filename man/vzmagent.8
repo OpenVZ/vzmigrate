@@ -1,0 +1,47 @@
+.TH vzmagent 8 "October 2009" "@PRODUCT_NAME_LONG@"
+
+.SH NAME
+vzmagent - script that run vzmigrate in \fIagent\fP like mode on nodes
+that don't have installed agent (like Virtuozzo 2.0.2).
+
+.SH SYNOPSIS
+.TP
+.B vzmagent {migrate options} \fI<src HN address>\fP
+\fI<dst serviceVE address>\fP \fI{VE\ List}\fP
+
+.SH DESCRIPTION
+This utility is used to emulate agent like mode on HN without agent
+installed. It work only in one direction, i.e. migration from node
+when it installed to HN with agent installed.
+
+.SH OPTIONS
+.TP
+See \fBvzmigrate(8)\fP.
+
+.SH NOTE
+You have to run \fBvzmsetkey(8)\fP before. It strongly recommended to
+run \fBvzmagent\fP with \fI-s\fP (no start) option to prevent attempt
+of VE starting on destination side.
+
+.SH MIGRATION
+Migration can be divided in some steps:
+.TP
+\fB1.\fP Get ssh key from destination node (see \fBvzagent\fP docs).
+.TP
+\fB2.\fP Set ssh key to source node (see \fBvzmsetkey(8)\fP).
+.TP
+\fB3.\fP Call prepare migration on destination node (see \fBvzagent\fP
+docs). NOTE: instead of source service VE address, you have to provide
+source HN address in \fBprepare_migration\fP command arguments.
+.TP
+\fB4.\fP Call \fBvzmagent\fP on source node.
+
+.SH EXIT STATUS
+See \fBvzmigrate(8)\fP.
+
+.SH SEE ALSO
+.BR vzmigrate (8)
+.BR vzmsetkey (8)
+
+.SH COPYRIGHT
+Copyright (c) 2003-@LAST_COPYRIGHT_YEAR@, @COPYRIGHT_OWNER@. All rights reserved.

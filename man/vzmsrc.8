@@ -1,0 +1,28 @@
+.TH vzmsrc 8 "October 2009" "@PRODUCT_NAME_LONG@"
+
+.SH NAME
+vzmsrc, vzmdest - Utilities for migration containers to another node.
+vzmdestmpl - Utility for migration templates to another node.
+
+.SH SYNOPSIS
+.TP
+.B vzmsrc -agent [-r yes|no] [-s] \fI<src serviceCT address>\fP
+\fI<dst serviceCT address>\fP \fI{CT List}\fP
+.TP
+.B vzmdest -agent \fI<src serviceCT address>\fP \fI<dst serviceCT
+address>\fP \fI{CT List}\fP
+.TP
+.B vzmdestmpl -agent \fI<src serviceCT address>\fP \fI<dst serviceCT
+address>\fP \fItemplate ...\fP
+
+.SH DESCRIPTION
+These utilities used by another higher level utility (vzagent). You
+DON'T need to use them directly. If you want to migrate VE/Template manually,
+see \fBvzmigrate(8), vzmtemplate(8)\fP.
+
+.SH SEE ALSO
+.BR vzmigrate (8)
+.BR vzmtemplate (8)
+
+.SH COPYRIGHT
+Copyright (c) 2001-@LAST_COPYRIGHT_YEAR@, @COPYRIGHT_OWNER@. All rights reserved.

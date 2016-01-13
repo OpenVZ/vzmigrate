@@ -1,0 +1,19 @@
+.TH vzmsetkey 8 "October 2009" "@PRODUCT_NAME_LONG@"
+
+.SH NAME
+vzmsetkey - utility to emulate \fIagent\fP command \fIset_ssh_key\fP
+during migrate on nodes that don't have installed agent (like Virtuozzo 2.0.2).
+
+.SH SYNOPSIS
+.TP
+.B vzmsetkey
+
+.SH DESCRIPTION
+This utility read line with ssh public key from stdin and write it to
+authorized_keys of special agent user (see \fBvzmpipe(8)\fP).
+
+.SH SEE ALSO
+.BR vzmagent (8)
+
+.SH COPYRIGHT
+Copyright (c) 2003-@LAST_COPYRIGHT_YEAR@, @COPYRIGHT_OWNER@. All rights reserved.

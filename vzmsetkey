@@ -1,0 +1,6 @@
+#!/bin/bash
+
+migdir=
+
+# run vzmig shell in key set mode
+$migdir/vzmpipe -s vzmig

@@ -1,0 +1,9 @@
+@comment "Install Service VE part"
+@cwd /
+@srcdir %%WRKBUILD%%
+usr/sbin/vzmpipe
+usr/share/man/man8/vzmpipe.8
+@exec pw useradd vzmig -s /usr/sbin/vzmpipe -b /home || [ $? -eq 65 ]
+@unexec pw userdel vzmig -r || true
+@exec install -d -m 0700 -g vzmig -o vzmig /home/vzmig/.ssh
+@exec touch /home/vzmig/.ssh/authorized_keys

@@ -1,0 +1,331 @@
+.TH vzmigrate 8 "October 2009" "@PRODUCT_NAME_LONG@"
+
+.SH NAME
+vzmigrate - utility for migration Containers between
+hardware nodes.
+
+.SH SYNOPSIS
+.TP
+.B vzmigrate [-r\ yes|no] [-sfvh] [--keeper[=<veid>]] [--ssh=<ssh\ \
+options>] [--keep-dst] [--online] [--noiter] [--readonly] \
+[--require-realtime] [--dry-run] [--new-id=<CT ID>] [--new-name=<CT name>] \
+[--new-private=<CT private>] [--new-root=<CT root>] [--nonsharedfs] [--whole-file] [--timeout]\
+\fI<[user@]destination_node_address>\fP \fI{CT\ List}\fP
+.TP
+\fI{CT\ List} = <source\ CT\ ID>[:<dst\ CTID>[:<dstCT\ private>[:<dstCT\ root>]]] [...]\fP
+without --new-id, --new-name, --new-private, --new-root option(s), and
+.TP
+\fI{CT\ List} = <source\ CT\ ID>\fP
+otherwise
+
+
+.SH DESCRIPTION
+This utility is used for CT(s) migrating from one (source)
+node to another (destination) node.
+.TP
+\fI{CT\ List}\fP - List of containers for migration. You may specify
+\fBdst\ CT\ ID\fP, if you want to change CT ID after migration. Also you
+can change \fBdstCT\ private\fP and \fBdstCT\ root\fP paths.
+
+.SH OPTIONS
+.TP
+\fB\-s, --nostart\fP
+Do not attempt to restore CT state (start/mount CT) after successful
+migration on destination node, when it was running/mounted on source
+node. It means that CT should be started/mounted manually on the
+destination node. Option doesn't affect CT that was stopped at the
+migration time.
+
+.TP
+\fB\-r, --remove-area yes|no\fP
+Remove/Don't Remove private area on source node for successfully migrated
+CT. Private area will save with .migrated suffix.
+Command-line option overrides configuration parameter
+\fBREMOVEMIGRATED\fP in @PRODUCT_NAME_LONG@ config file (see \fBvz(5)\fP).
+
+.TP
+\fB\-f, --nodeps\fR\fI[=[all][,cpu_check][,disk_space][,technologies][,license][,rate][,bindmount][,template_area_sync][,cpt_image_version][,capabilities][,kernel_modules]]\fP
+Ignore an absence of required package sets on destination node.
+To prevent CT against errors in filesystem due to absent template
+files, it will not be started on destination node after migration and
+must be started manually.
+.br
+Additional parameters:
+.br
+\fIall\fR - as is -f.
+.br
+\fIcpu_check\fR - to pass check of the cpu capabilities.
+.br
+\fIdisk_space\fR - to pass check of the disk usage.
+.br
+\fItechnologies\fR - to pass check of the used technologies.
+.br
+\fIlicense\fR - to pass check of the license.
+.br
+\fIrate\fR - to pass check of the RATE config parameters.
+.br
+\fIbindmount\fR - to pass check of the external bind mounts in config.
+
+.TP
+\fB\-h, --help\fP
+Get usage info.
+
+.TP
+\fB\--ssh=<ssh options>\fP
+Additional options that will be passed ssh during establishing
+connection with destination node. Please be carefully with passed
+options, DON'T pass destination hostname.
+
+.TP
+\fB\--keeper[=<veid>]\fP
+Keeper CT identification, \fIService CT\fP ID used if not
+specified. Keeper CT is needed to keep CT IP addresses during
+migration (it used for example to show web page that CT in stage of migration).
+
+.TP
+\fB\--keep-dst\fP
+Don't clean synced destination CT private area in case of some
+error. It is usefull to use this option on big CT migration to protect
+of syncing CT private area again in case of some error (on CT stop for
+example) occured during first migration attempt.
+
+.TP
+\fB\--online\fP
+Perform online (zero-downtime) migration: during the migration the CT
+hangs for a while and after the migration it continues working as though nothing has
+happened. Options --keeper and --nostart are ignored if this option is set.
+By default iterative scheme is used for online migration, that is most of the CT
+memory are transfered before CT suspend. This method introduces the smallest
+delay in service.
+
+.TP
+\fB\--noiter\fP
+Do not use iterative scheme during online migration.
+
+.TP
+\fB\--readonly\fP
+Do not locking and use write functions on source CT.
+
+.TP
+\fB\--require-realtime\fP
+Force to use only realtime scheme for online migration. Migration fails if this
+method is not available for some reason. It is useful to be sure that delay in
+service will be the smallest.
+
+.TP
+\fB\--dry-run\fP
+Option that will perform only checks and will not perform actual data transfer.
+
+.TP
+\fB\--new-id=<CT ID>\fP
+Set destination CT ID.
+
+.TP
+\fB\--new-name=<CT name>\fP
+Set destination CT name.
+
+.TP
+\fB\--new-private=<CT private>\fP
+Set destination CT private.
+
+.TP
+\fB\--new-root=<CT root>\fP
+Set destination CT root.
+
+.TP
+\fB\--nonsharedfs\fP
+Option that will force migrate of CT private from shared partition on non-shared.
+
+.TP
+\fB\-W, --whole-file\fP
+Use rsync --whole-file option.
+
+.TP
+\fB\-t, --timeout <value>\fP
+Set connection timeout in seconds.
+
+.TP
+\fB\--nocompress\fP
+Do not compress disk image data on online ploop migration.
+
+.TP
+\fB\--convert-vzfs\fP
+Convert the file system of a Container from VZFS to ext4.
+
+.TP
+\fB\-v, --verbose\fP
+Print verbose information.
+
+.SH MIGRATION
+Utility can migrate either stopped or running CT. For stopped CT, simple
+CT private area transfer is performed (\fBrsync(1)\fP is used for file
+transferring). For running CTs the migration may be slow (with minute or longer
+downtime), fast (seconds of downtime) or online (zero-downtime). For the
+fast migration the kernel support for \fIVZFS tracking\fP is required. 
+For the online migration kernel support of CPT is required.
+Utility also can migrate \fBshared\fP CTs, in this case it attempts to
+find suitable (templates set coincides with one of source CT) \fBshared
+base\fP CT on destination side, in case of failure it copies source \fBshared
+base\fP on destination side.
+
+.SH NOTES
+If you want to migrate CT in bounds of one hardware node, you
+shouldn't use this utility, use \fBvzmlocal(8)\fP instead.
+
+You can set disk IO limits for migrating Containers by configuring the \fBVZ_TOOLS_BCID\fR and \fBVZ_TOOLS_IOLIMIT\fR parameters in the global configuration file (\fI/etc/vz/vz.conf\fR, see \fBvz\fR(5)).
+
+.SH EXAMPLES
+To migrate CT#101 as CT#1001 to \fI192.168.1.130\fR by user "test":
+.br
+\f(CR	vzmigrate test@192.168.1.130 101:1001
+\fR
+
+.SH EXIT STATUS
+.TP
+.B 0
+Command completed successfully.
+.TP
+.B 1
+Bad command line options.
+.TP
+.B 2
+System error.
+.TP
+.B 3
+Can't lock CT.
+.TP
+.B 4
+Can't connect to destination (source) node.
+.TP
+.B 5
+CT is broken or improper.
+.TP
+.B 6
+CT private area copying/moving failed.
+.TP
+.B 7
+Can't start destination CT.
+.TP
+.B 8
+Can't stop source CT.
+.TP
+.B 9
+CT already exists on destination node.
+.TP
+.B 10
+CT doesn't exist on source node.
+.TP
+.B 11
+Failed package sets dependencies. Use -f options to forcedly migrate
+such CT, CT will not be started on destination side.
+.TP
+.B 12
+You attempt to migrate CT which IP addresses already in use (there
+is running CT) on destination node. Use -f options to forcedly migrate
+such CT, CT will not be started on destination side.
+.TP
+.B 13
+You attempt to migrate CT that contains mount script. Use -f
+options to forcedly migrate such CT, CT will not be started on
+destination side.
+.TP
+.B 21
+Connection to remote host is broken.
+.TP
+.B 22
+Connection to remote host closed due to timeout.
+.TP
+.B 25
+Programm terminated.
+.TP
+.B 26
+Migrate protocol error.
+.TP
+.B 27
+Failed to access template directory.
+.TP
+.B 29
+Clone is forbidden for suspended CT.
+.TP
+.B 30
+License check failed.
+.TP
+.B 31
+Disk space check failed.
+.TP
+.B 32
+Technologies check failed for destination node.
+.TP
+.B 33
+Rate check filed.
+.TP
+.B 34
+Source and destination CTs are equals.
+.TP
+.B 35
+UUID-collision, directory already exits.
+.TP
+.B 36
+CT config contains bind mount.
+.TP
+.B 37
+This CT layout is not supported on destination node.
+.TP
+.B 38
+This CT format is not supported on destination node.
+.TP
+.B 39
+Can't get source CT format.
+.TP
+.B 40
+Can't migrate vzcache2 area (old protocol).
+.TP
+.B 41
+Can't migrate suspended CT (old protocol).
+.TP
+.B 43
+libvzctl error.
+.TP
+.B 45
+This name already used by other CT.
+.TP
+.B 46
+CT private directory on the destination node resides on the
+non-shared partition, use --nonsharedfs option to force copying
+CT private data.
+.TP
+.B 48
+Can not perform online migration to/from elder version.
+.TP
+.B 49
+Too long message
+.TP
+.B 52
+External program failed
+.TP
+.B 56
+Insufficient cpu capabilities on destination node
+.TP
+.B 57
+CT has unsupported features
+.TP
+.B 61
+The IPv6 module is not loaded on the destination node.
+.TP
+.B 62
+The SLM module is not loaded on the destination node.
+.TP
+.B 63
+Mounting namespaces in the container is not allowed by the destination node kernel.
+.TP
+.B 104
+--dry-run option was used.
+
+.SH SEE ALSO
+.BR rsync (1),
+.BR vzmsrc (8),
+.BR vzmlocal (8),
+.BR vz (5)
+
+.SH COPYRIGHT
+Copyright (c) 2001-@LAST_COPYRIGHT_YEAR@, @COPYRIGHT_OWNER@. All rights reserved.

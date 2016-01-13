@@ -1,0 +1,7 @@
+- progress option
+- review checkVERoot() and checkVEPrivate()
+- check #100502 for vzmigrate
+- copy 'tar via ssh': last synchronization before tar start
+- check VE layout on destination for cluster case
+- rename private for cluster case with ve private changing
+- "invertlazy" command

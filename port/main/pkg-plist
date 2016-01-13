@@ -1,0 +1,11 @@
+@comment "Install vzmigrate"
+@cwd /
+@srcdir %%WRKBUILD%%
+usr/sbin/vzmlocal
+usr/sbin/vzmsrc
+usr/sbin/vzmigrate
+usr/sbin/vzmdest
+usr/share/man/man8/vzmigrate.8
+usr/share/man/man8/vzmlocal.8
+usr/share/man/man8/vzmsrc.8
+usr/share/man/man8/vzmdest.8
