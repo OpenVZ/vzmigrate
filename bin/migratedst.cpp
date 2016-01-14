@@ -93,15 +93,6 @@ int MigrateStateDstRemote::clean_unregister(const void * arg, const void *)
 	return 0;
 };
 
-int MigrateStateDstRemote::clean_restoreKill(const void * arg, const void *)
-{
-	VEObj * ve = (VEObj *) arg;
-	assert(ve);
-	logger(LOG_DEBUG, MIG_MSG_RST "restore kill CT %s", ve->ctid());
-	ve->kill_restore();
-	return 0;
-};
-
 int MigrateStateDstRemote::clean_umount(const void * arg, const void *)
 {
 	VEObj * ve = (VEObj *) arg;
@@ -563,30 +554,6 @@ int MigrateStateDstRemote::cmdCheckSharedTmpl(
 	return 0;
 }
 
-/* source and target nodes dumpdirs are onn the same cluster:
-   do not copy via ssh dumpfile - get from dumpdir */
-int MigrateStateDstRemote::cmdClusterDumpCopy(
-			istringstream &is)
-{
-	string dumpfile, fname;
-
-	if ((is >> fname) == NULL)
-		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
-
-	dumpfile = dstVE->dumpDir() + "/" + fname;
-	if (access(dumpfile.c_str(), R_OK))
-		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
-
-	if ((dstVE->dumpfile = strdup(dumpfile.c_str())) == NULL)
-		return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
-
-	logger(LOG_DEBUG, "Use %s dumpfile from cluster",
-			dstVE->dumpfile);
-	addCleanerRemove(clean_removeFile, dstVE->dumpfile, ANY_CLEANER);
-
-	return 0;
-}
-
 /* is keep dir & can we use tar for VE private area copy? */
 int MigrateStateDstRemote::cmdCheckKeepDir(
 			ostringstream & os)
@@ -785,11 +752,6 @@ int MigrateStateDstRemote::copyStage(int stage)
 		return h_copy_remote_rsync_fast(getCopyArea().c_str(), METHOD_TRACKER);
 	case FASTCOPY_BINDMOUNTS:
 		return h_copy_remote_rsync_fast(dstVE->bindmountPath().c_str(), METHOD_CHECKSUM);
-	case DUMPCOPY:
-		if ((rc = dstVE->createDumpFile()))
-			return rc;
-		addCleanerRemove(clean_removeFile, dstVE->dumpfile, SUCCESS_CLEANER);
-		return (this->*func_copyFile)(dstVE->dumpfile);
 	case SUSPENDCOPY:
 		if (dstVE->suspendPath().empty())
 			return putErr(MIG_ERR_SYSTEM, "can't get path for suspend file");
@@ -882,8 +844,11 @@ cleanup:
 	return rc;
 }
 
+
 int MigrateStateDstRemote::undump(void)
 {
+// need to adjust to new c/r technology
+#if 0
 	int rc;
 
 	if (	(isOptSet(OPT_PS_MODE) || isOptSet(OPT_AGENT)) &&
@@ -928,10 +893,14 @@ err:
 	addCleaner(clean_restoreKill, dstVE);
 
 	return rc;
+#endif
+	return -1;
 }
 
 int MigrateStateDstRemote::resume(void)
 {
+// need to adjust to new c/r technology
+#if 0
 	int rc;
 
 	if ((rc = dstVE->resume_restore(isOptSet(OPT_NOCONTEXT))) != 0)
@@ -941,11 +910,17 @@ int MigrateStateDstRemote::resume(void)
 		return rc;
 
 	return 0;
+#endif
+	return -1;
 }
 
 int MigrateStateDstRemote::resume_non_fatal(void)
 {
+// need to adjust to new c/r technology
+#if 0
 	return dstVE->resume_restore(isOptSet(OPT_NOCONTEXT));
+#endif
+	return -1;
 }
 
 int MigrateStateDstRemote::createSwapChannel(string veid_str)

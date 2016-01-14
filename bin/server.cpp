@@ -202,9 +202,6 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 	} else if (strcmp(cmd, CMD_FIRST) == 0) {
 		// first (full) rsync, 'first'
 		return state->copyStage(SIMPLECOPY);
-	} else if (strcmp(cmd, CMD_DUMPCOPY) == 0) {
-		// dump rsync
-		return state->copyStage(DUMPCOPY);
 	} else if (strcmp(cmd, CMD_SUSPENDCOPY) == 0) {
 		// suspend rsync - added in 4.0
 		return state->copyStage(SUSPENDCOPY);
@@ -297,9 +294,6 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 	} else if (strcmp(cmd, CMD_CHECK_SHARED_TMPL) == 0) {
 		// checking - all added in 4.0
 		return state->cmdCheckSharedTmpl(is, os);
-	} else if (strcmp(cmd, CMD_CLUSTER_DUMPCOPY) == 0) {
-		// checking - all added in 4.0
-		return state->cmdClusterDumpCopy(is);
 	} else if (strcmp(cmd, CMD_CHECK_KEEP_DIR) == 0) {
 		// checking - all added in 4.0
 		return state->cmdCheckKeepDir(os);

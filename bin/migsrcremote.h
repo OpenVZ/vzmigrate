@@ -98,10 +98,6 @@ protected:
 	int establishChannel(class MigrateSshChannel *ch, char *cmd);
 
 	/* copy functions */
-	int h_copy_remote_rsync_dump(const char * src);
-	/* dumpdirs of source and target nodes are on the same cluster.
-	   Do not rsync dumpfile, copy name only */
-	int h_copy_cluster_dump(const char * dumpfile);
 	int h_copy_remote_rsync_file(const char * cmd, const char * path);
 	int copy_remote(const char *src, struct string_list *exclude, bool use_rsync);
 
@@ -161,7 +157,6 @@ private:
 	int copy_active_deltas_dirty();
 	void close_active_deltas();
 
-	int memoryCopyOnline();
 	int sendVersionCmd();
 	int sendInitCmd();
 	int checkRemoteVersion();

@@ -41,7 +41,7 @@
 #define CMD_SCRIPT	"script"
 #define CMD_FINAL	"final"
 #define CMD_RESUME	"resume"
-#define CMD_DUMPCOPY	"dumpcopy"
+#define CMD_DUMPCOPY	"dumpcopy" /* unused */
 #define CMD_SUSPENDCOPY	"suspendcopy"
 #define CMD_PLOOP_COPY	"ploopcopy"
 #define CMD_COPY_EXTERNAL_DISK "copyexternaldisk"
@@ -92,7 +92,7 @@
 #define CMD_CHECK_SHARED_DUMP		"checkshareddump"
 #define CMD_CHECK_CLUSTER_TMPL		"checkclustertmpl"
 #define CMD_CHECK_SHARED_TMPL		"checksharedtmpl"
-#define CMD_CLUSTER_DUMPCOPY		"clusterdumpcopy"
+#define CMD_CLUSTER_DUMPCOPY		"clusterdumpcopy" /* unused */
 #define CMD_CHECK_EZDIR			"checkezdir"
 #define CMD_CHECK_KEEP_DIR		"checkkeepdir"
 #define CMD_CHECK_DISKSPACE		"checkdiskspace"

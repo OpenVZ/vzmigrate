@@ -234,10 +234,8 @@ extern const char * getError();
 #define MIG_MSG_ITER_MIG	"Iterative migration is not available"
 #define MIG_MSG_LAZY		"Can not perform lazy online migration"
 #define MIG_MSG_ONLINE_ELDER	"Can not perform online migration to/from elder version"
-#define MIG_MSG_VM_PREP		"can not prepare vm for CT %s : %s"
 #define MIG_MSG_CMD_SUSPEND	"can not suspend CT %s : %s"
 #define MIG_MSG_CMD_RESTORE	"can not restore CT %s : %s"
-#define MIG_MSG_DUMP		"can not dump CT %s : %s" MIG_MSG_TRYOFFLINE
 #define MIG_MSG_UNDUMP		"can not undump CT %s : %s" MIG_MSG_TRYOFFLINE
 #define MIG_MSG_TRYOFFLINE	"\nThis CT can't be migrated online at the moment. Try offline migration."
 #define MIG_MSG_ITER		"can not prepare destination CT %s for iterative migration : %s"
@@ -303,7 +301,5 @@ extern const char * getError();
 #define MIG_MSG_RUN_PHAUL			"phaul failed to live migrate CT"
 #define MIG_MSG_RUN_PHAUL_LOG		"phaul failed to live migrate CT (%s)"
 #define MIG_MSG_START_PHAUL_SRV		"can not start phaul service"
-
-#define MSG_FUNC_COPY_DUMP		"Syncing dump file..."
 
 #endif

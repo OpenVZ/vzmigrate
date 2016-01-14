@@ -1025,57 +1025,6 @@ int MigrateStateRemote::preMigrateStage()
 	return 0;
 }
 
-int MigrateStateRemote::memoryCopyOnline()
-{
-	int ret;
-	int fds[2];
-	size_t size;
-	int rc;
-
-	if (swapch)
-	{
-		if (isOptSet(OPT_SSH_FWD)) {
-			memcpy(&fds[0], swapch, sizeof(fds[0]));
-			memcpy(&fds[1], swapch, sizeof(fds[1]));
-		} else {
-			size = sizeof(fds);
-			if ((ret = vzsock_get_conn(&channel.ctx, swapch,
-					VZSOCK_DATA_FDPAIR, fds, &size)))
-				return putErr(MIG_ERR_VZSOCK,
-					"vzsock_get_conn() return %d\n", ret);
-		}
-	}
-
-	if (use_iteration)
-	{
-		if ((rc = srcVE->vm_iteration(fds[0], fds[1])))
-		{
-			logger(LOG_ERR, MIG_MSG_VM_PREP, srcVE->ctid(), getError());
-			logger(LOG_WARNING, MIG_MSG_ITER_MIG);
-			if (isOptSet(OPT_REALTIME))
-				return rc;
-			if (NULL != swapch)
-			{
-				// We can try to perform simple
-				// online migration
-				ch_send_str(&channel.ctx, swapch, "Closed");
-				// Close swap channel for command line and ssh forwarding modes
-				// It is needs to terminate vziterind on target node to call CPT_PUT_CONTEXT
-				// (https://jira.sw.ru/browse/PSBM-18868)
-				// for agent and ps modes vzmdest will terminate vziterind directly on target
-				if (isOptSet(OPT_SSH_FWD))
-					channel.fwdCloseSwap(swapch);
-				else if (!isOptSet(OPT_AGENT) && !isOptSet(OPT_PS_MODE))
-					vzsock_close_conn(&channel.ctx, (void *)swapch);
-
-				use_iteration = false;
-			}
-		}
-	}
-
-	return 0;
-}
-
 void MigrateStateRemote::unregisterHA()
 {
 	if (!isOptSet(OPT_KEEP_SRC))
@@ -1121,8 +1070,12 @@ int MigrateStateRemote::startVE()
 	int rc = 0;
 	char path[PATH_MAX+1];
 
+	assert(!isOptSet(OPT_ONLINE));
+
 	if (isOptSet(OPT_ONLINE))
 	{
+// need to adjust to new c/r technology
+#if 0
 		// VE restoring
 		if (use_iteration && VZMoptions.invert_lazy_flag)
 		{
@@ -1193,6 +1146,7 @@ int MigrateStateRemote::startVE()
 				addCleaner(clean_registerVE, srcVE);
 			}
 		}
+#endif
 	} else {
 		if (m_nFlags & VZMSRC_SHARED_PRIV) {
 			if (!isOptSet(OPT_KEEP_SRC)) {
@@ -1218,8 +1172,8 @@ int MigrateStateRemote::startVE()
 		disable_sig_handler();
 
 		// target will register resource on HA cluster here
-		rc = channel.sendCommand(CMD_FINAL " %d", isOptSet(OPT_NOSTART)
-	                           ? 0 : action);
+		rc = channel.sendCommand(CMD_FINAL " %d",
+			isOptSet(OPT_NOSTART) ? 0 : action);
 		if (rc)
 			return rc;
 	}
@@ -1388,44 +1342,6 @@ int MigrateStateRemote::postFinalStage()
  *	Next functions provide 'copy' functionality for different cases
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  */
-
-
-int MigrateStateRemote::h_copy_remote_rsync_dump(const char * src)
-{
-	if (isOptSet(OPT_KEEP_DUMP))
-		logger(LOG_INFO, "Dumpfile will be saved as %s", srcVE->dumpfile);
-
-	list<string> args;
-	args.push_back("--delete");
-	args.push_back(src);
-	args.push_back(DUMMY_DEST);
-	return remoteRsyncSrc(CMD_DUMPCOPY, false, args);
-}
-
-/* dumpdirs of source and target nodes are on the same cluster.
-   Do not rsync dumpfile, copy name only */
-int MigrateStateRemote::h_copy_cluster_dump(const char * dumpfile)
-{
-	int rc;
-	char path[PATH_MAX];
-	char *fname;
-
-	if (isOptSet(OPT_KEEP_DUMP)) {
-		snprintf(path, sizeof(path), "%s.1", srcVE->dumpfile);
-		/* pcs is not support hardlinks */
-		copy_file(path, srcVE->dumpfile);
-		logger(LOG_ERR, "Dumpfile will be saved as %s", path);
-	}
-
-	assert(channel.isConnected());
-
-	strncpy(path, dumpfile, sizeof(path));
-	fname = basename(path);
-	if ((rc = channel.sendCommand(CMD_CLUSTER_DUMPCOPY " %s", fname)))
-		return rc;
-
-	return 0;
-}
 
 int MigrateStateRemote::h_copy_remote_rsync_file(const char * cmd, const char * path)
 {

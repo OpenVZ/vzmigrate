@@ -141,14 +141,6 @@ public:
 	int umount();
 	int tsnapshot(const char *guid);
 	int tsnapshot_delete(const char *guid);
-	int dump();
-	int kill_chkpnt();
-	int kill_restore();
-	int resume_chkpnt();
-	int pageout(int fd_in, int fd_out);
-	int vm_prepare();
-	int vm_iteration(int fd_in, int fd_out);
-	int setlazyvm(int flag);
 	int destroy();
 	int cmd_suspend();
 	int cmd_restore();
@@ -176,7 +168,6 @@ public:
 
 	unsigned long checkTechnologies(unsigned long *tech_mask);
 	int checkRate();
-	int createDumpFile();
 	string confPath() const;
 	/* get real VE config file path */
 	string confRealPath() const;
@@ -211,8 +202,6 @@ public:
 	int checkName(const char *name);
 	/* set VE name */
 	int setName(char const *);
-	int resume_restore(int use_context);
-	int undump(int use_context);
 	int renewMAC();
 	/* returns maximum ploop format version among
 	   all CT disks */
