@@ -231,7 +231,6 @@ extern const char * ssh_test[];
    can be more than 30 mins (#99865) */
 #define IO_TIMEOUT     3600
 
-#define BIN_VZITER "/usr/libexec/vzvmiter"
 #define BIN_VZITERIND "/usr/libexec/vziterind"
 
 #define BIN_VZCTL	"/usr/sbin/vzctl"

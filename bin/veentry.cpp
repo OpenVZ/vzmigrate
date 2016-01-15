@@ -432,24 +432,6 @@ cleanup:
 	return rc;
 }
 
-int VEObj::createDumpFile()
-{
-	char path[PATH_MAX];
-	int fd;
-
-	/* create dir */
-	if (make_dir(dumpDir().c_str(), 0755) != 0)
-		return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
-	snprintf(path, sizeof(path), "%s/dumpfile.XXXXXX", dumpDir().c_str());
-	if ((fd = mkstemp(path)) == -1)
-		return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
-	close(fd);
-	if ((dumpfile = strdup(path)) == NULL)
-		return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
-	logger(LOG_DEBUG, "DUMPFILE: %s", dumpfile);
-	return 0;
-}
-
 /* get VE status */
 int VEObj::getStatus(int status, int *out)
 {
@@ -611,128 +593,6 @@ int VEObj::cmd_restore()
 	return operateVE("restore", "Restoring", NULL, 0);
 }
 
-int VEObj::dump()
-{
-// obsolete, c/r support removed from vzctl
-#if 0
-	const char * opt[] =
-		{"--dump", "--dumpfile", dumpfile, NULL
-		};
-	int rc;
-
-	rc = operateVE("chkpnt", "Dumping", opt, 0);
-#ifdef FIU_ENABLE
-	fiu_do_on("veentry/VEObj/dump", rc = MIG_ERR_SYSTEM);
-#endif
-	return rc;
-#endif
-	return -1;
-}
-
-int VEObj::undump(int use_context)
-{
-// obsolete, c/r support removed from vzctl
-#if 0
-	int rc, rcode;
-	int i = 0;
-	int count = 0;
-	char veid_hex[10];
-	const char *args[7];
-
-	args[i++] = "--undump";
-	args[i++] = "--skip_arpdetect";
-	if (dumpfile) {
-		args[i++] = "--dumpfile";
-		args[i++] = dumpfile;
-	}
-
-	if (use_context) {
-
-		snprintf(veid_hex, sizeof(veid_hex), "%x", veid());
-		args[i++] = "--context";
-		args[i++] = veid_hex;
-	}
-
-	args[i] = NULL;
-
-	rc = operateVE("restore", "Undumping", args, 0);
-#ifdef FIU_ENABLE
-	fiu_do_on("veentry/VEObj/undump", rc = MIG_ERR_SYSTEM);
-#endif
-	if (rc != 0)
-	{
-		char buf[BUFSIZ];
-		strncpy(buf, getError(), sizeof(buf));
-		const char * args2[] = {"--kill", NULL};
-		operateVE("restore", "Restore", args2, 1);
-		do
-		{
-			rcode = operateVE("umount", "Umount", NULL, 1);
-			usleep(500000);
-		}
-		while (rcode !=0 && count++ < 5);
-		putErr(MIG_ERR_SYSTEM, "%s", buf);
-	}
-	return rc;
-#endif
-	return -1;
-}
-
-int VEObj::resume_chkpnt()
-{
-// obsolete, c/r support removed from vzctl
-#if 0
-	const char * opt[] =
-		{"--resume", NULL
-		};
-	int rc = operateVE("chkpnt", "Resuming", opt, 0);
-	return rc;
-#endif
-	return -1;
-}
-
-int VEObj::resume_restore(int use_context)
-{
-// obsolete, c/r support removed from vzctl
-#if 0
-	char veid_hex[10];
-	const char * args[] = { "--resume", NULL, NULL, NULL };
-
-	if (use_context) {
-		snprintf(veid_hex, sizeof(veid_hex), "%x", veid());
-		args[1] = "--context";
-		args[2] = veid_hex;
-	}
-
-	return operateVE("restore", "Resuming", args, 0);
-#endif
-	return -1;
-}
-
-int VEObj::kill_chkpnt()
-{
-// obsolete, c/r support removed from vzctl
-#if 0
-	const char * opt[] =
-		{"--kill", NULL
-		};
-	return operateVE("chkpnt", "Killing", opt, 0);
-#endif
-	return -1;
-}
-
-int VEObj::kill_restore()
-{
-// obsolete, c/r support removed from vzctl
-#if 0
-	const char * opt[] =
-		{"--kill", NULL
-		};
-	return operateVE("restore", "Killing", opt, 0);
-#endif
-	return -1;
-}
-
 int VEObj::unSet(const char *param)
 {
 	char buf[PATH_MAX];
@@ -740,32 +600,6 @@ int VEObj::unSet(const char *param)
 
 	snprintf(buf, sizeof(buf), "--%s", param);
 	return operateVE("unset", "Unset", opt, 0);
-}
-
-int VEObj::vm_prepare()
-{
-	char * const args[] =
-		{(char *)"/usr/libexec/vzvmprep", m_ctid, NULL};
-
-	logger(LOG_DEBUG, "preparing vm");
-	return vzm_execve(args, NULL, -1, -1, NULL);
-}
-
-int VEObj::vm_iteration(int fd_in, int fd_out)
-{
-	char in[ITOA_BUF_SIZE];
-	char out[ITOA_BUF_SIZE];
-	char * const args[] =
-		{(char *)BIN_VZITER, m_ctid, in, out, NULL};
-
-#ifdef FIU_ENABLE
-	fiu_return_on("veentry/VEObj/vm_iteration", MIG_ERR_SYSTEM);
-#endif
-
-	snprintf(in, sizeof(in), "%u", fd_in);
-	snprintf(out, sizeof(out), "%u", fd_out);
-	logger(LOG_DEBUG, "preparing vm");
-	return vzm_execve(args, NULL, -1, -1, NULL);
 }
 
 int VEObj::operateVE(const char * func, const char * action,

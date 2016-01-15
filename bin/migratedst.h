@@ -64,7 +64,6 @@ protected:
 	pid_t m_phaulSrvPid;
 
 protected:
-	static int clean_restoreKill(const void * arg, const void *);
 	static int clean_umount(const void * arg, const void *);
 	static int clean_destroy(const void * arg, const void *);
 	static int clean_unregister(const void * arg, const void *);
