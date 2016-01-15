@@ -240,6 +240,7 @@ extern const char * getError();
 #define MIG_MSG_AREA_EXISTS	"destination '%s' already exists"
 #define MIG_MSG_CMP_LOCATIONS	"compare old and new CT locations failed : %m"
 #define MIG_MSG_SYSTEM		"system error : %m"
+#define MIG_MSG_INTERNAL	"'%s' call failed (errno %d)"
 #define MIG_MSG_EXEC_TRACK	"can not run tracking"
 #define MIG_MSG_COPY		"copy (using : [%s]) failed : %s"
 #define MIG_MSG_MOVE		"can not move '%s' -> '%s' : %m"

@@ -27,7 +27,9 @@
 #include <time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <netdb.h>
+#include <errno.h>
 
 #include <vz/libvzsock.h>
 
@@ -401,4 +403,71 @@ int sock_read(
 	return MIG_ERR_CONN_BROKEN;
 }
 
+/* 
+ * Current function needed to workaround bug in splice system call used in
+ * CRIU during online migration. Due to this bug splice system call work
+ * correctly only with AF_INET sockets, but the only supported domain for
+ * standard socketpair call is AF_UNIX. Current issue fixed in upstream kernel,
+ * but it is too hard for now to backport these patches to our kernel.
+ */
+int inet_socketpair(int type, int protocol, int sv[2])
+{
+	int lfd = -1;
+	int sfd = -1;
+	int cfd = -1;
+	struct sockaddr_in saddr;
+	struct sockaddr_in caddr;
+	socklen_t saddrlen;
 
+	/* create listening socket and client socket */
+	lfd = socket(AF_INET, type, protocol);
+	cfd = socket(AF_INET, type, protocol);
+	if ((lfd == -1) || (cfd == -1)) {
+		putErr(-1, MIG_MSG_INTERNAL, "socket", errno);
+		goto err;
+	}
+
+	/* start listen */
+	if (listen(lfd, 1) == -1) {
+		putErr(-1, MIG_MSG_INTERNAL, "listen", errno);
+		goto err;
+	}
+
+	/* get ephemeral port number allocated to listening socket */
+	memset(&saddr, 0, sizeof(saddr));
+	saddrlen = sizeof(saddr);
+	if (getsockname(lfd, (struct sockaddr*)&saddr, &saddrlen) == -1) {
+		putErr(-1, MIG_MSG_INTERNAL, "getsockname", errno);
+		goto err;
+	}
+
+	/* prepare server address needed to connect client socket */
+	memset(&caddr, 0, sizeof(caddr));
+	caddr.sin_family = AF_INET;
+	caddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	caddr.sin_port = saddr.sin_port;
+
+	/* connect client socket */
+	if (connect(cfd, (struct sockaddr*)&caddr, sizeof(caddr)) == -1) {
+		putErr(-1, MIG_MSG_INTERNAL, "connect", errno);
+		goto err;
+	}
+
+	/* accept server socket */
+	sfd = accept(lfd, NULL, NULL);
+	if (sfd == -1) {
+		putErr(-1, MIG_MSG_INTERNAL, "accept", errno);
+		goto err;
+	}
+
+	close(lfd);
+	sv[0] = sfd;
+	sv[1] = cfd;
+	return 0;
+
+err:
+	close(lfd);
+	close(sfd);
+	close(cfd);
+	return -1;
+}
