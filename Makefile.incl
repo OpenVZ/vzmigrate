@@ -15,7 +15,7 @@ LIBVZ_DST = -Wl,-Bstatic -lvzsock -Wl,-Bdynamic -luuid -lvzctl2 -ldl -lvztt -lpl
 LIBDIR = ${VZMROOT}/lib
 
 # ld flags
-LDFLAGS = -L/usr/local/lib $(LGCOV)
+LDFLAGS+= -L/usr/local/lib $(LGCOV)
 TARCH=$(shell uname -i)
 ifeq "$(TARCH)" "x86_64"
 LDFLAGS += -L/usr/kerberos/lib64
