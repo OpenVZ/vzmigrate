@@ -327,6 +327,9 @@ static ssize_t read_block_from_image(
 	return rc;
 }
 
+/* Phaul handle ploop online copying starting from Vz7, have to remove this
+logic from vzmigrate or adapt to Vz7 for legacy scenarios if needed */
+#if 0
 static int do_iter(
 		struct ploop_online_copy_data *data,
 		struct ploop_delta_desc *d,
@@ -379,6 +382,7 @@ static int do_iter(
 
 	return rc;
 }
+#endif
 
 static int ploop_data_init(int sock, int tmo, int lcompress,
 		struct ploop_online_copy_data *data)
@@ -485,6 +489,9 @@ void ploop_data_close()
 int ploop_src_online_copy_image_1(int sock, int tmo, int lcompress,
 		struct ploop_delta_desc *d)
 {
+/* Phaul handle ploop online copying starting from Vz7, have to remove this
+logic from vzmigrate or adapt to Vz7 for legacy scenarios if needed */
+#if 0
 	int rc = 0;
 	long retcode;
 	pthread_t write_th;
@@ -621,10 +628,15 @@ cleanup_0:
 		ploop_data_close();
 
 	return rc;
+#endif
+	return -1;
 }
 
 int ploop_src_online_copy_image_2(struct ploop_delta_desc *d)
 {
+/* Phaul handle ploop online copying starting from Vz7, have to remove this
+logic from vzmigrate or adapt to Vz7 for legacy scenarios if needed */
+#if 0
 	int rc = 0;
 	long retcode;
 	ssize_t n;
@@ -733,6 +745,8 @@ cleanup_0:
 	if (rc)
 		ploop_data_close(data);
 	return rc;
+#endif
+	return -1;
 }
 
 /*
