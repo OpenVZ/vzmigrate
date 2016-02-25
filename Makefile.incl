@@ -61,7 +61,7 @@ LIBVZ_SRC += -lfiu
 LIBVZ_DST += -lfiu
 endif
 
-CFLAGS += ${MFLAGS} -D_GNU_SOURCE
+CFLAGS += ${MFLAGS} -Wall -D_GNU_SOURCE
 CXXFLAGS += ${MFLAGS}
 
 #[ia64] gcc -pthread does not add -D_REENTRANT 

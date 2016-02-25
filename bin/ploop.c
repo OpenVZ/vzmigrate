@@ -49,7 +49,11 @@
 
 static int verbose = 0;
 
+/* Phaul handle ploop online copying starting from Vz7, have to remove this
+ * logic from vzmigrate or adapt to Vz7 for legacy scenarios if needed */
+#if 0
 static ssize_t snd_size = 0;
+#endif
 static ssize_t rcv_size = 0;
 static struct ploop_online_copy_data *_g_online_copy_data;
 
@@ -227,6 +231,9 @@ static ssize_t nwrite(int fd, int tmo, void *data, ssize_t size)
 	return -1;
 }
 
+/* Phaul handle ploop online copying starting from Vz7, have to remove this
+ * logic from vzmigrate or adapt to Vz7 for legacy scenarios if needed */
+#if 0
 static ssize_t send_block(struct ploop_online_copy_data *data)
 {
 	struct ploopcopy_data_packet pkt;
@@ -271,7 +278,11 @@ static ssize_t send_block(struct ploop_online_copy_data *data)
 	snd_size += pkt.size;
 	return n;
 }
+#endif
 
+/* Phaul handle ploop online copying starting from Vz7, have to remove this
+ * logic from vzmigrate or adapt to Vz7 for legacy scenarios if needed */
+#if 0
 static void *write_to_socket_func(void* d)
 {
 	long rc = 0;
@@ -304,7 +315,11 @@ static void *write_to_socket_func(void* d)
 	pthread_mutex_unlock(&data->write_mutex);
 	pthread_exit((void *)rc);
 }
+#endif
 
+/* Phaul handle ploop online copying starting from Vz7, have to remove this
+ * logic from vzmigrate or adapt to Vz7 for legacy scenarios if needed */
+#if 0
 static ssize_t read_block_from_image(
 		int devfd, int fd, void *buffer, __u64 pos, ssize_t size, __u64 *trackpos)
 {
@@ -326,6 +341,7 @@ static ssize_t read_block_from_image(
 	}
 	return rc;
 }
+#endif
 
 /* Phaul handle ploop online copying starting from Vz7, have to remove this
 logic from vzmigrate or adapt to Vz7 for legacy scenarios if needed */
@@ -486,8 +502,10 @@ void ploop_data_close()
 	}
 }
 
-int ploop_src_online_copy_image_1(int sock, int tmo, int lcompress,
-		struct ploop_delta_desc *d)
+int ploop_src_online_copy_image_1(int sock __attribute__((unused)),
+	int tmo __attribute__((unused)),
+	int lcompress __attribute__((unused)),
+	struct ploop_delta_desc * d __attribute__((unused)))
 {
 /* Phaul handle ploop online copying starting from Vz7, have to remove this
 logic from vzmigrate or adapt to Vz7 for legacy scenarios if needed */
@@ -632,7 +650,7 @@ cleanup_0:
 	return -1;
 }
 
-int ploop_src_online_copy_image_2(struct ploop_delta_desc *d)
+int ploop_src_online_copy_image_2(struct ploop_delta_desc * d __attribute__((unused)))
 {
 /* Phaul handle ploop online copying starting from Vz7, have to remove this
 logic from vzmigrate or adapt to Vz7 for legacy scenarios if needed */
