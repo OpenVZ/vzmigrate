@@ -32,6 +32,6 @@ do-extract:
 
 do-install:
 	@${MKDIR} ${WRKBUILD}
-	@cd ${WRKSRC} && ${GMAKE} DESTDIR=${WRKBUILD} DEBUG=defined install
+	@cd ${WRKSRC} && ${GMAKE} PREFIX=${WRKBUILD} DEBUG=defined install
 
 .include "../../Makefile.vz.inc"

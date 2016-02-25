@@ -30,31 +30,31 @@ include ${VZMROOT}/Makefile.incl
 install:: all
 
 	# install executables
-	install -d ${DESTDIR}/${sbindir}
-	install -d ${DESTDIR}/${datadir}
-	install -m 755 vzmsrc vzmdest vzmpipe ${DESTDIR}/${sbindir}
-	install -m 755 vzmd ${DESTDIR}/${sbindir}
-	install -m 755 vzmigrate ${DESTDIR}/${sbindir}
+	install -d ${PREFIX}/${sbindir}
+	install -d ${PREFIX}/${datadir}
+	install -m 755 vzmsrc vzmdest vzmpipe ${PREFIX}/${sbindir}
+	install -m 755 vzmd ${PREFIX}/${sbindir}
+	install -m 755 vzmigrate ${PREFIX}/${sbindir}
 
 	# source binaries
-	ln -sf ${sbindir}/vzmsrc ${DESTDIR}/${datadir}/pmigrate.c2c
-	ln -sf vzmsrc ${DESTDIR}/${sbindir}/vzmlocal	# local move/copy
+	ln -sf ${sbindir}/vzmsrc ${PREFIX}/${datadir}/pmigrate.c2c
+	ln -sf vzmsrc ${PREFIX}/${sbindir}/vzmlocal	# local move/copy
 
 	# destination binaries
-	ln -sf vzmdest ${DESTDIR}/${sbindir}/vzmdestmpl	# template migration
+	ln -sf vzmdest ${PREFIX}/${sbindir}/vzmdestmpl	# template migration
 
 	# install man pages
-	install -d ${DESTDIR}/${mandir}/man8
+	install -d ${PREFIX}/${mandir}/man8
 	install -m 644 man/vzmigrate.8 man/vzmlocal.8 man/vzmsrc.8 \
-		man/vzmpipe.8 ${DESTDIR}/${mandir}/man8/
+		man/vzmpipe.8 ${PREFIX}/${mandir}/man8/
 
-	ln -sf vzmsrc.8 ${DESTDIR}/${mandir}/man8/vzmdest.8
-	ln -sf vzmsrc.8 ${DESTDIR}/${mandir}/man8/vzmdestmpl.8
+	ln -sf vzmsrc.8 ${PREFIX}/${mandir}/man8/vzmdest.8
+	ln -sf vzmsrc.8 ${PREFIX}/${mandir}/man8/vzmdestmpl.8
 
 	grep -h 'fiu_do_on(' bin/*.cpp | sed 's/fiu_do_on("\(.*\)".*/\1/' > fiu.all
 	grep -h 'fiu_return_on(' bin/*.cpp | sed 's/fiu_return_on("\(.*\)".*/\1/' >> fiu.all
-	install -d ${DESTDIR}/usr/share/vzmigrate
-	install -m 644 fiu.all ${DESTDIR}/usr/share/vzmigrate/fiu.all
+	install -d ${PREFIX}/usr/share/vzmigrate
+	install -m 644 fiu.all ${PREFIX}/usr/share/vzmigrate/fiu.all
 
 
 rpms:
