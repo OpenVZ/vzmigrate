@@ -148,6 +148,7 @@ public:
 	int updateConfig(const char *param, const char *uuid = NULL);
 	int registration();
 	int unregister();
+	int createDevmap();
 
 	/* check VE status */
 	int getStatus(int status, int *out);

@@ -716,6 +716,14 @@ int VEObj::unregister()
 	return 0;
 }
 
+int VEObj::createDevmap()
+{
+	const char *opt[] = { "--create-devmap", NULL };
+	if (operateVE("suspend", "Create devmap", opt, 1))
+		return putErr(MIG_ERR_VZCTL, MIG_MSG_CREATE_DEVMAP, ctid());
+	return 0;
+}
+
 /* exec post create VE action: randomize cron too */
 int VEObj::ExecPostCreate()
 {
