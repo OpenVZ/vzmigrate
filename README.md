@@ -1,4 +1,4 @@
-vzctl
+vzmigrate
 =====
 
 vzmigrate is a Containers migration utility. It is a component of
