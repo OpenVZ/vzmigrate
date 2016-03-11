@@ -83,6 +83,7 @@ typedef vector<string> TemplOptEntries;
 
 #define MIGRATE_VERSION			MIGRATE_VERSION_700
 #define MIGRATE_VERSION_700		700
+#define MIGRATE_VERSION_612		612
 #define MIGRATE_VERSION_611 	611
 /* fix for converting second level quota for online migration */
 #define MIGRATE_VERSION_608 	608
