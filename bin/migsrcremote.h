@@ -133,6 +133,7 @@ private:
 	int doOnlinePloopSharedCtMigration();
 
 	int establishRemotePhaulConn(const std::vector<std::string>& activeDeltas);
+	int prePhaulMigration();
 	int runPhaulMigration();
 	std::vector<std::string> getPhaulArgs();
 	int execPhaul(const std::vector<std::string>& args);

@@ -2041,6 +2041,11 @@ int MigrateStateRemote::doOnlinePloopCtMigration()
 	if (rc)
 		return rc;
 
+	// Prepare CT for p.haul migration
+	rc = prePhaulMigration();
+	if (rc)
+		return rc;
+
 	// Run p.haul iterative memory and fs migration
 	rc = runPhaulMigration();
 	if (rc)
@@ -2145,6 +2150,16 @@ int MigrateStateRemote::establishRemotePhaulConn(
 	// Transfer connection ownership from local object to class object
 	m_phaulConn = conn;
 	return 0;
+}
+
+/*
+ * Employ reqired Virtuozzo-specific preparations and workarounds before p.haul
+ * migration start.
+ */
+int MigrateStateRemote::prePhaulMigration()
+{
+	// Create ploop major:minor map as workaround needed for criu
+	return srcVE->createDevmap();
 }
 
 /*
