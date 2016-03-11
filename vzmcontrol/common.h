@@ -250,6 +250,7 @@ extern const char * getError();
 #define MIG_MSG_REALTIME	"Can not perform online migration with low delay"
 #define MIG_MSG_ITER_MIG	"Iterative migration is not available"
 #define MIG_MSG_LAZY		"Can not perform lazy online migration"
+#define MIG_MSG_FROM_ELDER		"Can not perform migration from elder version, please run yum update on the source side"
 #define MIG_MSG_ONLINE_ELDER	"Can not perform online migration to/from elder version"
 #define MIG_MSG_CMD_SUSPEND	"can not suspend CT %s : %s"
 #define MIG_MSG_CMD_RESTORE	"can not restore CT %s : %s"

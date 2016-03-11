@@ -158,16 +158,14 @@ int MigrateStateDstRemote::initVEMigration(VEObj * ve)
 	logger(LOG_INFO, "Start of CT %s migration (private %s, root %s, opt=%d)",
 			ve->ctid(), ve->priv, ve->root, m_initOptions);
 
+	/* migration to 7.0 from versions lower than 612 is not supported */
+	if (VZMoptions.remote_version < MIGRATE_VERSION_612)
+		return putErr(MIG_ERR_SYSTEM, MIG_MSG_FROM_ELDER);
+
 	/* online migration to 7.0 from lower version is not supported */
 	if (!isOptSet(OPT_AGENT) && isOptSet(OPT_ONLINE) &&
 		(VZMoptions.remote_version < MIGRATE_VERSION_700))
 		return putErr(MIG_ERR_ONLINE_ELDER, MIG_MSG_ONLINE_ELDER);
-
-	if (!isOptSet(OPT_AGENT) &&
-		VZMoptions.remote_version < MIGRATE_VERSION_400)
-		/* vzmigrate-3.0 use only rsync for private area coping
-		   (https://jira.sw.ru/browse/PSBM-9143) */
-		func_copyFirst = &MigrateStateDstRemote::h_copy_remote_rsync;
 
 	if (m_initOptions & MIGINIT_CONVERT_VZFS) {
 		logger(LOG_DEBUG, "The file system of a Container will be converted to ext4.");
@@ -179,17 +177,6 @@ int MigrateStateDstRemote::initVEMigration(VEObj * ve)
 
 	if ((rc = is_path_on_shared_storage(ve->priv, &is_priv_on_shared, NULL)))
 		return rc;
-
-	if (!isOptSet(OPT_AGENT) &&
-		(VZMoptions.remote_version < MIGRATE_VERSION_400)) {
-		if (is_priv_on_shared) {
-			/* shoo old layout from our ... private area */
-			return putErr(MIG_ERR_SYSTEM, "Can't migrate this private area "
-				"on shared FS (old layout)\n"
-				"You can use the 'vzctl convert' "
-				"command to convert the Container to the new layout.\n");
-		}
-	}
 
 	/* check target private existance */
 	if (access(ve->priv, F_OK) == 0) {
