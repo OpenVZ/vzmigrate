@@ -1,4 +1,4 @@
-.TH vzmigrate 8 "October 2009" "@PRODUCT_NAME_LONG@"
+.TH vzmigrate 8 "October 2009" "OpenVZ"
 
 .SH NAME
 vzmigrate - utility for migration Containers between
@@ -41,7 +41,7 @@ migration time.
 Remove/Don't Remove private area on source node for successfully migrated
 CT. Private area will save with .migrated suffix.
 Command-line option overrides configuration parameter
-\fBREMOVEMIGRATED\fP in @PRODUCT_NAME_LONG@ config file (see \fBvz(5)\fP).
+\fBREMOVEMIGRATED\fP in vz config file (see \fBvz(5)\fP).
 
 .TP
 \fB\-f, --nodeps\fR\fI[=[all][,cpu_check][,disk_space][,technologies][,license][,rate][,bindmount][,template_area_sync][,kernel_modules]]\fP
@@ -324,4 +324,4 @@ Mounting namespaces in the container is not allowed by the destination node kern
 .BR vz (5)
 
 .SH COPYRIGHT
-Copyright (c) 2001-@LAST_COPYRIGHT_YEAR@, @COPYRIGHT_OWNER@. All rights reserved.
+Copyright (c) 2001-2016, Parallels IP Holdings GmbH. All rights reserved.
