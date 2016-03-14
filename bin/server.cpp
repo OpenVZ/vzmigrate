@@ -336,12 +336,10 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 		return state->cmdHaClusterNodeID(is, os);
 	} else if (strcmp(cmd, CMD_CHECK_PLOOP_FORMAT) == 0) {
 		return state->cmdCheckPloopFormat(is);
-	} else if (strcmp(cmd, CMD_PRE_ESTABLISH_PHAUL_CONN) == 0) {
-		return state->cmdPreEstablishPhaulConn();
-	} else if (strcmp(cmd, CMD_ESTABLISH_PHAUL_CONN) == 0) {
-		return state->cmdEstablishPhaulConn(is);
-	} else if (strcmp(cmd, CMD_START_PHAUL_SRV) == 0) {
-		return state->cmdStartPhaulSrv();
+	} else if (strcmp(cmd, CMD_PREPARE_PHAUL_CONN) == 0) {
+		return state->cmdPreparePhaulConn(is);
+	} else if (strcmp(cmd, CMD_RUN_PHAUL_MIGRATION) == 0) {
+		return state->cmdRunPhaulMigration();
 	}
 
 	if (VZMoptions.remote_version < MIGRATE_VERSION_401) {

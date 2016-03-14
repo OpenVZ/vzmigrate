@@ -52,6 +52,7 @@
 #include "remotecmd.h"
 #include "veentry.h"
 #include "util.h"
+#include "multiplexer.h"
 
 #define DUMMY_DEST "0.0.0.0:/dummy"
 
@@ -1472,6 +1473,18 @@ int MigrateStateRemote::clean_closeChannel(const void * arg, const void *)
 	return 0;
 }
 
+int MigrateStateRemote::clean_termPhaul(const void * arg, const void *)
+{
+	const int TERM_TIMEOUT = 3;
+	pid_t* phaulPid = (pid_t*)arg;
+
+	if (*phaulPid > 0)
+		term_clean(*phaulPid, TERM_TIMEOUT);
+
+	delete phaulPid;
+	return 0;
+}
+
 int MigrateStateRemote::copy_remote(const char *src, struct string_list *exclude,
 		bool use_rsync)
 {
@@ -2026,8 +2039,8 @@ int MigrateStateRemote::doOnlinePloopCtMigration()
 	if (rc)
 		return rc;
 
-	// Establish additional connections for p.haul-p.haul-service communication
-	rc = establishRemotePhaulConn(active_delta.toVector());
+	// Prepare data structures needed for phaul connections multiplexing
+	rc = preparePhaulConnection(active_delta.toVector());
 	if (rc)
 		return rc;
 
@@ -2036,17 +2049,12 @@ int MigrateStateRemote::doOnlinePloopCtMigration()
 	if (rc)
 		return rc;
 
-	// Start p.haul service on destination
-	rc = channel.sendCommand(CMD_START_PHAUL_SRV);
-	if (rc)
-		return rc;
-
 	// Prepare CT for p.haul migration
 	rc = prePhaulMigration();
 	if (rc)
 		return rc;
 
-	// Run p.haul iterative memory and fs migration
+	// Run iterative memory and fs migration via p.haul
 	rc = runPhaulMigration();
 	if (rc)
 		return rc;
@@ -2103,52 +2111,36 @@ err:
 }
 
 /*
- * Source side part of additional connections establishment needed for
- * communication between p.haul and p.haul-service. Current method of
- * connections establishment is unsafe and will be replaced with some better
- * implementation (e.g. tunneling through master connection) in near future.
+ * Prepare data structures needed for phaul connections multiplexing on source
+ * side and ask destination to prepare its data stuctures as well.
  *
- * Command CMD_ESTABLISH_PHAUL_CONN has following format:
+ * Command CMD_PREPARE_PHAUL_CONN has following format:
  * %count%\n[%delta_path1%\n[%delta_path2%\n[...]]] (count of active ploop
  * deltas and list of deltas paths separated by '\n').
  */
-int MigrateStateRemote::establishRemotePhaulConn(
+int MigrateStateRemote::preparePhaulConnection(
 	const std::vector<std::string>& activeDeltas)
 {
-	int rc = channel.sendCommand(CMD_PRE_ESTABLISH_PHAUL_CONN);
-	if (rc)
-		return rc;
-
-	// Prepare CMD_ESTABLISH_PHAUL_CONN command string
+	// Prepare CMD_PREPARE_PHAUL_CONN command string
 	std::ostringstream cmdStr;
-	cmdStr << CMD_ESTABLISH_PHAUL_CONN << " ";
+	cmdStr << CMD_PREPARE_PHAUL_CONN << " ";
 	cmdStr << activeDeltas.size() << "\n";
 	for (size_t i = 0; i < activeDeltas.size(); ++i) {
 		cmdStr << activeDeltas[i] << "\n";
 	}
 
-	// Send CMD_ESTABLISH_PHAUL_CONN command to destination. ATTENTION!, have
-	// to read reply further in this function unconditionally!
-	rc = channel.sendPkt(PACKET_SEPARATOR, cmdStr.str().c_str());
+	// Send CMD_PREPARE_PHAUL_CONN command to destination
+	int rc = channel.sendCommand(cmdStr.str().c_str());
 	if (rc)
 		return rc;
 
-	// Create and establish phaul connection
-	std::auto_ptr<PhaulSockClient> sockClient(new PhaulSockClient());
-	std::auto_ptr<PhaulConn> conn;
-	if (sockClient->init() == 0)
-		conn.reset(sockClient->establishConn(activeDeltas));
+	// Create and initialize phaul channels
+	std::auto_ptr<PhaulChannels> channels(new PhaulChannels(activeDeltas));
+	if (channels->init() != 0)
+		return putErr(-1, MIG_MSG_PREP_SRC_PHAUL_CONN);
 
-	// Read CMD_ESTABLISH_PHAUL_CONN command reply
-	rc = channel.readReply();
-	if (rc)
-		return rc;
-
-	if ((conn.get() == NULL) || (conn->checkEstablished() != 0))
-		return putErr(-1, MIG_MSG_EST_SRC_PHAUL_CONN);
-
-	// Transfer connection ownership from local object to class object
-	m_phaulConn = conn;
+	// Transfer channels ownership from local object to class object
+	m_phaulChannels = channels;
 	return 0;
 }
 
@@ -2163,16 +2155,47 @@ int MigrateStateRemote::prePhaulMigration()
 }
 
 /*
- * Run p.haul over existing connections established previously to handle
- * online migration of container on source side.
+ * Exec p.haul and handle connections multiplexing.
  */
 int MigrateStateRemote::runPhaulMigration()
 {
-	if (m_phaulConn.get() == NULL)
+	// Transfer channels ownership from class object to local object
+	std::auto_ptr<PhaulChannels> channels = m_phaulChannels;
+
+	if (channels.get() == NULL)
 		return putErr(MIG_ERR_RUN_PHAUL, MIG_MSG_RUN_PHAUL);
 
-	std::vector<std::string> phaulArgs = getPhaulArgs();
-	if (execPhaul(phaulArgs) != 0)
+	// Exec phaul
+	std::vector<std::string> phaulArgs = getPhaulArgs(*channels);
+	pid_t phaulPid = execPhaul(phaulArgs);
+	if (phaulPid == -1)
+		return putErr(MIG_ERR_RUN_PHAUL, MIG_MSG_RUN_PHAUL);
+
+	// Close phaul channels ends
+	channels->closePhaulChannelFds();
+
+	// Send CMD_RUN_PHAUL_MIGRATION command to destination. ATTENTION!, have
+	// to read reply further in this function unconditionally!
+	int rc = channel.sendPkt(PACKET_SEPARATOR, CMD_RUN_PHAUL_MIGRATION);
+	if (rc)
+		return rc;
+
+	// Create io multiplexer
+	multiplexer::IoMultiplexer ioMultiplexer(channel,
+		channels->getVzmigrateChannelFds(), phaulPid, true);
+
+	// Run phaul io multiplexing
+	rc = ioMultiplexer.runMultiplexing();
+	if (!ioMultiplexer.isChildTerminated()) {
+		addCleaner(clean_termPhaul, (new pid_t(phaulPid)), NULL, ANY_CLEANER);
+	}
+
+	// Read CMD_RUN_PHAUL_MIGRATION command reply
+	int remoteRc = channel.readReply();
+	if (remoteRc)
+		return remoteRc;
+
+	if (rc != 0)
 		return putErr(MIG_ERR_RUN_PHAUL, MIG_MSG_RUN_PHAUL_LOG,
 			PHAUL_LOG_FILE);
 
@@ -2182,10 +2205,9 @@ int MigrateStateRemote::runPhaulMigration()
 /*
  * Return vector of command line arguments for p.haul exec.
  */
-std::vector<std::string> MigrateStateRemote::getPhaulArgs()
+std::vector<std::string> MigrateStateRemote::getPhaulArgs(
+	const PhaulChannels& channels)
 {
-	assert(m_phaulConn.get() != NULL);
-
 	std::vector<std::string> args;
 	args.push_back(BIN_PHAUL);
 	args.push_back("vz");
@@ -2193,12 +2215,12 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs()
 
 	// Pass phaul connections as socket file descriptors
 	args.push_back("--fdrpc");
-	args.push_back(m_phaulConn->getFdrpcArg());
+	args.push_back(channels.getPhaulFdrpcArg());
 
 	args.push_back("--fdmem");
-	args.push_back(m_phaulConn->getFdmemArg());
+	args.push_back(channels.getPhaulFdmemArg());
 
-	std::string fdfsArg = m_phaulConn->getFdfsArg();
+	std::string fdfsArg = channels.getPhaulFdfsArg();
 	if (!fdfsArg.empty()) {
 		args.push_back("--fdfs");
 		args.push_back(fdfsArg);
@@ -2220,14 +2242,15 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs()
 	return args;
 }
 
-int MigrateStateRemote::execPhaul(const std::vector<std::string>& args)
+pid_t MigrateStateRemote::execPhaul(const std::vector<std::string>& args)
 {
 	ExecveArrayWrapper argsArray(args);
+	pid_t pid;
 
-	if (vzm_execve_quiet(argsArray.getArray(), NULL, -1, NULL) != 0)
-		return -1;
+	if (vzm_execve_quiet_nowait(argsArray.getArray(), NULL, -1, &pid) != 0)
+		return putErr(-1, MIG_MSG_EXEC_PHAUL, BIN_PHAUL);
 
-	return 0;
+	return pid;
 }
 
 bool MigrateStateRemote::isSameLocation()

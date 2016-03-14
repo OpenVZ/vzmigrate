@@ -399,7 +399,9 @@ int MigrateChannel::sendPkt(char separator, const char * str, va_list ap)
 
 int MigrateChannel::sendBuf(const char * buf, size_t size)
 {
-	assert(conn);
+	if (conn == NULL)
+		return putErr(MIG_ERR_CONN_BROKEN, MIG_MSG_SEND_BUF);
+
 	return (*vzm_send)(&ctx, conn, buf, size);
 }
 
@@ -448,6 +450,9 @@ int MigrateChannel::sendErrMsg(int code, const char * str, ...)
 	va_list ap;
 	int ret;
 
+	if (conn == NULL)
+		return putErr(MIG_ERR_CONN_BROKEN, MIG_MSG_SEND_ERR);
+
 	va_start(ap, str);
 	ret = formatReply(code, str, ap, buffer, sizeof(buffer));
 	va_end(ap);
@@ -486,6 +491,12 @@ const char * MigrateChannel::readReply(int * code)
 	int rc;
 	static char buffer[BUFSIZ];
 
+	if (conn == NULL) {
+		if (code != NULL)
+			(*code) = putErr(MIG_ERR_CONN_BROKEN, MIG_MSG_RECV_REPLY);
+		return NULL;
+	}
+
 	if ((rc = ch_read_reply(&ctx, conn,
 			code, buffer, sizeof(buffer))))
 		return NULL;
@@ -495,6 +506,9 @@ const char * MigrateChannel::readReply(int * code)
 
 int MigrateChannel::readReply()
 {
+	if (conn == NULL)
+		return putErr(MIG_ERR_CONN_BROKEN, MIG_MSG_RECV_REPLY);
+
 	return ch_read_retcode(&ctx, conn);
 }
 
@@ -606,99 +620,45 @@ cleanup_0:
 }
 
 /*
- * Initialize client of socket server needed to establish connections from
- * source to destination.
+ * Suppose we have N phaul channels - one rpc channel, one memory channel and
+ * zero or more fs channels (channel per active ploop delta). So we have
+ * (2 + active deltas count) channels in total.
  */
-int init_sock_server_client(struct vzsock_ctx *ctx)
-{
-	int rc = 0;
-	int ret;
-	int debug = (debug_level == LOG_DEBUG) ? 1 : 0;
-
-	if ((ret = vzsock_init(VZSOCK_SOCK, ctx)))
-		return putErr(MIG_ERR_VZSOCK, "vzsock_init() return %d", ret);
-
-	vzsock_set(ctx, VZSOCK_DATA_DEBUG, (void *)&debug, sizeof(debug));
-
-	if ((ret = vzsock_set(ctx, VZSOCK_DATA_TMO, (void *)&VZMoptions.tmo.val, sizeof(VZMoptions.tmo.val)))) {
-		rc = putErr(MIG_ERR_CONN_BROKEN, "vzsock_set() return %d", ret);
-		goto cleanup_0;
-	}
-	if ((ret = vzsock_set(ctx, VZSOCK_DATA_HOSTNAME, (void *)VZMoptions.dst_addr, strlen(VZMoptions.dst_addr)))) {
-		rc = putErr(MIG_ERR_VZSOCK, "vzsock_set() return %d", ret);
-		goto cleanup_0;
-	}
-	if ((ret = vzsock_set(ctx, VZSOCK_DATA_SERVICE, (void *)VZMD_DEF_PORT, strlen(VZMD_DEF_PORT)))) {
-		rc = putErr(MIG_ERR_VZSOCK, "vzsock_set() return %d", ret);
-		goto cleanup_0;
-	}
-
-	if ((ret = vzsock_open(ctx))) {
-		rc = putErr(MIG_ERR_VZSOCK, "vzsock_open() return %d", ret);
-		goto cleanup_0;
-	}
-
-	return 0;
-
-cleanup_0:
-	vzsock_close(ctx);
-	return rc;
-}
-
-/*
- * Suppose we have N channels for phaul - one rpc channel, one memory
- * channel and zero or more fs channels (channel per active ploop delta).
- * So we have (2 + active deltas count) channels in total.
- */
-PhaulConn::PhaulConn(const std::vector<std::string>& activeDeltas)
-	: m_channelConns(FS_CHANNELS_START_INDEX + activeDeltas.size(), NULL)
+PhaulChannels::PhaulChannels(const std::vector<std::string>& activeDeltas)
+	: m_channelsFds(FS_CHANNELS_START_INDEX + activeDeltas.size(),
+		std::make_pair(-1, -1))
 	, m_activeDeltas(activeDeltas)
 {
 }
 
-PhaulConn::~PhaulConn()
+PhaulChannels::~PhaulChannels()
 {
-	if (m_ctx.get() == NULL)
-		return;
-
-	for (size_t i = 0; i < m_channelConns.size(); ++i) {
-		if (m_channelConns[i] != NULL) {
-			vzsock_close_conn(m_ctx.get(), m_channelConns[i]);
-		}
+	for (size_t i = 0; i < m_channelsFds.size(); ++i) {
+		close(m_channelsFds[i].first);
+		close(m_channelsFds[i].second);
 	}
-
-	vzsock_close(m_ctx.get());
 }
 
-int PhaulConn::initServer(vzsock_ctx* ctx, int serverSocket)
+int PhaulChannels::init()
 {
-	sockaddr_storage addr;
-	socklen_t addrsize = sizeof(addr);
-	int connSocket;
-	void* conn = NULL;
-	int isBlocking = 1;
+	int fds[2];
+	int flags;
 
-	if ((ctx == NULL) || (m_ctx.get() != NULL))
-		return -1;
+	for (size_t i = 0; i < m_channelsFds.size(); ++i) {
 
-	m_ctx.reset(ctx);
-
-	for (size_t i = 0; i < m_channelConns.size(); ++i) {
-
-		connSocket = accept(serverSocket, (sockaddr*)&addr, &addrsize);
-		if (connSocket == -1) {
+		if (inet_socketpair(SOCK_STREAM, 0, fds) != 0) {
 			return -1;
 		}
 
-		if (vzsock_accept_conn(m_ctx.get(), (void*)&connSocket, &conn) != 0) {
-			close(connSocket);
+		m_channelsFds[i] = std::make_pair(fds[0], fds[1]);
+
+		flags = fcntl(getVzmigrateChannelFd(i), F_GETFD);
+		if (flags == -1) {
 			return -1;
 		}
 
-		m_channelConns[i] = conn;
-
-		if (vzsock_set_conn(m_ctx.get(), m_channelConns[i],
-			VZSOCK_DATA_BLOCKING, &isBlocking, sizeof(int)) != 0) {
+		flags |= FD_CLOEXEC;
+		if (fcntl(getVzmigrateChannelFd(i), F_SETFD, flags) == -1) {
 			return -1;
 		}
 	}
@@ -706,47 +666,31 @@ int PhaulConn::initServer(vzsock_ctx* ctx, int serverSocket)
 	return 0;
 }
 
-int PhaulConn::initClient(vzsock_ctx* ctx)
+std::vector<int> PhaulChannels::getVzmigrateChannelFds() const
 {
-	void* conn = NULL;
-	int isBlocking = 1;
+	std::vector<int> fds(m_channelsFds.size());
 
-	if ((ctx == NULL) || (m_ctx.get() != NULL))
-		return -1;
-
-	m_ctx.reset(ctx);
-
-	for (size_t i = 0; i < m_channelConns.size(); ++i) {
-
-		if (vzsock_open_conn(m_ctx.get(), NULL, &conn) != 0) {
-			return -1;
-		}
-
-		m_channelConns[i] = conn;
-
-		if (vzsock_set_conn(m_ctx.get(), m_channelConns[i],
-			VZSOCK_DATA_BLOCKING, &isBlocking, sizeof(int)) != 0) {
-			return -1;
-		}
+	for (size_t i = 0; i < m_channelsFds.size(); ++i) {
+		fds[i] = getVzmigrateChannelFd(i);
 	}
 
-	return 0;
+	return fds;
 }
 
 /*
  * Return value of --fdrpc phaul argument.
  */
-std::string PhaulConn::getFdrpcArg() const
+std::string PhaulChannels::getPhaulFdrpcArg() const
 {
-	return getChannelFdStr(RPC_CHANNEL_INDEX);
+	return getPhaulChannelFdStr(RPC_CHANNEL_INDEX);
 }
 
 /*
  * Return value of --fdmem phaul argument.
  */
-std::string PhaulConn::getFdmemArg() const
+std::string PhaulChannels::getPhaulFdmemArg() const
 {
-	return getChannelFdStr(MEM_CHANNEL_INDEX);
+	return getPhaulChannelFdStr(MEM_CHANNEL_INDEX);
 }
 
 /*
@@ -755,7 +699,7 @@ std::string PhaulConn::getFdmemArg() const
  * %path1%:%socket1%[,%path2%:%socket2%[,...]]. Expect path can't contain ','
  * character.
  */
-std::string PhaulConn::getFdfsArg() const
+std::string PhaulChannels::getPhaulFdfsArg() const
 {
 	std::ostringstream fdfs;
 	for (size_t nDelta = 0; nDelta < m_activeDeltas.size(); ++nDelta) {
@@ -765,133 +709,40 @@ std::string PhaulConn::getFdfsArg() const
 			fdfs << ",";
 
 		// Append %path%:%socket% pair
-		fdfs << m_activeDeltas[nDelta] << ":" << getActiveDeltaFdStr(nDelta);
+		fdfs << m_activeDeltas[nDelta] << ":"
+			<< getPhaulChannelFdStr(FS_CHANNELS_START_INDEX + nDelta);
 	}
 
 	return fdfs.str();
 }
 
-int PhaulConn::checkEstablished() const
+void PhaulChannels::closePhaulChannelFds()
 {
-	for (size_t i = 0; i < m_channelConns.size(); ++i) {
-		if (getChannelFd(i) == -1) {
-			return -1;
-		}
+	for (size_t i = 0; i < m_channelsFds.size(); ++i) {
+		close(m_channelsFds[i].second);
+		m_channelsFds[i].second = -1;
 	}
-	return 0;
 }
 
-int PhaulConn::getChannelFd(size_t index) const
+int PhaulChannels::getVzmigrateChannelFd(size_t index) const
 {
-	int fd = -1;
-	size_t fdSize = sizeof(int);
-
-	if (m_ctx.get() == NULL)
+	if (index >= m_channelsFds.size())
 		return -1;
 
-	if ((index >= m_channelConns.size()) || (m_channelConns[index] == NULL))
-		return -1;
-
-	if (vzsock_get_conn(m_ctx.get(), m_channelConns[index],
-		VZSOCK_DATA_FDSOCK, &fd, &fdSize) != 0) {
-		return -1;
-	}
-
-	return fd;
+	return m_channelsFds[index].first;
 }
 
-std::string PhaulConn::getChannelFdStr(size_t index) const
+int PhaulChannels::getPhaulChannelFd(size_t index) const
+{
+	if (index >= m_channelsFds.size())
+		return -1;
+
+	return m_channelsFds[index].second;
+}
+
+std::string PhaulChannels::getPhaulChannelFdStr(size_t index) const
 {
 	std::ostringstream fdStr;
-	fdStr << getChannelFd(index);
+	fdStr << getPhaulChannelFd(index);
 	return fdStr.str();
-}
-
-std::string PhaulConn::getActiveDeltaFdStr(size_t nDelta) const
-{
-	return getChannelFdStr(FS_CHANNELS_START_INDEX + nDelta);
-}
-
-PhaulSockServer::PhaulSockServer()
-	: m_serverSocket(-1)
-{
-}
-
-PhaulSockServer::~PhaulSockServer()
-{
-	if (m_serverSocket != -1)
-		close(m_serverSocket);
-
-	if (m_ctx.get() != NULL)
-		vzsock_close(m_ctx.get());
-}
-
-/*
- * Initialize phaul socket server to make it possible to accept incoming
- * connections. Code from vzmd reused.
- */
-int PhaulSockServer::init()
-{
-	assert(m_ctx.get() == NULL);
-	m_ctx.reset(new vzsock_ctx());
-
-	if (init_sock_server(m_ctx.get(), &m_serverSocket) != 0) {
-		m_ctx.reset(NULL);
-		return -1;
-	}
-
-	return 0;
-}
-
-/*
- * Accept required count of additional connections for phaul.
- */
-PhaulConn* PhaulSockServer::acceptConn(const std::vector<std::string>& activeDeltas)
-{
-	if ((m_ctx.get() == NULL) || (m_serverSocket == -1))
-		return NULL;
-
-	std::auto_ptr<PhaulConn> conn(new PhaulConn(activeDeltas));
-	if (conn->initServer(m_ctx.release(), m_serverSocket) != 0)
-		return NULL;
-
-	return conn.release();
-}
-
-PhaulSockClient::PhaulSockClient()
-{
-}
-
-PhaulSockClient::~PhaulSockClient()
-{
-	if (m_ctx.get() != NULL)
-		vzsock_close(m_ctx.get());
-}
-
-int PhaulSockClient::init()
-{
-	assert(m_ctx.get() == NULL);
-	m_ctx.reset(new vzsock_ctx());
-
-	if (init_sock_server_client(m_ctx.get())) {
-		m_ctx.reset(NULL);
-		return -1;
-	}
-
-	return 0;
-}
-
-/*
- * Establish required count of additional connections for phaul.
- */
-PhaulConn* PhaulSockClient::establishConn(const std::vector<std::string>& activeDeltas)
-{
-	if (m_ctx.get() == NULL)
-		return NULL;
-
-	std::auto_ptr<PhaulConn> phaulConn(new PhaulConn(activeDeltas));
-	if (phaulConn->initClient(m_ctx.release()) != 0)
-		return NULL;
-
-	return phaulConn.release();
 }
