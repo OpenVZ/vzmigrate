@@ -321,4 +321,12 @@ extern const char * getError();
 #define MIG_MSG_RUN_PHAUL_LOG		"phaul failed to live migrate CT (%s)"
 #define MIG_MSG_START_PHAUL_SRV		"can not start phaul service"
 
+#define MIG_MSG_MPX_UNKNOWN_CHANNEL	"unknown io multiplexer channel (#%d), skip packet"
+#define MIG_MSG_MPX_UNKNOWN_CMD		"unknown io multiplexer command (#%d)"
+#define MIG_MSG_MPX_UNKNOWN			"unknown io multiplexer error"
+#define MIG_MSG_MPX_ABORT			"io multiplexer aborted"
+#define MIG_MSG_MPX_PEER_ABORT		"io multiplexer peer aborted"
+#define MIG_MSG_MPX_DISCONNECT		"io multiplexer disconnected"
+#define MIG_MSG_MPX_OOM				"io multiplexer out of memory"
+
 #endif
