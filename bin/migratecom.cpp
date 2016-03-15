@@ -393,6 +393,8 @@ const char ** MigrateStateCommon::getRsyncArgs()
 	rsync_args[i++] = "-q";
 	rsync_args[i++] = "-a";
 	rsync_args[i++] = "-H";
+	rsync_args[i++] = "-A";
+	rsync_args[i++] = "-X";
 	if (use_sparse_opt)
 		rsync_args[i++] = "--sparse";
 	rsync_args[i++] = "--numeric-ids";
