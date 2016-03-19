@@ -36,17 +36,6 @@ INCFLAGS ?= \
 
 INCFLAGS += -I/usr/kerberos/include
 
-ifeq "${MODE}" "test"
-VZMODULES_HEADERS = /lib/modules/2.6.18-028stab054.1/build/include
-VZKERNEL_HEADERS = /usr/src/kernels/2.6.18-028stab054.1-x86_64/include
-#VZMODULES_HEADERS = /lib/modules/2.6.9-023stab030.1/build/include
-#VZKERNEL_HEADERS = /lib/modules/2.6.9-023stab030.1/build/include
-INCFLAGS += -I${VZKERNEL_HEADERS} -I${VZMODULES_HEADERS}
-else
-VZKERNEL_HEADERS ?= /lib/modules/$(shell uname -r)/build/include
-INCFLAGS += -I${VZKERNEL_HEADERS}
-endif
-
 CC = gcc
 
 MFLAGS = -pthread -Werror -W -Wformat -g ${INCFLAGS} ${VZFS}
