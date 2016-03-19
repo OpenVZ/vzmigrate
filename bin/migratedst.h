@@ -42,8 +42,7 @@ enum {
 
 class VEObj;
 class MigrateSshChannel;
-class PhaulSockServer;
-class PhaulConn;
+class PhaulChannels;
 
 class MigrateStateDstRemote : public MigrateStateCommon
 {
@@ -59,9 +58,7 @@ protected:
 	struct ploop_online_copy_data *m_pPloopData;
 	char m_convertQuota2[PATH_MAX];
 
-	std::auto_ptr<PhaulSockServer> m_phaulSockServer;
-	std::auto_ptr<PhaulConn> m_phaulConn;
-	pid_t m_phaulSrvPid;
+	std::auto_ptr<PhaulChannels> m_phaulChannels;
 
 protected:
 	static int clean_umount(const void * arg, const void *);
@@ -89,8 +86,8 @@ protected:
 
 	int registerOnHaCluster();
 
-	std::vector<std::string> getPhaulSrvArgs();
-	int execPhaulSrv(const std::vector<std::string>& args);
+	std::vector<std::string> getPhaulSrvArgs(const PhaulChannels& channels);
+	pid_t execPhaulSrv(const std::vector<std::string>& args);
 
 public:
 	int is_priv_on_shared;
@@ -141,9 +138,8 @@ public:
 	int cmdMountPloop(unsigned long ploop_size, unsigned long create_size, int lmounted);
 	int cmdHaClusterNodeID(istringstream &is, ostringstream &os);
 	int cmdCheckPloopFormat(istringstream &is);
-	int cmdPreEstablishPhaulConn();
-	int cmdEstablishPhaulConn(istringstream &is);
-	int cmdStartPhaulSrv();
+	int cmdPreparePhaulConn(istringstream &is);
+	int cmdRunPhaulMigration();
 
 	int initVEMigration(VEObj * ve);
 	int initMigration();

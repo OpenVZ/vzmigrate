@@ -29,6 +29,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vz/libvzsock.h>
 
 #define PACKET_SEPARATOR '\0'
@@ -70,34 +71,34 @@ public:
 };
 
 int init_sock_server(struct vzsock_ctx *ctx, int *sock);
-int init_sock_server_client(struct vzsock_ctx *ctx);
 
 /*
- * Phaul connection manage additional connections needed for p.haul and
- * p.haul-service on source and destination sides respectively. Three
- * additional sockets needed for p.haul - socket for rpc calls, socket for
- * memory transfer and socket for disk transfer.
+ * Set of socket pairs needed to emulate multiple virtual connections using
+ * single real connection. At least two channels needed for
+ * p.haul/p.haul-service on source/destination sides respectively - channel
+ * for rpc-calls, channel for memory transfer and zero or more channels for
+ * disk transfer.
  */
-class PhaulConn {
+class PhaulChannels {
 public:
-	PhaulConn(const std::vector<std::string>& activeDeltas);
-	~PhaulConn();
-	int initServer(vzsock_ctx* ctx, int serverSocket);
-	int initClient(vzsock_ctx* ctx);
-	std::string getFdrpcArg() const;
-	std::string getFdmemArg() const;
-	std::string getFdfsArg() const;
-	int checkEstablished() const;
+	PhaulChannels(const std::vector<std::string>& activeDeltas);
+	~PhaulChannels();
+	int init();
+
+	std::vector<int> getVzmigrateChannelFds() const;
+	std::string getPhaulFdrpcArg() const;
+	std::string getPhaulFdmemArg() const;
+	std::string getPhaulFdfsArg() const;
+	void closePhaulChannelFds();
 
 private:
-	int getChannelFd(size_t index) const;
-	std::string getChannelFdStr(size_t index) const;
-	std::string getActiveDeltaFdStr(size_t nDelta) const;
+	int getVzmigrateChannelFd(size_t index) const;
+	int getPhaulChannelFd(size_t index) const;
+	std::string getPhaulChannelFdStr(size_t index) const;
 
 private:
-	// Forbidden class methods
-	PhaulConn(const PhaulConn&);
-	PhaulConn& operator =(const PhaulConn&);
+	PhaulChannels(const PhaulChannels&);
+	PhaulChannels& operator =(const PhaulChannels&);
 
 private:
 	enum {
@@ -107,46 +108,8 @@ private:
 	};
 
 private:
-	std::auto_ptr<vzsock_ctx> m_ctx;
-	std::vector<void*> m_channelConns;
+	std::vector<std::pair<int, int> > m_channelsFds;
 	std::vector<std::string> m_activeDeltas;
-};
-
-/*
- * Phaul socket server handle additional connections establishment needed for
- * phaul on destination side.
- */
-class PhaulSockServer {
-public:
-	PhaulSockServer();
-	~PhaulSockServer();
-	int init();
-	PhaulConn* acceptConn(const std::vector<std::string>& activeDeltas);
-private:
-	// Forbidden class methods
-	PhaulSockServer(const PhaulSockServer&);
-	PhaulSockServer& operator =(const PhaulSockServer&);
-private:
-	std::auto_ptr<vzsock_ctx> m_ctx;
-	int m_serverSocket;
-};
-
-/*
- * Client of phaul socket server handle additional connections establishment
- * needed for phaul on source side.
- */
-class PhaulSockClient {
-public:
-	PhaulSockClient();
-	~PhaulSockClient();
-	int init();
-	PhaulConn* establishConn(const std::vector<std::string>& activeDeltas);
-private:
-	// Forbidden class methods
-	PhaulSockClient(const PhaulSockClient&);
-	PhaulSockClient& operator =(const PhaulSockClient&);
-private:
-	std::auto_ptr<vzsock_ctx> m_ctx;
 };
 
 #endif

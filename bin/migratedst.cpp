@@ -43,6 +43,7 @@
 #include "vzacompat.h"
 #include "channel.h"
 #include "migchannel.h"
+#include "multiplexer.h"
 
 extern struct vz_data *vzcnf;
 extern void *istorage_ctx;
@@ -51,7 +52,6 @@ MigrateStateDstRemote::MigrateStateDstRemote(VEObj * ve, int options)
 	: MigrateStateCommon()
 	, dstVE(ve)
 	, m_initOptions(options)
-	, m_phaulSrvPid(-1)
 {
 	assert(dstVE != NULL);
 
@@ -128,12 +128,12 @@ int MigrateStateDstRemote::clean_unregisterOnHaCluster(const void * arg1, const 
 int MigrateStateDstRemote::clean_termPhaulSrv(const void * arg, const void *)
 {
 	const int TERM_TIMEOUT = 3;
-	pid_t* srvPid = (pid_t*)arg;
+	pid_t* phaulSrvPid = (pid_t*)arg;
 
-	if (*srvPid > 0)
-		term_clean(*srvPid, TERM_TIMEOUT);
+	if (*phaulSrvPid > 0)
+		term_clean(*phaulSrvPid, TERM_TIMEOUT);
 
-	delete srvPid;
+	delete phaulSrvPid;
 	return 0;
 }
 
@@ -990,21 +990,20 @@ int MigrateStateDstRemote::registerOnHaCluster()
 /*
  * Return vector of command line arguments for p.haul-service exec.
  */
-std::vector<std::string> MigrateStateDstRemote::getPhaulSrvArgs()
+std::vector<std::string> MigrateStateDstRemote::getPhaulSrvArgs(
+	const PhaulChannels& channels)
 {
-	assert(m_phaulConn.get() != NULL);
-
 	std::vector<std::string> args;
 	args.push_back(BIN_PHAUL_SRV);
 
 	// Pass phaul connections as socket file descriptors
 	args.push_back("--fdrpc");
-	args.push_back(m_phaulConn->getFdrpcArg());
+	args.push_back(channels.getPhaulFdrpcArg());
 
 	args.push_back("--fdmem");
-	args.push_back(m_phaulConn->getFdmemArg());
+	args.push_back(channels.getPhaulFdmemArg());
 
-	std::string fdfsArg = m_phaulConn->getFdfsArg();
+	std::string fdfsArg = channels.getPhaulFdfsArg();
 	if (!fdfsArg.empty()) {
 		args.push_back("--fdfs");
 		args.push_back(fdfsArg);
@@ -1017,17 +1016,15 @@ std::vector<std::string> MigrateStateDstRemote::getPhaulSrvArgs()
 	return args;
 }
 
-int MigrateStateDstRemote::execPhaulSrv(const std::vector<std::string>& args)
+pid_t MigrateStateDstRemote::execPhaulSrv(const std::vector<std::string>& args)
 {
 	ExecveArrayWrapper argsArray(args);
+	pid_t pid;
 
-	if (vzm_execve_quiet_nowait(argsArray.getArray(), NULL, -1, &m_phaulSrvPid) != 0)
-		return -1;
+	if (vzm_execve_quiet_nowait(argsArray.getArray(), NULL, -1, &pid) != 0)
+		return putErr(-1, MIG_MSG_EXEC_PHAUL_SERVICE, BIN_PHAUL_SRV);
 
-	// Add cleanup routine to terminate phaul service in the end
-	addCleaner(clean_termPhaulSrv, (new pid_t(m_phaulSrvPid)), NULL, ANY_CLEANER);
-
-	return 0;
+	return pid;
 }
 
 /******************************
@@ -1225,47 +1222,15 @@ int MigrateStateDstRemote::cmdCheckPloopFormat(istringstream &is)
 }
 
 /*
- * Create phaul socket server and start listening on incoming connections.
+ * Prepare data structures needed for phaul connections multiplexing on
+ * destination side.
  *
- * Current implementation permit only single running vzmdest binary at a time
- * at destination node (since VZMD_DEF_PORT port used to establish
- * connections). It is temporary solution which will be replaced with some
- * better implementation in near future.
- */
-int MigrateStateDstRemote::cmdPreEstablishPhaulConn()
-{
-	if (m_phaulSockServer.get() != NULL)
-		return putErr(-1, MIG_MSG_PRE_EST_PHAUL_CONN);
-
-	// Create and initialize phaul sock server
-	std::auto_ptr<PhaulSockServer> sockServer(new PhaulSockServer());
-	if (sockServer->init() != 0)
-		return putErr(-1, MIG_MSG_PRE_EST_PHAUL_CONN);
-
-	// Transfer socket server ownership from local object to class object
-	m_phaulSockServer = sockServer;
-	return 0;
-}
-
-/*
- * Destination side part of additional connections establishment needed for
- * communication between p.haul and p.haul-service. Current method of
- * connections establishment is unsafe and will be replaced with some better
- * implementation (e.g. tunneling through master connection) in near future.
- *
- * Command CMD_ESTABLISH_PHAUL_CONN has following format:
+ * Command CMD_PREPARE_PHAUL_CONN has following format:
  * %count%\n[%delta_path1%\n[%delta_path2%\n[...]]] (count of active ploop
  * deltas and list of deltas paths separated by '\n').
  */
-int MigrateStateDstRemote::cmdEstablishPhaulConn(istringstream &is)
+int MigrateStateDstRemote::cmdPreparePhaulConn(istringstream &is)
 {
-	// Transfer phaul socket server ownership to local smart pointer to destroy
-	// socket server on return unconditionally.
-	std::auto_ptr<PhaulSockServer> sockServer(m_phaulSockServer);
-	if (sockServer.get() == NULL)
-		return putErr(-1, MIG_MSG_EST_DST_PHAUL_CONN);
-
-
 	// Read active deltas count
 	std::string bufStr;
 	if (!std::getline(is, bufStr))
@@ -1286,32 +1251,59 @@ int MigrateStateDstRemote::cmdEstablishPhaulConn(istringstream &is)
 		activeDeltas.push_back(delta);
 	}
 
-	// Establish phaul connection
-	std::auto_ptr<PhaulConn> conn(sockServer->acceptConn(activeDeltas));
-	if ((conn.get() == NULL) || (conn->checkEstablished() != 0))
-		return putErr(-1, MIG_MSG_EST_DST_PHAUL_CONN);
+	// Check that channels not already created
+	if (m_phaulChannels.get() != NULL)
+		return putErr(-1, MIG_MSG_PREP_DST_PHAUL_CONN);
 
-	// Transfer connection ownership from local object to class object
-	m_phaulConn = conn;
+	// Create and initialize phaul channels
+	std::auto_ptr<PhaulChannels> channels(new PhaulChannels(activeDeltas));
+	if (channels->init() != 0)
+		return putErr(-1, MIG_MSG_PREP_DST_PHAUL_CONN);
+
+	// Transfer channels ownership from local object to class object
+	m_phaulChannels = channels;
 	return 0;
 }
 
 /*
- * Run p.haul-service over existing connections established previously
- * to handle online migration of container on destination side.
+ * Exec p.haul-service and handle connections multiplexing.
  */
-int MigrateStateDstRemote::cmdStartPhaulSrv()
+int MigrateStateDstRemote::cmdRunPhaulMigration()
 {
-	if (m_phaulConn.get() == NULL)
-		return putErr(MIG_ERR_START_PHAUL_SRV, MIG_MSG_START_PHAUL_SRV);
+	assert(m_phaulChannels.get() != NULL);
 
-	// Check phaul service not already running
-	if (m_phaulSrvPid != -1)
-		return putErr(MIG_ERR_START_PHAUL_SRV, MIG_MSG_START_PHAUL_SRV);
+	// Transfer channels ownership from class object to local object
+	std::auto_ptr<PhaulChannels> channels = m_phaulChannels;
 
-	std::vector<std::string> phaulArgs = getPhaulSrvArgs();
-	if (execPhaulSrv(phaulArgs) != 0)
-		return putErr(MIG_ERR_START_PHAUL_SRV, MIG_MSG_START_PHAUL_SRV);
+	// Exec phaul-service
+	std::vector<std::string> phaulArgs = getPhaulSrvArgs(*channels);
+	pid_t phaulServicePid = execPhaulSrv(phaulArgs);
+
+	// Close phaul-service channels ends
+	channels->closePhaulChannelFds();
+
+	// Create io multiplexer
+	multiplexer::IoMultiplexer ioMultiplexer(channel,
+		channels->getVzmigrateChannelFds(), phaulServicePid, false);
+
+	int rc;
+	if (phaulServicePid != -1) {
+
+		// Run phaul-service io multiplexing
+		rc = ioMultiplexer.runMultiplexing();
+		if (!ioMultiplexer.isChildTerminated()) {
+			addCleaner(clean_termPhaulSrv, (new pid_t(phaulServicePid)), NULL,
+				ANY_CLEANER);
+		}
+
+	} else {
+		// Run io multiplexing abort if failed to start phaul-service
+		ioMultiplexer.runMultiplexingAbort();
+		rc = -1;
+	}
+
+	if (rc != 0)
+		return putErr(MIG_ERR_RUN_PHAUL_SRV, MIG_MSG_RUN_PHAUL_SERVICE);
 
 	return 0;
 }

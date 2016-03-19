@@ -184,7 +184,7 @@ extern const char * getError();
 #define MIG_ERR_SECOND_LEVEL_BUG        -71 /* unused */
 #define MIG_ERR_EXTERNAL_PROCESS        -72 /* unused */
 #define MIG_ERR_RUN_PHAUL				-73
-#define MIG_ERR_START_PHAUL_SRV			-74
+#define MIG_ERR_RUN_PHAUL_SRV			-74
 
 // internal error codes
 //#define MIG_ERR_SHARED_NOTFOUND	-101
@@ -223,6 +223,9 @@ extern const char * getError();
 
 #define MIG_MSG_AREA_USED	"directory '%s' or it descendant already used by CT %s"
 #define MIG_MSG_SEND_PKT	"can't send command to destination side : %m"
+#define MIG_MSG_SEND_BUF	"connection broken, can't send buffer"
+#define MIG_MSG_SEND_ERR	"connection broken, can't send error code"
+#define MIG_MSG_RECV_REPLY	"connection broken, can't receive reply"
 #define MIG_MSG_CANT_CONN_SRC	"can't connect to source node (%s) : %s"
 #define MIG_MSG_CANT_CONNECT	"can't connect to destination node"
 #define MIG_MSG_NOT_INSTALL	"seems you need install migrate package on destination node"
@@ -240,6 +243,7 @@ extern const char * getError();
 #define MIG_MSG_AREA_EXISTS	"destination '%s' already exists"
 #define MIG_MSG_CMP_LOCATIONS	"compare old and new CT locations failed : %m"
 #define MIG_MSG_SYSTEM		"system error : %m"
+#define MIG_MSG_INTERNAL	"'%s' call failed (errno %d)"
 #define MIG_MSG_EXEC_TRACK	"can not run tracking"
 #define MIG_MSG_COPY		"copy (using : [%s]) failed : %s"
 #define MIG_MSG_MOVE		"can not move '%s' -> '%s' : %m"
@@ -314,11 +318,20 @@ extern const char * getError();
 #define MIG_MSG_THESAME_SHARED	"Source and target %s resides "\
 	"on the same shared partition"
 
-#define MIG_MSG_PRE_EST_PHAUL_CONN	"can not initialize phaul socket server"
-#define MIG_MSG_EST_DST_PHAUL_CONN	"can not establish phaul connection on destination"
-#define MIG_MSG_EST_SRC_PHAUL_CONN	"can not establish phaul connection on source"
+#define MIG_MSG_PREP_DST_PHAUL_CONN	"can not prepare phaul connection on destination"
+#define MIG_MSG_PREP_SRC_PHAUL_CONN	"can not prepare phaul connection on source"
+#define MIG_MSG_EXEC_PHAUL			"can not exec phaul ('%s')"
 #define MIG_MSG_RUN_PHAUL			"phaul failed to live migrate CT"
 #define MIG_MSG_RUN_PHAUL_LOG		"phaul failed to live migrate CT (%s)"
-#define MIG_MSG_START_PHAUL_SRV		"can not start phaul service"
+#define MIG_MSG_EXEC_PHAUL_SERVICE	"can not exec phaul-service ('%s')"
+#define MIG_MSG_RUN_PHAUL_SERVICE	"phaul service failed to live migrate CT"
+
+#define MIG_MSG_MPX_UNKNOWN_CHANNEL	"unknown io multiplexer channel (#%d), skip packet"
+#define MIG_MSG_MPX_UNKNOWN_CMD		"unknown io multiplexer command (#%d)"
+#define MIG_MSG_MPX_UNKNOWN			"unknown io multiplexer error"
+#define MIG_MSG_MPX_ABORT			"io multiplexer aborted"
+#define MIG_MSG_MPX_PEER_ABORT		"io multiplexer peer aborted"
+#define MIG_MSG_MPX_DISCONNECT		"io multiplexer disconnected"
+#define MIG_MSG_MPX_OOM				"io multiplexer out of memory"
 
 #endif

@@ -94,6 +94,11 @@ int sock_read(
 		char *data,
 		size_t *size);
 
+/*
+ * Manual implementation of socketpair call for AF_INET sockets.
+ */
+int inet_socketpair(int type, int protocol, int sv[2]);
+
 #ifdef __cplusplus
 }
 #endif

@@ -103,9 +103,8 @@
 #define CMD_HA_CLUSTER_NODE_ID		"haclusternodeid"
 #define CMD_CHECK_PLOOP_FORMAT		"checkploopformat"
 
-#define CMD_PRE_ESTABLISH_PHAUL_CONN	"preestphaulconn"
-#define CMD_ESTABLISH_PHAUL_CONN		"estphaulconn"
-#define CMD_START_PHAUL_SRV				"startphaulsrv"
+#define CMD_PREPARE_PHAUL_CONN		"prepphaulconn"
+#define CMD_RUN_PHAUL_MIGRATION		"runphaulmigr"
 
 #endif
 

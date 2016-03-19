@@ -28,7 +28,7 @@
 #include "migratesrc.h"
 #include "ploop.h"
 
-class PhaulConn;
+class PhaulChannels;
 
 class MigrateStateRemote : public MigrateStateSrc
 {
@@ -88,7 +88,7 @@ protected:
 	typedef std::list<struct ploop_delta_desc *> listDeltaDesc_t;
 	listDeltaDesc_t m_deltas;
 
-	std::auto_ptr<PhaulConn> m_phaulConn;
+	std::auto_ptr<PhaulChannels> m_phaulChannels;
 
 protected:
 	int establishSshChannel();
@@ -108,6 +108,7 @@ protected:
 	static int clean_closeChannel(
 			const void * arg,
 			const void * dummy = NULL);
+	static int clean_termPhaul(const void * arg, const void *);
 
 	bool isSameLocation();
 	int checkDiskSpaceValues(unsigned long long bytes, unsigned long long inodes);
@@ -132,11 +133,11 @@ private:
 	int doLegacyOnlinePloopCtMigration();
 	int doOnlinePloopSharedCtMigration();
 
-	int establishRemotePhaulConn(const std::vector<std::string>& activeDeltas);
+	int preparePhaulConnection(const std::vector<std::string>& activeDeltas);
 	int prePhaulMigration();
 	int runPhaulMigration();
-	std::vector<std::string> getPhaulArgs();
-	int execPhaul(const std::vector<std::string>& args);
+	std::vector<std::string> getPhaulArgs(const PhaulChannels& channels);
+	pid_t execPhaul(const std::vector<std::string>& args);
 
 	int createDiskDescriptorXmlCopy(const char *basedir, const char *delta,
 			char *dd_copy, size_t size, int cleaner);
