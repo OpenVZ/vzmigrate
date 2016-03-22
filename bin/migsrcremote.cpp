@@ -2213,6 +2213,11 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 	args.push_back("vz");
 	args.push_back(srcVE->ctid());
 
+	if (isOptSet(OPT_KEEP_IMAGES))
+	{
+		args.push_back("--keep-images");
+	}
+
 	// Pass phaul connections as socket file descriptors
 	args.push_back("--fdrpc");
 	args.push_back(channels.getPhaulFdrpcArg());

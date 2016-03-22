@@ -157,7 +157,7 @@ typedef vector<string> TemplOptEntries;
 #define OPT_READONLY    (1ULL << 30)
 #define OPT_SKIP_TEMPLATE_AREA_SYNC (1ULL << 31)
 #define OPT_SOCKET	(1ULL << 32)
-#define OPT_KEEP_DUMP	(1ULL << 33)
+#define OPT_KEEP_IMAGES	(1ULL << 33)
 #define OPT_SUDO	(1ULL << 34)
 #define OPT_SSH_FWD	(1ULL << 35) /* to use ssh port forwarding (-L option) */
 #define OPT_PS_MODE	(1ULL << 36)

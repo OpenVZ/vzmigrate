@@ -163,6 +163,7 @@ ctid_t g_keeperCTID = "\0";
 "                             CT private area again in case of some error (on\n"\
 "                             CT stop for example) occured during first\n"\
 "                             migration attempt.\n"\
+"      --keep-images          Don't remove c/r images after a successful migration.\n"\
 "      --readonly             Do not locking and use write functions on source\n"       \
 "                             CT.\n"			\
 "      --dry-run              Option that will perform only checks and will not\n"       \
@@ -267,7 +268,7 @@ const char * VEArgs[MAX_ARGS + 1] =
 #define APROGRESS_OPTS          18
 #define READONLY_OPTS           19
 #define SOCKET_OPTS		20
-#define KEEP_DUMP_OPTS		21
+#define KEEP_IMAGES_OPTS	21
 #define KEEP_SRC_OPTS		22
 #define NEW_UUID_OPTS		23
 #define NOCOMPRESS_OPTS		24
@@ -605,7 +606,7 @@ void parse_options (int argc, char **argv)
 		{"aprogress", no_argument, NULL, APROGRESS_OPTS},
 		{"skiplock", no_argument, NULL, SKIP_LOCKVE_OPTS}, // Skip locking VE
 		{"socket", no_argument, NULL, SOCKET_OPTS},
-		{"keep-dump", no_argument, NULL, KEEP_DUMP_OPTS}, // Keep dump file
+		{"keep-images", no_argument, NULL, KEEP_IMAGES_OPTS}, // Keep images 
 		// Keep source CT - internal for parallels server mode
 		{"keep-src", no_argument, NULL, KEEP_SRC_OPTS},
 		{"new-uuid", required_argument, NULL, NEW_UUID_OPTS},
@@ -882,8 +883,8 @@ void parse_options (int argc, char **argv)
 		case SOCKET_OPTS:
 			setOpt(OPT_SOCKET);
 			break;
-		case KEEP_DUMP_OPTS:
-			setOpt(OPT_KEEP_DUMP);
+		case KEEP_IMAGES_OPTS:
+			setOpt(OPT_KEEP_IMAGES);
 			break;
 		case KEEP_SRC_OPTS:
 			setOpt(OPT_KEEP_SRC);
