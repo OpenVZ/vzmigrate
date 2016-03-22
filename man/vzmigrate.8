@@ -7,7 +7,7 @@ hardware nodes.
 .SH SYNOPSIS
 .TP
 .B vzmigrate [-r\ yes|no] [-sfvh] [--keeper[=<veid>]] [--ssh=<ssh\ \
-options>] [--keep-dst] [--online] [--noiter] [--readonly] \
+options>] [--keep-dst] [--keep-images] [--online] [--noiter] [--readonly] \
 [--require-realtime] [--dry-run] [--new-id=<CT ID>] [--new-name=<CT name>] \
 [--new-private=<CT private>] [--new-root=<CT root>] [--nonsharedfs] [--whole-file] [--timeout]\
 \fI<[user@]destination_node_address>\fP \fI{CT\ List}\fP
@@ -88,6 +88,10 @@ Don't clean synced destination CT private area in case of some
 error. It is usefull to use this option on big CT migration to protect
 of syncing CT private area again in case of some error (on CT stop for
 example) occured during first migration attempt.
+
+.TP
+\fB\--keep-images\fP
+Don't remove c/r images after a successful migration.
 
 .TP
 \fB\--online\fP

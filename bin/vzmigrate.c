@@ -45,7 +45,7 @@
 #define WHOLE_FILE_OPTS		'W'
 #define TIMEOUT_OPTS		't'
 #define NO_SSL_OPTS		18
-#define KEEP_DUMP_OPTS		19
+#define KEEP_IMAGES_OPTS	19
 #define CERTIFICATE_OPTS	20
 #define PRIVATEKEY_OPTS		21
 #define CIPHERS_OPTS		22
@@ -169,6 +169,7 @@ static int call_pmigrate(char *src_ct, char *dst_hn, char *dst_ct, char **narg)
 "                             CT private area again in case of some error (on\n"\
 "                             CT stop for example) occured during first\n"\
 "                             migration attempt.\n"\
+"      --keep-images          Don't remove c/r images after a successful migration.\n"\
 "      --readonly             Do not locking and use write functions on source\n"       \
 "                             CT.\n"			\
 "      --dry-run              Option that will perform only checks and will not\n"       \
@@ -239,7 +240,7 @@ int main(int argc, char **argv)
 		{"certificate", required_argument, NULL, CERTIFICATE_OPTS},
 		{"privatekey", required_argument, NULL, PRIVATEKEY_OPTS},
 		{"ciphers", required_argument, NULL, CIPHERS_OPTS},
-		{"keep-dump", no_argument, NULL, KEEP_DUMP_OPTS},
+		{"keep-images", no_argument, NULL, KEEP_IMAGES_OPTS},
 		{"nocompress", no_argument, NULL, NOCOMPRESS_OPTS},
 		{"ignore-backup-disk", no_argument, NULL, IGNORE_BACKUP_DISK_OPTS},
 		{"noevent", no_argument, NULL, NOEVENT_OPTS},
@@ -293,7 +294,7 @@ int main(int argc, char **argv)
 			CHECK_NOOPT_ARG(NONSHAREDFS_OPTS, "--nonsharedfs");
 			CHECK_NOOPT_ARG(WHOLE_FILE_OPTS, "--whole-file");
 			CHECK_NOOPT_ARG(NO_SSL_OPTS, "--no-ssl");
-			CHECK_NOOPT_ARG(KEEP_DUMP_OPTS, "--keep-dump");
+			CHECK_NOOPT_ARG(KEEP_IMAGES_OPTS, "--keep-images");
 			CHECK_NOOPT_ARG('b', "--batch");
 			CHECK_NOOPT_ARG(NOCOMPRESS_OPTS, "--nocompress");
 			CHECK_NOOPT_ARG(NOEVENT_OPTS, "--noevent");
