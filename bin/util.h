@@ -40,7 +40,6 @@
 
 #define VZ_CONF_LOCKDIR 	"LOCKDIR"
 #define VZ_CONF_TMPLDIR 	"TEMPLATE"
-#define VZ_CONF_DUMPDIR 	"DUMPDIR"
 #define VZ_CONF_USE_ATI 	"USE_ATI"
 #define VZ_CONF_QUOTA 		"DISK_QUOTA"
 #define VZ_CONF_SHAPING		"TRAFFIC_SHAPING"
@@ -88,7 +87,6 @@ struct vz_data {
 	char *priv_orig;
 	char *lockdir;
 	char *tmpldir;
-	char *dumpdir;
 	int quota;
 	int use_ati;
 	int shaping;

@@ -101,10 +101,6 @@ int main(int argc, char **argv)
 	if ((rc = vz_data_load(vzcnf)))
 		exitM(rc);
 
-	/* dumpdir must be exist */
-	if ((rc = make_dir(vzcnf->dumpdir, S_IRWXU|S_IRWXG|S_IRWXO)))
-		exit(rc);
-
 	parse_options(argc, argv);
 
 	if (VZMoptions.bintype == BIN_SRC) {

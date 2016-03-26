@@ -158,11 +158,7 @@ string VEObj::dumpDir() const
 {
 	std::ostringstream os;
 
-	// for layout=4 for compatibility only
-	if (layout < VZCTL_LAYOUT_4)
-		os << vzcnf->dumpdir;
-	else
-		os << priv << "/" SUSPEND_DIR;
+	os << priv << "/" SUSPEND_DIR;
 
 	return os.str();
 }
