@@ -52,7 +52,6 @@ protected:
 
 	// Clean functions
 	static int clean_startVE(const void * arg, const void *);
-	static int clean_closeSocket(const void * arg, const void *);
 	static int clean_mountVE(const void * arg, const void *);
 	static int clean_rollbackIPs(const void * arg, const void *);
 	static int clean_deletePloopSnapshot(const void * arg, const void * arg2);

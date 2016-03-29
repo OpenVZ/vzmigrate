@@ -64,7 +64,6 @@ MigrateStateDstRemote::MigrateStateDstRemote(VEObj * ve, int options)
 	is_privdir_exist = 0;
 	is_keepdir_exist = 0;
 	is_priv_on_shared = 0;
-	m_nVziterindPid = -1;
 	m_convertQuota2[0] = '\0';
 };
 
@@ -908,61 +907,6 @@ int MigrateStateDstRemote::resume_non_fatal(void)
 	return dstVE->resume_restore(isOptSet(OPT_NOCONTEXT));
 #endif
 	return -1;
-}
-
-int MigrateStateDstRemote::createSwapChannel(string veid_str)
-{
-	char *argv[] = { (char *)BIN_VZITERIND, (char *)veid_str.c_str(), NULL };
-
-	if (isOptSet(OPT_AGENT)) {
-		return vza_start_swap_srv(&channel.ctx, channel.conn, argv, &m_nVziterindPid);
-	} else if (isOptSet(OPT_PS_MODE)) {
-		pid_t pid, chpid;
-		int status;
-
-		/* ignore veid_str from source: source known nothing about
-		   --new_id option on dst side (https://jira.sw.ru/browse/PSBM-9045) */
-		char str[100];
-		snprintf(str, sizeof(str)-1, "%s", dstVE->ctid());
-		argv[1] = str;
-		logger(LOG_DEBUG, "%s %s", argv[0], argv[1]);
-
-		do_block(VZMoptions.swap_sock);
-		if ((chpid = fork()) < 0) {
-			return putErr(MIG_ERR_SYSTEM, "fork() : %m");
-		} else if (chpid == 0) {
-			for (int fd = 0; fd < 1024; fd++) {
-				if (fd != VZMoptions.swap_sock)
-					close(fd);
-			}
-			dup2(VZMoptions.swap_sock, STDIN_FILENO);
-			dup2(VZMoptions.swap_sock, STDOUT_FILENO);
-			dup2(VZMoptions.swap_sock, STDERR_FILENO);
-			close(VZMoptions.swap_sock);
-			execvp(argv[0], argv);
-			exit(-1);
-		}
-		/* One socket is on the Dispatcher side, the other - is passed to
-		 * vziterind, we don't need it anymore (see #PSBM-20615). */
-		close(VZMoptions.swap_sock);
-
-		while ((pid = waitpid(chpid, &status, WNOHANG)) == -1)
-			if (errno != EINTR)
-				break;
-
-		if (pid < 0)
-			return putErr(MIG_ERR_SYSTEM, "fork() : %m");
-		if (pid == chpid) {
-			check_exit_status(argv[0], status);
-			return putErr(MIG_ERR_SYSTEM, MIG_MSG_PAGEIN_EXEC);
-		}
-		m_nVziterindPid = chpid;
-	} else if (isOptSet(OPT_SSH_FWD)) {
-		return channel.fwdStartSwapSrv(argv);
-	} else {
-		return ssh_start_swap_srv(&channel.ctx, argv);
-	}
-	return 0;
 }
 
 int MigrateStateDstRemote::registerOnHaCluster()

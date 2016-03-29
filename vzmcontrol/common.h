@@ -212,8 +212,6 @@ extern const char * getError();
 
 #define MSG_FORCE_USED		"Force option is used"
 #define MIG_MSG_CHECK_KERNEL_MODULES	"Can't load kernel module %s on target node"
-#define MIG_MSG_PAGEIN_EXEC	"Can't execute vzpageind"
-#define MIG_MSG_PAGEIN_STATE	"vzpageind is not running"
 #define MIG_MSG_PKTDEPS_COM	"Destination node has not got required packages [%s]"
 #define MIG_MSG_IP_IN_USE_COM	"IP addresses [%s] already in use on destination node"
 #define MIG_MSG_IP_IN_USE	MIG_MSG_IP_IN_USE_COM ", use '-f' option"
@@ -251,8 +249,6 @@ extern const char * getError();
 #define MIG_MSG_EXEC_BIN	"can not exec '%s' : %m"
 #define MIG_MSG_STOP		"can not stop/umount CT %s : %s"
 #define MIG_MSG_START		"can not start/mount CT %s : %s"
-#define MIG_MSG_REALTIME	"Can not perform online migration with low delay"
-#define MIG_MSG_ITER_MIG	"Iterative migration is not available"
 #define MIG_MSG_LAZY		"Can not perform lazy online migration"
 #define MIG_MSG_FROM_ELDER		"Can not perform migration from elder version, please run yum update on the source side"
 #define MIG_MSG_ONLINE_ELDER	"Can not perform online migration to/from elder version"
@@ -309,7 +305,6 @@ extern const char * getError();
 #define MIG_MSG_RST_RENAME	"cleaning : rename : %s -> %s"
 #define MIG_MSG_RST_START	"cleaning : start CT %s"
 #define MIG_MSG_RST_RESUME	"cleaning : resume CT %s"
-#define MIG_MSG_RST_CHANNEL	"cleaning : close ssh channel"
 #define MIG_MSG_RST_MOUNT	"cleaning : mount CT %s"
 
 /* shared FS support */

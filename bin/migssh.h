@@ -44,12 +44,6 @@ int ssh_recv_data(
 		char * const *args,
 		const char *dst,
 		long timeout);
-int ssh_start_swap_cli(
-		struct vzsock_ctx *ctx,
-		const char *dst_bin,
-		const char *dst_ctid,
-		void **wcn);
-int ssh_start_swap_srv(struct vzsock_ctx *ctx, char * const *args);
 
 // Ssh channel
 class MigrateSshChannel : public MigrateChannel
@@ -65,9 +59,6 @@ public:
 	void fwdSrvClose();
 	int fwdSendData(const char *cmd, char * const *argv);
 	int fwdRecvData(char * const argv[]);
-	int fwdStartSwapCli(const char *cmd, void **swapch);
-	int fwdStartSwapSrv(char * const argv[]);
-	void fwdCloseSwap(const void *swapch);
 };
 
 #endif

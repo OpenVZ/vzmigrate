@@ -33,8 +33,6 @@ class PhaulChannels;
 class MigrateStateRemote : public MigrateStateSrc
 {
 public:
-	void *swapch;
-
 	virtual int doCtMigration();
 	int doCtMigrationDefault();
 	int doCtMigrationPhaul();
@@ -81,7 +79,6 @@ public:
 	~MigrateStateRemote();
 
 protected:
-	bool use_iteration;
 	long is_keep_dir;
 	bool m_bIsPrivOnShared;
 	long m_isTargetInHaCluster;
@@ -91,8 +88,6 @@ protected:
 	std::auto_ptr<PhaulChannels> m_phaulChannels;
 
 protected:
-	int establishSshChannel();
-
 	int invertLazyFlag();
 
 	int establishChannel(class MigrateSshChannel *ch, char *cmd);
@@ -105,9 +100,6 @@ protected:
 	   Used for migration in the same cluster */
 	static int clean_restoreVEconf(const void * arg1, const void * arg2);
 	static int clean_startVE(const void * arg1, const void * arg2);
-	static int clean_closeChannel(
-			const void * arg,
-			const void * dummy = NULL);
 	static int clean_termPhaul(const void * arg, const void *);
 
 	bool isSameLocation();

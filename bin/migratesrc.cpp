@@ -146,15 +146,6 @@ int MigrateStateSrc::clean_startVE(const void * arg, const void *)
 	return 0;
 };
 
-int MigrateStateSrc::clean_closeSocket(const void * arg, const void *)
-{
-	int * sockfd = (int *) arg;
-	// Close socket
-	close(*sockfd);
-	delete sockfd;
-	return 0;
-};
-
 // Clean functions
 int MigrateStateSrc::clean_rollbackIPs(const void * arg1, const void *arg2)
 {
