@@ -79,14 +79,6 @@ static int cmdCreateSwapChannel(void)
 	return putErr(MIG_ERR_SYSTEM, "Lazy migration is not supported");
 }
 
-static int cmdCreateIterChannel(istringstream & is)
-{
-	string veid_str;
-	if ((is >> veid_str) == NULL)
-		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
-	return state->createSwapChannel(veid_str);
-}
-
 static int cmdInvertLazyFlag(void)
 {
 	isOptSet(OPT_NOCONTEXT) ? unSetOpt(OPT_NOCONTEXT) : setOpt(OPT_NOCONTEXT);
@@ -319,9 +311,6 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 	} else if (strcmp(cmd, CMD_SWAPCH ) == 0) {
 		// create new channel for lazy migration
 		return cmdCreateSwapChannel();
-	} else if (strcmp(cmd, CMD_ITERCH) == 0) {
-		// create new channel for iteration migration - added in 4.0
-		return cmdCreateIterChannel(is);
 	} else if (strcmp(cmd, CMD_INVERTLAZY) == 0) {
 		// invert LAZY flag for iteration migration - added in 4.0
 		return cmdInvertLazyFlag();

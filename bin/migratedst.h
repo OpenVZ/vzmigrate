@@ -47,7 +47,6 @@ class PhaulChannels;
 class MigrateStateDstRemote : public MigrateStateCommon
 {
 private:
-	pid_t m_nVziterindPid;
 	VEObj * dstVE;
 
 protected:
@@ -155,7 +154,6 @@ public:
 	int undump();
 	int resume();
 	int resume_non_fatal();
-	int createSwapChannel(string veid_str);
 	std::string getCopyArea();
 	VEObj *getDstVE()
 	{

@@ -71,7 +71,7 @@
 #define CMD_CPT_VER		"cpt_ver" /* unused */
 #define CMD_SLMONLY		"slmonly"
 #define CMD_SWAPCH		"swapch"
-#define CMD_ITERCH		"iterch"
+#define CMD_ITERCH		"iterch" /* unused */
 #define CMD_INVERTLAZY		"invertlazy"
 
 #define CMD_FIRSTEMPL		"firstempl"

@@ -80,10 +80,7 @@ MigrateStateRemote::MigrateStateRemote(
 	: MigrateStateSrc(src_ctid, dst_ctid, priv, root, dst_name),
 	m_bIsPrivOnShared(false)
 {
-	use_iteration = true;
-
 	is_keep_dir = 0;
-	swapch = NULL;
 
 	m_isTargetInHaCluster = 0;
 
@@ -391,68 +388,6 @@ int MigrateStateRemote::checkPloopFormat()
 	logger(LOG_DEBUG, "%s",  outStr.str().c_str());
 
 	return channel.sendCommand(outStr.str().c_str());
-}
-
-int MigrateStateRemote::establishSshChannel()
-{
-	int rc, ret;
-	char buffer[BUFSIZ];
-	int fds[2];
-	const char *bin_dst;
-
-	if (!isOptSet(OPT_NOITER)) {
-		bin_dst = BIN_VZITERIND;
-		snprintf(buffer, sizeof(buffer), CMD_ITERCH " %s", dstVE->ctid());
-	} else {
-		return putErr(MIG_ERR_PROTOCOL, "Bad mode for swap channel");
-	}
-
-	if (isOptSet(OPT_AGENT)) {
-		int *sock = new(int);
-		assert(sock);
-		if ((rc = vza_start_swap_cli(&channel.ctx,
-				channel.conn, dstVE->ctid(), sock, &swapch)))
-			return rc;
-		addCleaner(clean_closeSocket, (void *)sock, NULL, ANY_CLEANER);
-	} else if (isOptSet(OPT_PS_MODE)) {
-		/* create & send command to start swap channel of server */
-		if ((rc = ch_send_cmd(&channel.ctx, channel.conn, buffer)))
-			return rc;
-
-		if ((ret = vzsock_open_conn(&channel.ctx, NULL, &swapch)))
-			return putErr(MIG_ERR_VZSOCK,
-				"vzsock_open_conn() return %d\n", ret);
-		fds[0] = VZMoptions.swap_sock;
-		fds[1] = VZMoptions.swap_sock;
-		if ((ret = vzsock_set_conn(&channel.ctx, swapch,
-				VZSOCK_DATA_FDPAIR, fds, sizeof(fds))))
-			return putErr(MIG_ERR_VZSOCK,
-				"vzsock_set_conn() return %d\n", ret);
-	} else if (isOptSet(OPT_SSH_FWD)) {
-		if ((rc = channel.fwdStartSwapCli(buffer, &swapch)))
-			return rc;
-		addCleaner(clean_closeChannel, swapch, NULL,
-			!isOptSet(OPT_NOITER) ? ANY_CLEANER : ERROR_CLEANER);
-		return 0;
-	} else {
-		if ((rc = ssh_start_swap_cli(&channel.ctx, bin_dst,
-				dstVE->ctid(), &swapch)))
-			return rc;
-	}
-	addCleaner(clean_closeChannel, swapch, NULL);
-
-	/* read reply from channel */
-	if ((rc = ch_recv(&channel.ctx, swapch, '\n',
-			buffer, sizeof(buffer))))
-		return rc;
-
-	if (strcmp(buffer, "OK")) {
-		logger(LOG_ERR, "%s", buffer);
-		return putErr(MIG_ERR_CANT_CONNECT, MIG_MSG_CANT_CONNECT);
-	}
-
-	logger(LOG_DEBUG, "Swap channel established");
-	return 0;
 }
 
 /* check shared fs type and id for source VE private,
@@ -851,9 +786,6 @@ int MigrateStateRemote::preMigrateStage()
 	if ((rc = checkBindMounts()))
 		return rc;
 
-	// Use iterative scheme by default
-	use_iteration = (isOptSet(OPT_NOITER)) ? false : true;
-
 	/* check on the same cluster migration case */
 	if ((rc = checkClusterID()))
 		return rc;
@@ -873,26 +805,9 @@ int MigrateStateRemote::preMigrateStage()
 		addCleaner(clean_restoreVEconf, srcVE);
 	}
 
-	/* adjust some options with recipient - before establishSshChannel() due to OPT_SSH_FWD */
+	/* adjust some options with recipient */
 	if ((rc = checkOptions(&VZMoptions.options)))
 		return rc;
-
-	if (isOptSet(OPT_ONLINE) && use_iteration)
-	{
-		rc = establishSshChannel();
-		if (rc != 0 && use_iteration)
-		{
-			if (isOptSet(OPT_REALTIME))
-			{
-				logger(LOG_ERR, MIG_MSG_REALTIME);
-				return rc;
-			}
-			else
-				logger(LOG_WARNING, MIG_MSG_ITER_MIG);
-			use_iteration = false;
-			setOpt(OPT_NOITER);
-		}
-	}
 
 	if ((rc = adjustTimeout(&VZMoptions.tmo)))
 		return rc;
@@ -1459,18 +1374,6 @@ cleanup_0:
 	free((void *)args);
 	string_list_clean(&ls);
 	return rc;
-}
-
-int MigrateStateRemote::clean_closeChannel(const void * arg, const void *)
-{
-	logger(LOG_DEBUG, MIG_MSG_RST_CHANNEL);
-	// Close pageout channel
-	if (isOptSet(OPT_SSH_FWD))
-		channel.fwdCloseSwap(arg);
-	else
-		vzsock_close_conn(&channel.ctx, (void *)arg);
-
-	return 0;
 }
 
 int MigrateStateRemote::clean_termPhaul(const void * arg, const void *)
@@ -2213,9 +2116,6 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 	args.push_back("vz");
 	args.push_back(srcVE->ctid());
 
-	if (isOptSet(OPT_KEEP_IMAGES))
-		args.push_back("--keep-images");
-
 	// Pass phaul connections as socket file descriptors
 	args.push_back("--fdrpc");
 	args.push_back(channels.getPhaulFdrpcArg());
@@ -2229,6 +2129,12 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 		args.push_back(fdfsArg);
 	}
 
+	// Explicitly enable or disable predumps creation (iterations)
+	if (isOptSet(OPT_NOITER))
+		args.push_back("--no-pre-dump");
+	else
+		args.push_back("--pre-dump");
+
 	// Specify path to phaul log
 	args.push_back("--log-file");
 	args.push_back(PHAUL_LOG_FILE);
@@ -2239,8 +2145,8 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 		args.push_back("4");
 	}
 
-	// Force predump (iterations)
-	args.push_back("--pre-dump");
+	if (isOptSet(OPT_KEEP_IMAGES))
+		args.push_back("--keep-images");
 
 	return args;
 }
