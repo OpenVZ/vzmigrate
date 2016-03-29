@@ -1934,9 +1934,6 @@ int MigrateStateRemote::doOnlinePloopCtMigration()
 	StringListWrapper active_delta;
 	int rc;
 
-	if (!isOptSet(OPT_ONLINE))
-		return putErr(-1, "Not implemented");
-
 	rc = getActivePloopDelta(srcVE->m_disks.get(disk_is_non_shared),
 		&active_delta.getList());
 	if (rc)
@@ -2127,6 +2124,12 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 	if (!fdfsArg.empty()) {
 		args.push_back("--fdfs");
 		args.push_back(fdfsArg);
+	}
+
+	// Specify mode as restart if online migration disabled
+	if (!isOptSet(OPT_ONLINE)) {
+		args.push_back("--mode");
+		args.push_back("restart");
 	}
 
 	// Explicitly enable or disable predumps creation (iterations)
