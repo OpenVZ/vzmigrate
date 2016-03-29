@@ -2129,6 +2129,12 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 		args.push_back(fdfsArg);
 	}
 
+	// Explicitly enable or disable predumps creation (iterations)
+	if (isOptSet(OPT_NOITER))
+		args.push_back("--no-pre-dump");
+	else
+		args.push_back("--pre-dump");
+
 	// Specify path to phaul log
 	args.push_back("--log-file");
 	args.push_back(PHAUL_LOG_FILE);
@@ -2141,9 +2147,6 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 
 	if (isOptSet(OPT_KEEP_IMAGES))
 		args.push_back("--keep-images");
-
-	// Force predump (iterations)
-	args.push_back("--pre-dump");
 
 	return args;
 }
