@@ -2138,6 +2138,10 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 	else
 		args.push_back("--pre-dump");
 
+	// Specify force option to skip cpu compatibility checks if needed
+	if (isOptSet(OPT_SKIP_CHECKCPU))
+		args.push_back("--force");
+
 	// Specify path to phaul log
 	args.push_back("--log-file");
 	args.push_back(PHAUL_LOG_FILE);
