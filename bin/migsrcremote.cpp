@@ -636,9 +636,7 @@ int MigrateStateRemote::doCtMigration()
 	if ((rc = preMigrateStage()))
 		goto error;
 
-	if (srcVE->isrun() && is_shared() && isOptSet(OPT_ONLINE))
-		rc = doOnlinePloopSharedCtMigration();
-	else if ((srcVE->isrun()) && (VZMoptions.remote_version >= MIGRATE_VERSION_700))
+	if ((srcVE->isrun()) && (VZMoptions.remote_version >= MIGRATE_VERSION_700))
 		rc = doCtMigrationPhaul();
 	else
 		rc = doCtMigrationDefault();
@@ -1246,9 +1244,15 @@ int MigrateStateRemote::postFinalStage()
 		}
 	}
 
+	deletePloopStatfsFiles();
+
 	/* and destroy VE without exitcode check */
-	if (!(m_nFlags & VZMSRC_SHARED_PRIV))
+	if (!(m_nFlags & VZMSRC_SHARED_PRIV)) {
 		srcVE->destroy();
+	} else {
+		if (srcVE->unregister())
+			logger(LOG_ERR, "Failed to unregister");
+	}
 
 	END_STAGE();
 	return 0;
@@ -1684,242 +1688,6 @@ void MigrateStateRemote::finishDestination()
 		channel.readReply();
 }
 
-/*
-src node                                                dst node
-
-copy external disk(s)
-
-copy default DiskDescriptor.xml to local file
-migrate memory
-vzctl chkpnt --suspend
-
-copy external active delta(s)
-
-vzctl chkpnt --dump
-create snapshot A
-                                                        create snapshot B
-                                                        vzctl chkpnt --undump
-                                                        register CT
-                                                        vzctl chkpnt --restore
-vzctl chkpnt --kill
-vzctl umount
-                                                        merge snapshot B
-                                                        finish
-unregister CT
-remove custom DiskDescriptor.xml
-remove snapshot A
-finish
-*/
-int MigrateStateRemote::doOnlinePloopSharedCtMigration()
-{
-// need to adjust to new c/r technology
-#if 0
-	int rc;
-	char path[PATH_MAX+1];
-	// create copy of DiskDescription.xml
-	char dd_xml2[PATH_MAX+1];
-	char dd_xml[PATH_MAX+1];
-	struct string_list active_delta;
-	std::list<std::string> snap_info_list;
-	std::list<std::string>::const_iterator sit;
-
-	string_list_init(&active_delta);
-
-	ct_disk disks = srcVE->m_disks.get(disk_is_non_shared);
-
-	rc = getActivePloopDelta(disks, &active_delta);
-	if (rc)
-		return rc;
-
-	rc = open_active_deltas(&active_delta);
-	if (rc)
-		goto err1;
-
-	rc = copy_ct(&active_delta);
-	if (rc)
-		goto err1;
-
-	rc = copy_active_deltas();
-	if (rc)
-		goto err1;
-
-	/*
-	 * start of offline mode
-	 */
-	if ((rc = stopVE()))
-		goto err1;
-
-	srcVE->gen_snap_guid();
-	for (ct_disk::const_iterator it = srcVE->m_disks.begin();
-			it != srcVE->m_disks.end(); ++it)
-	{
-		if (!it->is_shared())
-			continue;
-
-		rc = createDiskDescriptorXmlCopy(srcVE->priv, it->image.c_str(),
-				dd_xml2, sizeof(dd_xml2), ANY_CLEANER);
-		if (rc)
-			goto err;
-
-		rc = MigrateStateCommon::ploopCreateSnapshot(dd_xml2, srcVE->snap_guid());
-		if (rc)
-			goto err;
-
-		snap_info_list.push_back(dd_xml2);
-
-		std::ostringstream d;
-		d << (VZMoptions.remote_version < MIGRATE_VERSION_606 ?
-			CMD_CREATE_PLOOP_SNAPSHOT : CMD_CREATE_PLOOP_SNAPSHOT_NO_ROLLBACK);
-		d << " " <<  srcVE->snap_guid() << " " << it->image;
-		if ((rc = ch_send_cmd(&channel.ctx, channel.conn, d.str().c_str())))
-			goto err;
-	}
-
-	if (use_iteration && VZMoptions.invert_lazy_flag) {
-		// Set LAZY flag on dst node
-		// We need to do this only one time
-		rc = invertLazyFlag();
-		if (rc != 0) {
-			logger(LOG_ERR, MIG_MSG_ITER, dstVE->ctid(), getError());
-			goto err;
-		}
-		VZMoptions.invert_lazy_flag = 0;
-	}
-
-	/* Copy external active deltas stage(2) */
-	rc = copy_active_deltas_dirty();
-	if (rc)
-		goto err;
-
-	close_active_deltas();
-
-	rc = channel.sendCommand(CMD_UNDUMP);
-	if (rc != 0)
-	{
-		logger(LOG_ERR, MIG_MSG_UNDUMP, dstVE->ctid(), getError());
-		/* for debug purposes */
-		snprintf(path, sizeof(path), "%s.saved", srcVE->dumpfile);
-		rename(srcVE->dumpfile, path);
-		logger(LOG_ERR, "Dumpfile %s saved", path);
-		goto err;
-	}
-
-	rc = channel.sendCommand(CMD_NON_FINAL_RESUME);
-	if (rc != 0)
-	{
-		logger(LOG_ERR, MIG_MSG_DST_RESUME, dstVE->ctid(), getError());
-		/* for debug purposes */
-		snprintf(path, sizeof(path), "%s.saved", srcVE->dumpfile);
-		rename(srcVE->dumpfile, path);
-		logger(LOG_ERR, "Dumpfile %s saved", path);
-		goto err;
-	}
-
-	/* CT is running on destination side now, so will ignore error
-	 * on source and try to remove CT by any path (https://jira.sw.ru/browse/PSBM-12622) */
-
-	/*
-	 * At the first to copy original CT config to /etc/..., so shared config may
-	 * be changed by target side. see https://jira.sw.ru/browse/PSBM-12643
-	 */
-
-	if (m_nFlags & VZMSRC_SHARED_PRIV) {
-		snprintf(path, sizeof(path), "%s" SUFFIX_MIGRATED, srcVE->confRealPath().c_str());
-		unlink(srcVE->confPath().c_str());
-		copy_file(srcVE->confPath().c_str(), path);
-	}
-
-	// Now we should restore (before dst VE starting) VEs IP from keeperVE
-	if (isOptSet(OPT_KEEPER))
-		restoreKeeperIPs();
-
-	/* stop and umount CT _before_ merge on target */
-	if (srcVE->kill_chkpnt())
-		logger(LOG_ERR, MIG_MSG_STOP, srcVE->ctid(), getError());
-
-	if (srcVE->umount()) {
-		logger(LOG_ERR, MIG_MSG_STOP, srcVE->ctid(), getError());
-	} else {
-		// do not merge snapshot on target if umount failed
-		// https://jira.sw.ru/browse/PSBM-21804
-		for (ct_disk::const_iterator it = srcVE->m_disks.begin();
-				it != srcVE->m_disks.end(); ++it)
-		{
-			if (!it->is_shared())
-				continue;
-
-			std::ostringstream d;
-			d << CMD_MERGE_PLOOP_SNAPSHOT << " " << srcVE->snap_guid() << " "
-				<< it->image;
-			ch_send_cmd(&channel.ctx, channel.conn, d.str().c_str());
-
-		}
-	}
-
-	/* Since private resides on shared storage and destination was mounted
-	earlier than source was unmounted we have dangling .statfs files needed
-	for unmounted disks managment. Remove these files manually. */
-	deletePloopStatfsFiles();
-
-	/* and stop target side */
-	channel.sendCommand(CMD_STOP);
-
-	/* to remote snapshot */
-
-	for (sit = snap_info_list.begin(); sit != snap_info_list.end(); ++sit)
-		if (MigrateStateCommon::ploopGetTopImageFileName((*sit).c_str(), path, sizeof(path)) == 0)
-			unlink(path);
-
-	/* and unregister */
-	srcVE->unregister();
-	unregisterHA();
-	cleanExternalDisk();
-
-	if (!(m_nFlags & VZMSRC_SHARED_PRIV))
-		clean_removeDir(srcVE->priv, NULL);
-
-	string_list_clean(&active_delta);
-	close_active_deltas();
-
-	return 0;
-
-err:
-	/* will wait till vzmdest complete rollback and close socket
-	   to avoid fatal async undump/merge on shared PCS
-	   https://jira.sw.ru/browse/PSBM-11228 */
-
-	finishDestination();
-
-	/* CT has reregistered on CMD_UNDUMP stage return back */
-	srcVE->registration();
-
-	for (sit = snap_info_list.begin(); sit != snap_info_list.end(); ++sit) {
-		const char *xml2 = (*sit).c_str();
-
-		/* remove top delta from dst */
-		snprintf(dd_xml, strlen(xml2) - sizeof(".migrate.xml") + 2, "%s", xml2);
-		if (MigrateStateCommon::ploopGetTopImageFileName(dd_xml, path, sizeof(path)) == 0) {
-			if (unlink(path))
-				logger(LOG_ERR, "Failed to remove dst top delta %s: %m", path);
-		}
-
-		/* rollback two DiskDescriptor.xml hack
-		 * move back DiskDescriptor.xml
-		 */
-		if (rename(xml2, dd_xml) == 0 || copy_file(dd_xml, xml2) == 0)
-			MigrateStateCommon::ploopDeleteSnapshot(dd_xml, srcVE->snap_guid());
-	}
-
-err1:
-	string_list_clean(&active_delta);
-	close_active_deltas();
-
-	return rc;
-#endif
-
-	return putErr(-1, "Online migration of containers with shared ploop disks not implemented");
-}
-
 /* Offline migration with shared VE_PRIVATE
  * copy external disk and regiter on dst
  */
@@ -2102,6 +1870,24 @@ int MigrateStateRemote::runPhaulMigration()
 	return 0;
 }
 
+std::string MigrateStateRemote::getPhaulSharedDisksArg() const
+{
+	ct_disk disks(srcVE->m_disks.get(disk_is_shared));
+	if (disks.empty())
+		return "";
+
+	std::ostringstream shared;
+	const char* delim = "";
+	ct_disk::const_iterator it(disks.begin());
+	ct_disk::const_iterator last(disks.end());
+	for (; it != last; ++it) {
+		shared << delim << it->image;
+		delim = ",";
+	}
+	logger(LOG_INFO, "shared disks: %s", shared.str().c_str());
+	return shared.str();
+}
+
 /*
  * Return vector of command line arguments for p.haul exec.
  */
@@ -2141,6 +1927,12 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 	// Specify force option to skip cpu compatibility checks if needed
 	if (isOptSet(OPT_SKIP_CHECKCPU))
 		args.push_back("--force");
+
+	std::string sharedArg(getPhaulSharedDisksArg());
+	if (!sharedArg.empty()) {
+		args.push_back("--vz-shared-disks");
+		args.push_back(sharedArg);
+	}
 
 	// Specify path to phaul log
 	args.push_back("--log-file");
