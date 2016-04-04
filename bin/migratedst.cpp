@@ -1216,6 +1216,10 @@ int MigrateStateDstRemote::cmdRunPhaulMigration()
 {
 	assert(m_phaulChannels.get() != NULL);
 
+	// Reset logging level to protect connection from logging messages
+	int origDebugLevel = debug_level;
+	debug_level = LOG_EMERG;
+
 	// Transfer channels ownership from class object to local object
 	std::auto_ptr<PhaulChannels> channels = m_phaulChannels;
 
@@ -1245,6 +1249,9 @@ int MigrateStateDstRemote::cmdRunPhaulMigration()
 		ioMultiplexer.runMultiplexingAbort();
 		rc = -1;
 	}
+
+	// Restore original logging level
+	debug_level = origDebugLevel;
 
 	if (rc != 0)
 		return putErr(MIG_ERR_RUN_PHAUL_SRV, MIG_MSG_RUN_PHAUL_SERVICE);
