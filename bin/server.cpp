@@ -180,6 +180,16 @@ static int cmdMountPloop(istringstream & is)
 	return state->cmdMountPloop(ploop_size, create_size, lmounted);
 }
 
+/*
+ * Log received command except few commands which must preserve connection in
+ * consistent state for bidirectional communication.
+ */
+static void log_cmd(const std::string& cmd)
+{
+	if (cmd.compare(CMD_RUN_PHAUL_MIGRATION) != 0)
+		logger(LOG_DEBUG, "Command : %s", cmd.c_str());
+}
+
 static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 {
 	int rc;
@@ -380,7 +390,7 @@ int main_loop()
 		if ((is >> cmd) == NULL)
 			return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
 
-		logger(LOG_DEBUG, "Command : %s", cmd.c_str());
+		log_cmd(cmd);
 		rcode = proc_cmd(cmd.c_str(), is, os);
 		if (rcode != 0)
 			logger(LOG_DEBUG, "error [%d] : %s", rcode, getError());
