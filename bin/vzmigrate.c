@@ -97,7 +97,7 @@ static int call_pmigrate_once(char *src_ct, char *dst_hn,
 {
 	char *dst;
 
-	narg[2] = src_ct;
+	narg[1] = src_ct;
 	dst = malloc(strlen(dst_hn) + strlen(dst_ct) + 2);
 	if (dst == NULL) {
 		perror("Not enough memory");
@@ -105,9 +105,9 @@ static int call_pmigrate_once(char *src_ct, char *dst_hn,
 	}
 
 	sprintf(dst, "%s/%s", dst_hn, dst_ct);
-	narg[4] = dst;
+	narg[2] = dst;
 
-	execv("/usr/sbin/pmigrate", narg);
+	execv("/usr/share/pmigrate/pmigrate.c2c", narg);
 	perror("Can't execute pmigrate");
 	return 1;
 }
@@ -266,12 +266,10 @@ int main(int argc, char **argv)
 
 	memset(new_args, 0, (argc * 2 + 3) * sizeof(char *));
 
-	new_args[0] = "pmigrate";
-	new_args[1] = "ct";
+	new_args[0] = "pmigrate.c2c";
+	new_args[1] = NULL; /* will be set later */
 	new_args[2] = NULL; /* will be set later */
-	new_args[3] = "ct";
-	new_args[4] = NULL; /* will be set later */
-	new_argc = 5;
+	new_argc = 3;
 
 	/* according to mesk@ vzmigrate is never called by agent directly */
 
