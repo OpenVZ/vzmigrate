@@ -156,11 +156,7 @@ string VEObj::confPath() const
 
 string VEObj::dumpDir() const
 {
-	std::ostringstream os;
-
-	os << priv << "/" SUSPEND_DIR;
-
-	return os.str();
+	return vzcnf->dumpdir;
 }
 
 string VEObj::tmplDir() const

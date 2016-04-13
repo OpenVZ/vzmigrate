@@ -40,6 +40,7 @@
 
 #define VZ_CONF_LOCKDIR 	"LOCKDIR"
 #define VZ_CONF_TMPLDIR 	"TEMPLATE"
+#define VZ_CONF_DUMPDIR 	"DUMPDIR"
 #define VZ_CONF_USE_ATI 	"USE_ATI"
 #define VZ_CONF_QUOTA 		"DISK_QUOTA"
 #define VZ_CONF_SHAPING		"TRAFFIC_SHAPING"
@@ -71,6 +72,7 @@
 
 #define VE_PLOOP_BINDMOUNT_DIR	"/.bindmount"
 #define PFCACHE_BIN "/usr/libexec/vztt_pfcache_xattr"
+#define DEFAULT_DUMP_DIR	"/vz/dump"
 
 #define fl_prls_release	"/etc/parallels-release"
 
@@ -87,6 +89,7 @@ struct vz_data {
 	char *priv_orig;
 	char *lockdir;
 	char *tmpldir;
+	char *dumpdir;
 	int quota;
 	int use_ati;
 	int shaping;

@@ -1913,6 +1913,9 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 		args.push_back(sharedArg);
 	}
 
+	args.push_back("--img-path");
+	args.push_back(vzcnf->dumpdir);
+
 	// Specify path to phaul log
 	args.push_back("--log-file");
 	args.push_back(PHAUL_LOG_FILE);

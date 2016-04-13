@@ -247,6 +247,17 @@ int vz_data_load(struct vz_data *vz)
 		goto cleanup;
 	}
 
+	/* read DUMPDIR */
+	if ((rc = vzctl2_env_get_param(h, VZ_CONF_DUMPDIR, &data)) || data == NULL) {
+		data = DEFAULT_DUMP_DIR;
+		logger(LOG_WARNING, "Can't read " VZ_CONF_DUMPDIR " from " VZ_CONF
+				"; default value (%s) will be used", data);
+	}
+	if ((vz->dumpdir = strdup(data)) == NULL) {
+		rc = putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
+		goto cleanup;
+	}
+
 	/* read DISK_QUOTA */
 	if ((rc = vzctl2_env_get_param(h, VZ_CONF_QUOTA, &data)) == 0 && data != NULL)
 		vz->quota = (strcasecmp(data, "yes") == 0);
