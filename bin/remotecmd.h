@@ -42,7 +42,7 @@
 #define CMD_FINAL	"final"
 #define CMD_RESUME	"resume"
 #define CMD_DUMPCOPY	"dumpcopy" /* unused */
-#define CMD_SUSPENDCOPY	"suspendcopy"
+#define CMD_SUSPENDCOPY	"suspendcopy" /* unused */
 #define CMD_PLOOP_COPY	"ploopcopy"
 #define CMD_COPY_EXTERNAL_DISK "copyexternaldisk"
 #define CMD_PLOOP_COPY_SYNC	"loopcopysync"

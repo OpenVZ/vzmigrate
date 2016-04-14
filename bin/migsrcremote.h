@@ -123,16 +123,13 @@ private:
 	int doOfflinePloopCtMigration();
 	int doOnlinePloopCtMigration();
 	int doLegacyOnlinePloopCtMigration();
-	int doOnlinePloopSharedCtMigration();
 
 	int preparePhaulConnection(const std::vector<std::string>& activeDeltas);
 	int prePhaulMigration();
 	int runPhaulMigration();
+	std::string getPhaulSharedDisksArg() const;
 	std::vector<std::string> getPhaulArgs(const PhaulChannels& channels);
 	pid_t execPhaul(const std::vector<std::string>& args);
-
-	int createDiskDescriptorXmlCopy(const char *basedir, const char *delta,
-			char *dd_copy, size_t size, int cleaner);
 
 	int syncPageCacheAndFreezeFS(const char *mnt);
 	void unfreezeFS(int fd);

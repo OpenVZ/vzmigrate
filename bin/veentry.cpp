@@ -156,28 +156,12 @@ string VEObj::confPath() const
 
 string VEObj::dumpDir() const
 {
-	std::ostringstream os;
-
-	os << priv << "/" SUSPEND_DIR;
-
-	return os.str();
+	return vzcnf->dumpdir;
 }
 
 string VEObj::tmplDir() const
 {
 	return std::string(vzcnf->tmpldir);
-}
-
-string VEObj::suspendPath() const
-{
-	std::ostringstream os;
-
-	os << dumpDir() << "/" SUSPEND_FILE;
-
-	if (layout < VZCTL_LAYOUT_4)
-		os << "." << ctid();
-
-	return os.str();
 }
 
 void VEObj::setPrivate(const char *p)

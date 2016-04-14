@@ -133,7 +133,6 @@ public:
 	int cmdCopyPloopImageOnline2(istringstream &is);
 	int cmdCreatePloopSnapshot(istringstream &is, bool rollback = true);
 	int cmdCreatePloopSnapshotNoRollback(istringstream &is);
-	int cmdDeletePloopSnapshot(istringstream &is);
 	int cmdMountPloop(unsigned long ploop_size, unsigned long create_size, int lmounted);
 	int cmdHaClusterNodeID(istringstream &is, ostringstream &os);
 	int cmdCheckPloopFormat(istringstream &is);
@@ -151,9 +150,7 @@ public:
 	/* final VE operation before start/mounting */
 	int finalVEtuning();
 	int finalStage(int action);
-	int undump();
 	int resume();
-	int resume_non_fatal();
 	std::string getCopyArea();
 	VEObj *getDstVE()
 	{
