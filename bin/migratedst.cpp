@@ -738,11 +738,6 @@ int MigrateStateDstRemote::copyStage(int stage)
 		return h_copy_remote_rsync_fast(getCopyArea().c_str(), METHOD_TRACKER);
 	case FASTCOPY_BINDMOUNTS:
 		return h_copy_remote_rsync_fast(dstVE->bindmountPath().c_str(), METHOD_CHECKSUM);
-	case SUSPENDCOPY:
-		if (dstVE->suspendPath().empty())
-			return putErr(MIG_ERR_SYSTEM, "can't get path for suspend file");
-		addCleanerRemove(clean_removeFile, dstVE->suspendPath().c_str());
-		return (this->*func_copyFile)(dstVE->suspendPath().c_str());
 	}
 }
 
@@ -831,58 +826,6 @@ cleanup:
 }
 
 
-int MigrateStateDstRemote::undump(void)
-{
-// need to adjust to new c/r technology
-#if 0
-	int rc;
-
-	if (	(isOptSet(OPT_PS_MODE) || isOptSet(OPT_AGENT)) &&
-		!isOptSet(OPT_NOCONTEXT) && (m_nVziterindPid != -1))
-	{
-		// If iterative migration failed (context does not exist) but
-		// vziterind already running, for agent and ps modes
-		// will terminate vziterind directly
-		// (https://jira.sw.ru/browse/PSBM-18868)
-		// And it's looks as OPT_NOCONTEXT options is upend
-		kill(m_nVziterindPid, SIGTERM);
-		for (int i = 0; i < 3; i++) {
-			pid_t pid = waitpid(m_nVziterindPid, NULL, WNOHANG);
-			if (pid < 0) {
-				logger(LOG_ERR, "waitpid() return %d : %m", pid);
-				break;
-			} else if (pid == m_nVziterindPid) {
-				break;
-			}
-			sleep(1);
-		}
-	}
-	if ((rc = dstVE->undump(isOptSet(OPT_NOCONTEXT))) != 0)
-		return rc;
-
-	/* will register resource on HA cluster just before
-	   register CT on node : better to have a broken resource than
-	   losing a valid */
-	if ((rc = registerOnHaCluster()))
-		goto err;
-
-	/* vzctl register for new layout VE */
-	if ((rc = dstVE->veRegister()))
-		goto err;
-	addCleaner(clean_unregister, dstVE);
-
-	/* set ve name */
-	if ((rc = dstVE->setName(dst_name)))
-		goto err;
-err:
-	addCleaner(clean_umount, dstVE);
-	addCleaner(clean_restoreKill, dstVE);
-
-	return rc;
-#endif
-	return -1;
-}
-
 int MigrateStateDstRemote::resume(void)
 {
 // need to adjust to new c/r technology
@@ -896,15 +839,6 @@ int MigrateStateDstRemote::resume(void)
 		return rc;
 
 	return 0;
-#endif
-	return -1;
-}
-
-int MigrateStateDstRemote::resume_non_fatal(void)
-{
-// need to adjust to new c/r technology
-#if 0
-	return dstVE->resume_restore(isOptSet(OPT_NOCONTEXT));
 #endif
 	return -1;
 }
@@ -1268,78 +1202,6 @@ int MigrateStateDstRemote::clean_umountImage(const void *arg, const void *)
 	ve->umount();
 	return 0;
 };
-
-int MigrateStateDstRemote::cmdCreatePloopSnapshot(istringstream &is, bool rollback)
-{
-	int rc;
-	char path[PATH_MAX+1];
-	string guid;
-
-	is >> guid;
-
-	GET_DISKDESCRIPTOR_XML(dstVE->priv, path)
-	if (!guid.empty()) {
-		char fname[PATH_MAX];
-		std::string image;
-
-		is >> image;
-		if (!image.empty())
-			snprintf(path, sizeof(path), "%s",
-				get_dd_xml(get_full_path(dstVE->priv, image.c_str(), fname, sizeof(fname))).c_str()
-				);
-
-		logger(LOG_DEBUG, "create snapshot '%s' '%s'",
-				guid.c_str(), path);
-		rc = MigrateStateCommon::ploopCreateSnapshot(path, guid.c_str());
-	} else {
-		logger(LOG_DEBUG, "create tsnapshot '%s'", guid.c_str());
-
-		guid = dstVE->gen_snap_guid();
-
-		rc = MigrateStateCommon::ploopCreateTSnapshot(path, guid.c_str());
-	}
-	if (rc)
-		return rc;
-
-	if (rollback)
-		addCleanerRemove(clean_deletePloopSnapshot, path,
-				guid.c_str());
-	return 0;
-}
-
-int MigrateStateDstRemote::cmdCreatePloopSnapshotNoRollback(istringstream &is)
-{
-	return cmdCreatePloopSnapshot(is, false);
-}
-
-int MigrateStateDstRemote::cmdDeletePloopSnapshot(istringstream &is)
-{
-	char path[PATH_MAX+1];
-	string guid;
-
-	is >> guid;
-
-	GET_DISKDESCRIPTOR_XML(dstVE->priv, path)
-	if (guid.empty()) {
-		logger(LOG_DEBUG, "merge top delta '%s'", guid.c_str());
-		return MigrateStateCommon::ploopMergeTopDelta(path);
-	} else {
-		char fname[PATH_MAX];
-		std::string image;
-
-		is >> image;
-		if (!image.empty())
-			snprintf(path, sizeof(path), "%s",
-				get_dd_xml(get_full_path(dstVE->priv, image.c_str(), fname, sizeof(fname))).c_str()
-				);
-
-		logger(LOG_DEBUG, "delete snapshot '%s' '%s'",
-				guid.c_str(), path);
-
-		return MigrateStateCommon::ploopDeleteSnapshot(path,
-				guid.c_str());
-	}
-}
 
 int isJquotaSupported(const char *ostemplate, bool &supported)
 {       

@@ -204,9 +204,6 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 	} else if (strcmp(cmd, CMD_FIRST) == 0) {
 		// first (full) rsync, 'first'
 		return state->copyStage(SIMPLECOPY);
-	} else if (strcmp(cmd, CMD_SUSPENDCOPY) == 0) {
-		// suspend rsync - added in 4.0
-		return state->copyStage(SUSPENDCOPY);
 	} else if (strcmp(cmd, CMD_VENAME) == 0) {
 		// bug #65012 - added in 4.0
 		return state->cmdCheckName(is);
@@ -237,15 +234,6 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 	} else if (strcmp(cmd, CMD_ONLINE_PLOOP_COPY_2) == 0) {
 		// copy dirty blocks of ploop active disc image in suspended CT
 		return state->cmdCopyPloopImageOnline2(is);
-	} else if (strcmp(cmd, CMD_CREATE_PLOOP_SNAPSHOT_NO_ROLLBACK) == 0) {
-		// create snapshot on online pcs migration
-		return state->cmdCreatePloopSnapshotNoRollback(is);
-	} else if (strcmp(cmd, CMD_CREATE_PLOOP_SNAPSHOT) == 0) {
-		// create snapshot on online pcs migration
-		return state->cmdCreatePloopSnapshot(is);
-	} else if (strcmp(cmd, CMD_MERGE_PLOOP_SNAPSHOT) == 0) {
-		// mergesnapshot on online pcs migration
-		return state->cmdDeletePloopSnapshot(is);
 	} else if (strcmp(cmd, CMD_MOUNT_PLOOP) == 0) {
 		// mount ploop for migration with convert zfs4 to ext4
 		return cmdMountPloop(is);
@@ -261,10 +249,6 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 	} else if (strcmp(cmd, CMD_FINAL) == 0) {
 		// post migrate: Ve start, 'post'
 		return cmdFinalStage(is);
-	} else if (strcmp(cmd, CMD_UNDUMP) == 0) {
-		return state->undump();
-	} else if (strcmp(cmd, CMD_NON_FINAL_RESUME) == 0) {
-		return state->resume_non_fatal();
 	} else if (strcmp(cmd, CMD_RESUME) == 0) {
 		return state->resume();
 	} else if (strcmp(cmd, CMD_NATIVE_QUOTA_SET) == 0) {
@@ -328,9 +312,6 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 		return state->cmdTemplateSync(is);
 	} else if (strcmp(cmd, CMD_ADJUST_TMO) == 0) {
 		return cmdAdjustTimeout(is, os);
-	} else if (strcmp(cmd, CMD_STOP) == 0) {
-		// just a finish
-		return 0;
 	} else if (strcmp(cmd, CMD_HA_CLUSTER_NODE_ID) == 0) {
 		return state->cmdHaClusterNodeID(is, os);
 	} else if (strcmp(cmd, CMD_CHECK_PLOOP_FORMAT) == 0) {
@@ -397,8 +378,7 @@ int main_loop()
 
 		if (cmd.compare(CMD_FINAL) == 0 ||
 		        cmd.compare(CMD_RESUME) == 0 ||
-		        cmd.compare(CMD_FINTEMPL) == 0 ||
-		        cmd.compare(CMD_STOP) == 0)
+		        cmd.compare(CMD_FINTEMPL) == 0)
 		{
 			e = doGoodbye(rcode, os.str());
 			if (0 == e)

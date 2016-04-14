@@ -1652,27 +1652,6 @@ void MigrateStateRemote::close_active_deltas()
 	m_deltas.clear();
 }
 
-// create copy of DiskDescription.xml
-int MigrateStateRemote::createDiskDescriptorXmlCopy(const char *basedir, const char *delta,
-		char *dd_copy, size_t size, int cleaner)
-{
-	char path[PATH_MAX+1];
-	char fname[PATH_MAX+1];
-
-	snprintf(path, sizeof(path), "%s/" DISKDESCRIPTOR_XML,
-			get_full_path(basedir, delta, fname, sizeof(fname)));
-	snprintf(dd_copy, size, "%s.migrate.xml", path);
-	if (copy_file(dd_copy, path))
-		return putErr(MIG_ERR_COPY, MIG_MSG_COPY_FILE, path, dd_copy, getError());
-	addCleanerRemove(clean_removeFile, dd_copy, cleaner);
-
-	/* *.lck file for xml config will create during snapshot creation.
-	   now anybody remove .lck files so will do it yourself */
-	snprintf(path, sizeof(path), "%s.lck", dd_copy);
-	addCleanerRemove(clean_removeFile, path, cleaner);
-	return 0;
-}
-
 static bool disk_is_non_shared(const struct disk_entry &d)
 {
 	return !d.is_shared();

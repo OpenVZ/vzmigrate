@@ -174,7 +174,6 @@ public:
 	string confRealPath() const;
 	/* get VE VZFS directory */
 	const string getVEPrivateVZFS();
-	string suspendPath() const;
 	string dumpDir() const;
 	string tmplDir() const;
 	void setPrivate(const char *p);
