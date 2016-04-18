@@ -1905,7 +1905,7 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 
 	// Specify force option to skip cpu compatibility checks if needed
 	if (isOptSet(OPT_SKIP_CHECKCPU))
-		args.push_back("--force");
+		args.push_back("--skip-cpu-check");
 
 	std::string sharedArg(getPhaulSharedDisksArg());
 	if (!sharedArg.empty()) {
