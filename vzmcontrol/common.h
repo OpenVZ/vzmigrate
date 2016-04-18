@@ -195,6 +195,11 @@ extern const char * getError();
 
 #define MIG_ERR_ALREDY_RUNNING	-201
 
+// Info messages
+
+#define MIG_INFO_LIVE_STARTED		"Live migration stage started"
+#define MIG_INFO_LIVE_COMPLETED		"Live migration stage completed"
+
 // Errors message
 
 #define VZM_MSG_UNKBIN	"Unknown binary \"%s\" run"
@@ -313,13 +318,13 @@ extern const char * getError();
 #define MIG_MSG_THESAME_SHARED	"Source and target %s resides "\
 	"on the same shared partition"
 
-#define MIG_MSG_PREP_DST_PHAUL_CONN	"can not prepare phaul connection on destination"
-#define MIG_MSG_PREP_SRC_PHAUL_CONN	"can not prepare phaul connection on source"
-#define MIG_MSG_EXEC_PHAUL			"can not exec phaul ('%s')"
-#define MIG_MSG_RUN_PHAUL			"phaul failed to live migrate CT"
-#define MIG_MSG_RUN_PHAUL_LOG		"phaul failed to live migrate CT (%s)"
-#define MIG_MSG_EXEC_PHAUL_SERVICE	"can not exec phaul-service ('%s')"
-#define MIG_MSG_RUN_PHAUL_SERVICE	"phaul service failed to live migrate CT"
+#define MIG_MSG_PREP_DST_PHAUL_CONN	"Can not prepare phaul connection on destination"
+#define MIG_MSG_PREP_SRC_PHAUL_CONN	"Can not prepare phaul connection on source"
+#define MIG_MSG_EXEC_PHAUL			"Can not exec phaul ('%s')"
+#define MIG_MSG_RUN_PHAUL			"Phaul failed to live migrate CT"
+#define MIG_MSG_RUN_PHAUL_LOG		"Phaul failed to live migrate CT (%s)"
+#define MIG_MSG_EXEC_PHAUL_SERVICE	"Can not exec phaul-service ('%s')"
+#define MIG_MSG_RUN_PHAUL_SERVICE	"Phaul service failed to live migrate CT"
 
 #define MIG_MSG_MPX_UNKNOWN_CHANNEL	"unknown io multiplexer channel (#%d), skip packet"
 #define MIG_MSG_MPX_UNKNOWN_CMD		"unknown io multiplexer command (#%d)"
