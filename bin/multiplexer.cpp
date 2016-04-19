@@ -609,19 +609,24 @@ int IoMultiplexer::runMultiplexing()
 		return 0;
 	case STATE_ABORTING:
 		cleanupAborting();
-		return putErr(-1, MIG_MSG_MPX_ABORT);
+		logger(LOG_DEBUG, MIG_MSG_MPX_ABORT);
+		return -1;
 	case STATE_ACK_FINISHING:
 		cleanupAckFinishing();
 		return 0;
 	case STATE_ACK_ABORTING:
 		cleanupAckAborting();
-		return putErr(-1, MIG_MSG_MPX_PEER_ABORT);
+		logger(LOG_DEBUG, MIG_MSG_MPX_PEER_ABORT);
+		return -1;
 	case STATE_DISCONNECTED:
-		return putErr(-1, MIG_MSG_MPX_DISCONNECT);
+		logger(LOG_ERR, MIG_MSG_MPX_DISCONNECT);
+		return -1;
 	case STATE_OOM:
-		return putErr(-1, MIG_MSG_MPX_OOM);
+		logger(LOG_ERR, MIG_MSG_MPX_OOM);
+		return -1;
 	default:
-		return putErr(-1, MIG_MSG_MPX_UNKNOWN);
+		logger(LOG_ERR, MIG_MSG_MPX_UNKNOWN);
+		return -1;
 	}
 }
 
@@ -685,7 +690,7 @@ void IoMultiplexer::doDemultiplex(PackedPacket* packet)
 		m_controlConn->doProcessCommand(rawPacket);
 
 	} else {
-		putErr(-1, MIG_MSG_MPX_UNKNOWN_CHANNEL, (int)channelIndex);
+		logger(LOG_ERR, MIG_MSG_MPX_UNKNOWN_CHANNEL, (int)channelIndex);
 	}
 }
 
@@ -704,7 +709,7 @@ void IoMultiplexer::doProcessCommand(uint32_t command)
 	case MULTIPLEXER_CMD_ACK_ABORT:
 		return processAckAbortCommand();
 	default:
-		putErr(-1, MIG_MSG_MPX_UNKNOWN_CMD, (int)command);
+		logger(LOG_ERR, MIG_MSG_MPX_UNKNOWN_CMD, (int)command);
 	}
 }
 

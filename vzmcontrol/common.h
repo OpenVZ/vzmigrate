@@ -326,12 +326,12 @@ extern const char * getError();
 #define MIG_MSG_EXEC_PHAUL_SERVICE	"Can not exec phaul-service ('%s')"
 #define MIG_MSG_RUN_PHAUL_SERVICE	"Phaul service failed to live migrate CT"
 
-#define MIG_MSG_MPX_UNKNOWN_CHANNEL	"unknown io multiplexer channel (#%d), skip packet"
-#define MIG_MSG_MPX_UNKNOWN_CMD		"unknown io multiplexer command (#%d)"
-#define MIG_MSG_MPX_UNKNOWN			"unknown io multiplexer error"
-#define MIG_MSG_MPX_ABORT			"io multiplexer aborted"
-#define MIG_MSG_MPX_PEER_ABORT		"io multiplexer peer aborted"
-#define MIG_MSG_MPX_DISCONNECT		"io multiplexer disconnected"
-#define MIG_MSG_MPX_OOM				"io multiplexer out of memory"
+#define MIG_MSG_MPX_UNKNOWN_CHANNEL	"Unknown io multiplexer channel (#%d), skip packet"
+#define MIG_MSG_MPX_UNKNOWN_CMD		"Unknown io multiplexer command (#%d)"
+#define MIG_MSG_MPX_UNKNOWN			"Unknown io multiplexer error"
+#define MIG_MSG_MPX_ABORT			"Io multiplexer aborted"
+#define MIG_MSG_MPX_PEER_ABORT		"Io multiplexer peer aborted"
+#define MIG_MSG_MPX_DISCONNECT		"Io multiplexer disconnected"
+#define MIG_MSG_MPX_OOM				"Io multiplexer out of memory"
 
 #endif
