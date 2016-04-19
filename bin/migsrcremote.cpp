@@ -1806,6 +1806,8 @@ int MigrateStateRemote::prePhaulMigration()
  */
 int MigrateStateRemote::runPhaulMigration()
 {
+	logger(LOG_INFO, MIG_INFO_LIVE_STARTED);
+
 	// Transfer channels ownership from class object to local object
 	std::auto_ptr<PhaulChannels> channels = m_phaulChannels;
 
@@ -1846,6 +1848,7 @@ int MigrateStateRemote::runPhaulMigration()
 		return putErr(MIG_ERR_RUN_PHAUL, MIG_MSG_RUN_PHAUL_LOG,
 			PHAUL_LOG_FILE);
 
+	logger(LOG_INFO, MIG_INFO_LIVE_COMPLETED);
 	return 0;
 }
 
