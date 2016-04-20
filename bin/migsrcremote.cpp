@@ -1894,6 +1894,12 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 		args.push_back(fdfsArg);
 	}
 
+	// Specify destination CTID if it differs from source CTID
+	if (CMP_CTID(srcVE->ctid(), dstVE->ctid()) != 0) {
+		args.push_back("--dst-id");
+		args.push_back(dstVE->ctid());
+	}
+
 	// Specify mode as restart if online migration disabled
 	if (!isOptSet(OPT_ONLINE)) {
 		args.push_back("--mode");
