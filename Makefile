@@ -24,6 +24,7 @@ sbindir ?=		/usr/sbin/
 mandir ?=		/usr/share/man/
 #migdir ?=		/usr/share/vzmigrate-${version}/
 datadir ?=		/usr/share/pmigrate/
+logrotatedir ?=		/etc/logrotate.d/
 
 include ${VZMROOT}/Makefile.incl
 
@@ -32,9 +33,11 @@ install:: all
 	# install executables
 	install -d ${DESTDIR}/${sbindir}
 	install -d ${DESTDIR}/${datadir}
+	install -d ${DESTDIR}/${logrotatedir}
 	install -m 755 vzmsrc vzmdest vzmpipe ${DESTDIR}/${sbindir}
 	install -m 755 vzmd ${DESTDIR}/${sbindir}
 	install -m 755 vzmigrate ${DESTDIR}/${sbindir}
+	install -m 644 logrotate/vzmigrate ${DESTDIR}/${logrotatedir}
 
 	# source binaries
 	ln -sf ${sbindir}/vzmsrc ${DESTDIR}/${datadir}/pmigrate.c2c
