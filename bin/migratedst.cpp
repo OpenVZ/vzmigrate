@@ -900,7 +900,7 @@ pid_t MigrateStateDstRemote::execPhaulSrv(const std::vector<std::string>& args)
 	pid_t pid;
 
 	if (vzm_execve_quiet_nowait(argsArray.getArray(), NULL, -1, &pid) != 0)
-		return putErr(-1, MIG_MSG_EXEC_PHAUL_SERVICE, BIN_PHAUL_SRV);
+		return -1;
 
 	return pid;
 }
@@ -1150,10 +1150,6 @@ int MigrateStateDstRemote::cmdRunPhaulMigration()
 {
 	assert(m_phaulChannels.get() != NULL);
 
-	// Reset logging level to protect connection from logging messages
-	int origDebugLevel = debug_level;
-	debug_level = LOG_EMERG;
-
 	// Transfer channels ownership from class object to local object
 	std::auto_ptr<PhaulChannels> channels = m_phaulChannels;
 
@@ -1179,13 +1175,11 @@ int MigrateStateDstRemote::cmdRunPhaulMigration()
 		}
 
 	} else {
+
 		// Run io multiplexing abort if failed to start phaul-service
 		ioMultiplexer.runMultiplexingAbort();
-		rc = -1;
+		rc = putErr(-1, MIG_MSG_EXEC_PHAUL_SERVICE, BIN_PHAUL_SRV);
 	}
-
-	// Restore original logging level
-	debug_level = origDebugLevel;
 
 	if (rc != 0)
 		return putErr(MIG_ERR_RUN_PHAUL_SRV, MIG_MSG_RUN_PHAUL_SERVICE);

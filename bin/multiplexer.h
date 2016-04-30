@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include <vector>
 #include <deque>
+#include <string>
 #include <memory>
 #include <boost/asio.hpp>
 #include <boost/shared_ptr.hpp>
@@ -50,13 +51,27 @@ struct MultiplexerPacketHeaderData {
 #pragma pack(pop)
 
 /*
- * Control command data. Consists of single uint32 value - control command.
- * ATTENTION!, don't touch structure size and format to preserve backward
- * compatibility.
+ * Multiplexer command header data. Consists of command id (uint32) and command
+ * specific data (arbitrary size). ATTENTION!, don't touch structure format to
+ * preserve backward compatibility.
  */
 #pragma pack(push, 1)
-struct MultiplexerControlCommandData {
+struct MultiplexerCommandHeaderData {
 	uint32_t m_command;
+	char m_data[];
+};
+#pragma pack(pop)
+
+/*
+ * MULTIPLEXER_CMD_LOG_MESSAGE command associated data structure. Consists of
+ * logging level of message (int32) and zero-terminated message string
+ * (arbitrary size). ATTENTION!, don't touch structure format to preserve
+ * backward compatibility.
+ */
+#pragma pack(push, 1)
+struct MultiplexerLogCommandData {
+	int32_t m_level;
+	char m_text[];
 };
 #pragma pack(pop)
 
@@ -65,10 +80,11 @@ struct MultiplexerControlCommandData {
  * existing commands to preserve backward compatibility.
  */
 enum EMultiplexerControlCommands {
-	MULTIPLEXER_CMD_FINISH = 0,     // Ask peer to finish
-	MULTIPLEXER_CMD_ABORT = 1,      // Ask peer to abort
-	MULTIPLEXER_CMD_ACK_FINISH = 2, // Acknowledge peers finish
-	MULTIPLEXER_CMD_ACK_ABORT = 3,  // Acknowledge peers abort
+	MULTIPLEXER_CMD_FINISH = 0,       // Ask peer to finish
+	MULTIPLEXER_CMD_ABORT = 1,        // Ask peer to abort
+	MULTIPLEXER_CMD_ACK_FINISH = 2,   // Acknowledge peers finish
+	MULTIPLEXER_CMD_ACK_ABORT = 3,    // Acknowledge peers abort
+	MULTIPLEXER_CMD_LOG_MESSAGE = 4,  // Log peer message
 };
 
 } // extern "C"
@@ -210,7 +226,8 @@ private:
 class ControlChannelConn : private boost::noncopyable {
 public:
 	ControlChannelConn(IoMultiplexer& ioMultiplexer);
-	void doDispatchCommand(uint32_t command);
+	void doDispatchControlCommand(int command);
+	void doDispatchLogMessage(int level, const std::string& text);
 	void doProcessCommand(const boost::shared_ptr<RawPacket>& packet);
 
 public:
@@ -235,7 +252,8 @@ public:
 	void runMultiplexingAbort();
 	void doMultiplex(RawPacket* packet, size_t index);
 	void doDemultiplex(PackedPacket* packet);
-	void doProcessCommand(uint32_t command);
+	void doProcessControlCommand(int command);
+	void doProcessLogMessage(int level, const std::string& text);
 	void doProcessDisconnect();
 	void doProcessOOM();
 	boost::asio::io_service& getIoService();
@@ -253,6 +271,7 @@ private:
 	void cleanupAckFinishing();
 	void cleanupAckAborting();
 
+	void logMessage(int level, const std::string& text);
 	void recvAllChannelsRawRemainder();
 	void sendAllChannelsRawRemainder();
 	void sendMasterPackedReminder();
