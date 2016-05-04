@@ -526,19 +526,52 @@ ControlChannelConn::ControlChannelConn(IoMultiplexer& ioMultiplexer)
 {
 }
 
-void ControlChannelConn::doDispatchCommand(uint32_t command)
+/*
+ * Send control command to peer (e.g. MULTIPLEXER_CMD_FINISH).
+ */
+void ControlChannelConn::doDispatchControlCommand(int command)
 {
 	std::auto_ptr<RawPacket> rawPacket(
-		RawPacket::create(sizeof(MultiplexerControlCommandData)));
+		RawPacket::create(sizeof(MultiplexerCommandHeaderData)));
 	if (rawPacket.get() == NULL) {
 		m_ioMultiplexer.doProcessOOM();
 		return;
 	}
 
 	// Pack control command manually
-	((MultiplexerControlCommandData*)
-		rawPacket->getBodyBuf())->m_command = command;
+	MultiplexerCommandHeaderData* commandHeader =
+		((MultiplexerCommandHeaderData*)rawPacket->getBodyBuf());
+	commandHeader->m_command = (uint32_t)command;
 
+	// Release raw packet with control command and multiplex it
+	m_ioMultiplexer.doMultiplex(rawPacket.release(), INDEX);
+}
+
+/*
+ * Send log message to peer (MULTIPLEXER_CMD_LOG_MESSAGE).
+ */
+void ControlChannelConn::doDispatchLogMessage(int level,
+	const std::string& text)
+{
+	std::auto_ptr<RawPacket> rawPacket(
+		RawPacket::create(sizeof(MultiplexerCommandHeaderData) +
+			sizeof(MultiplexerLogCommandData) + text.size() + 1));
+	if (rawPacket.get() == NULL) {
+		m_ioMultiplexer.doProcessOOM();
+		return;
+	}
+
+	// Pack log message command manually
+	MultiplexerCommandHeaderData* commandHeader =
+		((MultiplexerCommandHeaderData*)rawPacket->getBodyBuf());
+	commandHeader->m_command = (uint32_t)MULTIPLEXER_CMD_LOG_MESSAGE;
+
+	MultiplexerLogCommandData* logCommandData =
+		((MultiplexerLogCommandData*)commandHeader->m_data);
+	logCommandData->m_level = (int32_t)level;
+	snprintf(logCommandData->m_text, text.size() + 1, "%s", text.c_str());
+
+	// Release raw packet with log message command and multiplex it
 	m_ioMultiplexer.doMultiplex(rawPacket.release(), INDEX);
 }
 
@@ -546,10 +579,18 @@ void ControlChannelConn::doProcessCommand(
 	const boost::shared_ptr<RawPacket>& packet)
 {
 	// Unpack control command manually
-	uint32_t command = ((MultiplexerControlCommandData*)
-		packet->getBodyBuf())->m_command;
+	const MultiplexerCommandHeaderData* commandHeader =
+		((const MultiplexerCommandHeaderData*)packet->getBodyBuf());
 
-	m_ioMultiplexer.doProcessCommand(command);
+	if (commandHeader->m_command == MULTIPLEXER_CMD_LOG_MESSAGE) {
+		const MultiplexerLogCommandData* logCommandData =
+			((const MultiplexerLogCommandData*)commandHeader->m_data);
+		m_ioMultiplexer.doProcessLogMessage(logCommandData->m_level,
+			std::string(logCommandData->m_text));
+
+	} else {
+		m_ioMultiplexer.doProcessControlCommand(commandHeader->m_command);
+	}
 }
 
 IoMultiplexer::IoMultiplexer(MigrateChannel& migrateChannel,
@@ -609,23 +650,23 @@ int IoMultiplexer::runMultiplexing()
 		return 0;
 	case STATE_ABORTING:
 		cleanupAborting();
-		logger(LOG_DEBUG, MIG_MSG_MPX_ABORT);
+		logMessage(LOG_DEBUG, MIG_MSG_MPX_ABORT);
 		return -1;
 	case STATE_ACK_FINISHING:
 		cleanupAckFinishing();
 		return 0;
 	case STATE_ACK_ABORTING:
 		cleanupAckAborting();
-		logger(LOG_DEBUG, MIG_MSG_MPX_PEER_ABORT);
+		logMessage(LOG_DEBUG, MIG_MSG_MPX_PEER_ABORT);
 		return -1;
 	case STATE_DISCONNECTED:
-		logger(LOG_ERR, MIG_MSG_MPX_DISCONNECT);
+		logMessage(LOG_ERR, MIG_MSG_MPX_DISCONNECT);
 		return -1;
 	case STATE_OOM:
-		logger(LOG_ERR, MIG_MSG_MPX_OOM);
+		logMessage(LOG_ERR, MIG_MSG_MPX_OOM);
 		return -1;
 	default:
-		logger(LOG_ERR, MIG_MSG_MPX_UNKNOWN);
+		logMessage(LOG_ERR, MIG_MSG_MPX_UNKNOWN);
 		return -1;
 	}
 }
@@ -690,14 +731,17 @@ void IoMultiplexer::doDemultiplex(PackedPacket* packet)
 		m_controlConn->doProcessCommand(rawPacket);
 
 	} else {
-		logger(LOG_ERR, MIG_MSG_MPX_UNKNOWN_CHANNEL, (int)channelIndex);
+		char buf[BUFSIZ];
+		snprintf(buf, sizeof(buf), MIG_MSG_MPX_UNKNOWN_CHANNEL,
+			(int)channelIndex);
+		logMessage(LOG_ERR, buf);
 	}
 }
 
 /*
- * Process command from control channel.
+ * Process control command from control channel.
  */
-void IoMultiplexer::doProcessCommand(uint32_t command)
+void IoMultiplexer::doProcessControlCommand(int command)
 {
 	switch (command) {
 	case MULTIPLEXER_CMD_FINISH:
@@ -709,7 +753,22 @@ void IoMultiplexer::doProcessCommand(uint32_t command)
 	case MULTIPLEXER_CMD_ACK_ABORT:
 		return processAckAbortCommand();
 	default:
-		logger(LOG_ERR, MIG_MSG_MPX_UNKNOWN_CMD, (int)command);
+		{
+		char buf[BUFSIZ];
+		snprintf(buf, sizeof(buf), MIG_MSG_MPX_UNKNOWN_CMD, command);
+		logMessage(LOG_ERR, buf);
+		}
+	}
+}
+
+/*
+ * Process log message from control channel.
+ */
+void IoMultiplexer::doProcessLogMessage(int level, const std::string& text)
+{
+	if (m_isMasterMode) {
+		std::string tmpText = std::string(MIG_INFO_MPX_SLAVE_PREFIX) + text;
+		logMessage(level, tmpText);
 	}
 }
 
@@ -853,7 +912,7 @@ void IoMultiplexer::cleanupFinishing()
 	m_ioService.poll();
 
 	// Queue finish control command to peer
-	m_controlConn->doDispatchCommand(MULTIPLEXER_CMD_FINISH);
+	m_controlConn->doDispatchControlCommand(MULTIPLEXER_CMD_FINISH);
 
 	// Send master remainder and release master output stream
 	sendMasterPackedReminder();
@@ -876,7 +935,7 @@ void IoMultiplexer::cleanupAborting()
 	m_ioService.poll();
 
 	// Queue abort control command to peer
-	m_controlConn->doDispatchCommand(MULTIPLEXER_CMD_ABORT);
+	m_controlConn->doDispatchControlCommand(MULTIPLEXER_CMD_ABORT);
 
 	// Send master remainder and release master output stream
 	sendMasterPackedReminder();
@@ -900,7 +959,7 @@ void IoMultiplexer::cleanupAckFinishing()
 	m_ioService.poll();
 
 	// Queue acknowledgement control command to peer
-	m_controlConn->doDispatchCommand(MULTIPLEXER_CMD_ACK_FINISH);
+	m_controlConn->doDispatchControlCommand(MULTIPLEXER_CMD_ACK_FINISH);
 
 	// Send master remainder and release master output stream
 	sendMasterPackedReminder();
@@ -920,11 +979,20 @@ void IoMultiplexer::cleanupAckAborting()
 	m_ioService.poll();
 
 	// Queue acknowledgement control command to peer
-	m_controlConn->doDispatchCommand(MULTIPLEXER_CMD_ACK_ABORT);
+	m_controlConn->doDispatchControlCommand(MULTIPLEXER_CMD_ACK_ABORT);
 
 	// Send master remainder and release master output stream
 	sendMasterPackedReminder();
 	m_masterConn->doCloseOutStream();
+}
+
+void IoMultiplexer::logMessage(int level, const std::string& text)
+{
+	if (m_isMasterMode) {
+		logger(level, text.c_str());
+	} else {
+		m_controlConn->doDispatchLogMessage(level, text);
+	}
 }
 
 /*
