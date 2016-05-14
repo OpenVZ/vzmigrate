@@ -441,8 +441,11 @@ finish:
 		size = 100;
 		if (entry->priv_path)
 			size += strlen(entry->priv_path) + 1;
-		if (entry->root_path)
+		if (entry->root_path) {
 			size += strlen(entry->root_path) + 1;
+			if (entry->priv_path == NULL)
+				size += 1;
+		}
 		if ((VEArgs[point] = (const char *)malloc(size)) == NULL) {
 			logger(LOG_ERR, "Memory allocation failure");
 			exit(-MIG_ERR_SYSTEM);
@@ -456,6 +459,10 @@ finish:
 				size - strlen(VEArgs[point]) - 1);
 		}
 		if (entry->root_path) {
+			if (!entry->priv_path) {
+				strncat((char *)VEArgs[point], ":",
+					size - strlen(VEArgs[point]) - 1);
+			}
 			strncat((char *)VEArgs[point], ":",
 				size - strlen(VEArgs[point]) - 1);
 			strncat((char *)VEArgs[point], entry->root_path,
@@ -1192,8 +1199,11 @@ void parse_options (int argc, char **argv)
 		size = 100;
 		if (entry->priv_path)
 			size += strlen(entry->priv_path) + 1;
-		if (entry->root_path)
+		if (entry->root_path) {
 			size += strlen(entry->root_path) + 1;
+			if (!entry->priv_path)
+				size += 1;
+		}
 		if ((VEArgs[0] = (const char *)malloc(size)) == NULL) {
 			logger(LOG_ERR, "Memory allocation failure");
 			exit(-MIG_ERR_SYSTEM);
@@ -1207,6 +1217,10 @@ void parse_options (int argc, char **argv)
 				size - strlen(VEArgs[0]) - 1);
 		}
 		if (entry->root_path) {
+			if (!entry->priv_path) {
+				strncat((char *)VEArgs[0], ":",
+					size - strlen(VEArgs[0]) - 1);
+			}
 			strncat((char *)VEArgs[0], ":",
 				size - strlen(VEArgs[0]) - 1);
 			strncat((char *)VEArgs[0], entry->root_path,
