@@ -98,6 +98,7 @@
 #define CMD_CHECK_DISKSPACE		"checkdiskspace"
 #define CMD_CHECK_OPTIONS		"checkoptions"
 #define CMD_ADJUST_TMO			"adjusttmo"
+#define CMD_ADJUST_XXL_TMO		"adjustxxltmo"
 #define CMD_COPY_EZCACHE		"copyezcache"
 #define CMD_CHECK_KERNEL_MODULES	"checkkernelmodules"
 #define CMD_HA_CLUSTER_NODE_ID		"haclusternodeid"

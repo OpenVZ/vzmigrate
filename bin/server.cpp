@@ -312,6 +312,8 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 		return state->cmdTemplateSync(is);
 	} else if (strcmp(cmd, CMD_ADJUST_TMO) == 0) {
 		return cmdAdjustTimeout(is, os);
+	} else if (strcmp(cmd, CMD_ADJUST_XXL_TMO) == 0) {
+		return state->cmdAdjustXxlTimeout(is);
 	} else if (strcmp(cmd, CMD_HA_CLUSTER_NODE_ID) == 0) {
 		return state->cmdHaClusterNodeID(is, os);
 	} else if (strcmp(cmd, CMD_CHECK_PLOOP_FORMAT) == 0) {

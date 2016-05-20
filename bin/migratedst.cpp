@@ -64,6 +64,7 @@ MigrateStateDstRemote::MigrateStateDstRemote(VEObj * ve, int options)
 	is_privdir_exist = 0;
 	is_keepdir_exist = 0;
 	is_priv_on_shared = 0;
+	m_nXxlTimeout = 0;
 	m_convertQuota2[0] = '\0';
 };
 
@@ -610,6 +611,14 @@ int MigrateStateDstRemote::cmdCheckOptions(istringstream & is, ostringstream & o
 	return 0;
 }
 
+int MigrateStateDstRemote::cmdAdjustXxlTimeout(istringstream &is)
+{
+	if ((is >> m_nXxlTimeout) == NULL)
+		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
+	logger(LOG_DEBUG, "Set custom XXL timeout %ld sec", m_nXxlTimeout);
+	return 0;
+}
+
 /* check and load kernel modules */
 int MigrateStateDstRemote::cmdCheckKernelModules(istringstream &is)
 {
@@ -923,7 +932,19 @@ int MigrateStateDstRemote::h_copy_remote_rsync_dir(const char * dst)
 
 int MigrateStateDstRemote::h_copy_remote_rsync(const char * dst)
 {
-	return h_copy_remote_rsync_dir(dst);
+	int rc;
+	char *str = NULL;
+	if (m_nXxlTimeout) {
+		if ((str = strdup(VZMoptions.tmo.str)))
+			snprintf(VZMoptions.tmo.str, sizeof(VZMoptions.tmo.str),
+				"%ld", m_nXxlTimeout);
+	}
+	rc = h_copy_remote_rsync_dir(dst);
+	if (str) {
+		strncpy(VZMoptions.tmo.str, str, sizeof(VZMoptions.tmo.str));
+		free((void *)str);
+	}
+	return rc;
 }
 
 int MigrateStateDstRemote::h_copy_remote_rsync_fast(const char * dst, enum mig_method mth)

@@ -54,6 +54,7 @@ protected:
 	int is_thesame_private;
 	int is_privdir_exist;
 	int is_keepdir_exist;
+	long m_nXxlTimeout;
 	struct ploop_online_copy_data *m_pPloopData;
 	char m_convertQuota2[PATH_MAX];
 
@@ -114,6 +115,7 @@ public:
 	int cmdClusterDumpCopy(istringstream &is);
 	int cmdCheckKeepDir(ostringstream & os);
 	int cmdCheckOptions(istringstream & is, ostringstream & os);
+	int cmdAdjustXxlTimeout(istringstream &is);
 	int cmdCheckKernelModules(istringstream &is);
 	int cmdTemplateSync(istringstream &is);
 	int cmdCopyPloopPrivate() { return h_copy_remote_tar(dstVE->priv); }
