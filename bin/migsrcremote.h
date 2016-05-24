@@ -65,10 +65,6 @@ public:
 	/* check target VE name */
 	int checkDstName();
 
-	/* check templates on destination HN */
-	int checkTemplates();
-	int checkNewTemPackageDependencies();
-
 	MigrateStateRemote(
 		const char * src_ctid,
 		const char * dst_ctid,
