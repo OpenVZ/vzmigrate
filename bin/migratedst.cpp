@@ -31,7 +31,6 @@
 #include <vector>
 #include <string>
 
-#include <vz/vztt.h>
 #include <vzctl/libvzctl.h>
 #include <ploop/libploop.h>
 
@@ -644,58 +643,8 @@ int MigrateStateDstRemote::cmdCheckKernelModules(istringstream &is)
 
 int MigrateStateDstRemote::cmdTemplateSync(istringstream &is)
 {
-	int rc = 0;
-	string name, type, distributive;
-	bool isOs = false;
-	struct options opts;
-	struct tmpl_info info;
-	string temPath;
-	char path[PATH_MAX + 1];
-
-	if ((is >> name >> type) == NULL)
-		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
-
-	if (strcmp(type.c_str(), "vztemplate"))
-		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
-
-	if ((is >> isOs >> distributive >> temPath) == NULL)
-		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
-
-	vztt_set_default_options(&opts);
-	opts.fld_mask = VZTT_INFO_NONE;
-	memset((void *)&info, 0, sizeof(info));
-	if (isOs) {
-		rc = vztt_get_os_tmpl_info((char *)name.c_str(), &opts, &info);
-	} else {
-		rc = vztt_get_app_tmpl_info((char *)distributive.c_str(),
-			(char *)name.c_str(), &opts, &info);
-	}
-	vztt_clean_tmpl_info(&info);
-	if (rc == 0) {
-		// already exist, we needn't call sync
-		logger(LOG_DEBUG, "Template %s already exist", name.c_str());
-		return MIG_ERR_EXISTS;
-	}
-
-	if (isOs) {
-		/* /vzt/template/centos/5/x86_64/config/os/default/ */
-		rc = get_real_tmpl_path(dstVE->tmplDir().c_str(), (char *)temPath.c_str(),
-			6, path, sizeof(path));
-	} else {
-		/* /vzt/template/redhat/as4/x86/config/app/mod_perl/default/ */
-		rc = get_real_tmpl_path(dstVE->tmplDir().c_str(), (char *)temPath.c_str(),
-			7, path, sizeof(path));
-	}
-	if (rc)
-		return rc;
-
-	// sync template path
-	if (make_dir(path, DEF_DIR_MODE) == 0)
-		addCleanerRemove(clean_removeDir, path);
-	else
-		return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
-
-	return remoteRsyncDst(getRsyncArgs(), "--server", ".", path, (void *)NULL);
+	// obsoleted, template syncronization removed starting from Vz7
+	return MIG_ERR_EXISTS;
 }
 
 int MigrateStateDstRemote::cmdHaClusterNodeID(istringstream &is, ostringstream &os)
