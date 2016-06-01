@@ -550,11 +550,12 @@ int MigrateStateRemote::checkClusterID()
 
 int MigrateStateRemote::doCtMigration()
 {
-	int rc = 0;
-
-	if ((rc = preMigrateStage()))
+	// Sanity checks and preparations
+	int rc = preMigrateStage();
+	if (rc)
 		goto error;
 
+	// Handle migration of desired type
 	if ((srcVE->isrun()) && (VZMoptions.remote_version >= MIGRATE_VERSION_700))
 		rc = doCtMigrationPhaul();
 	else
@@ -595,13 +596,12 @@ int MigrateStateRemote::doCtMigrationDefault()
 
 int MigrateStateRemote::doCtMigrationPhaul()
 {
+	// Handle online migration of ploop container (in live or restart modes)
 	int rc = doOnlinePloopCtMigration();
 	if (rc != 0)
 		return rc;
 
-	// phaul handle containers start, so if phaul migration return success
-	// container already running on destination; just send finish command
-	// from here
+	// Container restored on destination; CAN'T FAIL STARTING FROM THIS POINT
 	rc = channel.sendCommand(CMD_FINAL " %d", DSTACT_NOTHING);
 
 	// VE final cleaning
@@ -1608,11 +1608,7 @@ int MigrateStateRemote::doOnlinePloopCtMigration()
 		return rc;
 
 	// Run iterative memory and fs migration via p.haul
-	rc = runPhaulMigration();
-	if (rc)
-		return rc;
-
-	return 0;
+	return runPhaulMigration();
 }
 
 /*
@@ -1716,7 +1712,6 @@ int MigrateStateRemote::runPhaulMigration()
 
 	// Transfer channels ownership from class object to local object
 	std::auto_ptr<PhaulChannels> channels = m_phaulChannels;
-
 	if (channels.get() == NULL)
 		return putErr(MIG_ERR_RUN_PHAUL, MIG_MSG_RUN_PHAUL);
 
@@ -1745,12 +1740,9 @@ int MigrateStateRemote::runPhaulMigration()
 		addCleaner(clean_termPhaul, (new pid_t(phaulPid)), NULL, ANY_CLEANER);
 	}
 
-	// Read CMD_RUN_PHAUL_MIGRATION command reply
+	// Read CMD_RUN_PHAUL_MIGRATION command reply and check result
 	int remoteRc = channel.readReply();
-	if (remoteRc)
-		return remoteRc;
-
-	if (rc != 0)
+	if ((remoteRc != 0) || (rc != 0))
 		return putErr(MIG_ERR_RUN_PHAUL, MIG_MSG_RUN_PHAUL_LOG,
 			PHAUL_LOG_FILE);
 

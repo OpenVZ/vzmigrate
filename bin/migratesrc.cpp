@@ -107,18 +107,18 @@ int MigrateStateSrc::startVEStage()
 
 int MigrateStateSrc::doMigration()
 {
-	int rc;
-
-	if ((rc = srcVE->getStatus(ENV_STATUS_MOUNTED | ENV_STATUS_RUNNING, &m_srcInitStatus)))
+	// Get status of container
+	int rc = srcVE->getStatus(ENV_STATUS_MOUNTED | ENV_STATUS_RUNNING, &m_srcInitStatus);
+	if (rc)
 		return rc;
 
+	// Migrate container
 	rc = doCtMigration();
 	if (rc)
 		return rc;
 
-	// clean MigrateState Cleaners
+	// Handle final cleanup
 	erase();
-	// final cleaning
 	doCleaning(SUCCESS_CLEANER);
 	return 0;
 }
