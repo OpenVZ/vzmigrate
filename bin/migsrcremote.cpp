@@ -70,6 +70,17 @@ static int copy_remote_tar(
 		const char *bdir,
 		const list<string> &names);
 
+void reportStage(const char* stage)
+{
+	if (VZMoptions.progress_fd <= 0 || fcntl(VZMoptions.progress_fd, F_GETFL) == -1
+		|| !stage || !stage[0])
+		return;
+
+	std::string s = stage;
+	s += "\n";
+	write(VZMoptions.progress_fd, s.c_str(), s.length());
+}
+
 MigrateStateRemote::MigrateStateRemote(
 		const char * src_ctid,
 		const char * dst_ctid,
@@ -669,6 +680,7 @@ int MigrateStateRemote::preMigrateStage()
 	string quot;
 
 	START_STAGE();
+	reportStage(MIG_INFO_STAGE_CHECK_PRECONDITION);
 
 	if (keepVE) {
 		if ((rc = keepVE->init_existed()))
@@ -1349,6 +1361,7 @@ int MigrateStateRemote::copy_ct(struct string_list *exclude)
 	int rc;
 	bool use_rsync = (is_keep_dir || isOptSet(OPT_USE_RSYNC));
 
+	reportStage(MIG_INFO_STAGE_COPY_STATIC_DATA);
 	logger(LOG_ERR, "copy CT private %s", srcVE->priv);
 	if (!(m_nFlags & VZMSRC_SHARED_PRIV)) {
 		rc = copy_remote(srcVE->priv, exclude, use_rsync);
@@ -1708,6 +1721,7 @@ int MigrateStateRemote::prePhaulMigration()
  */
 int MigrateStateRemote::runPhaulMigration()
 {
+	reportStage(MIG_INFO_LIVE_STARTED);
 	logger(LOG_INFO, MIG_INFO_LIVE_STARTED);
 
 	// Transfer channels ownership from class object to local object
