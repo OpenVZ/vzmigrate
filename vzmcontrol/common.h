@@ -331,4 +331,7 @@ extern const char * getError();
 #define MIG_MSG_MPX_DISCONNECT		"Io multiplexer disconnected"
 #define MIG_MSG_MPX_OOM				"Io multiplexer out of memory"
 
+#define MIG_INFO_STAGE_CHECK_PRECONDITION	"Checking preconditions"
+#define MIG_INFO_STAGE_COPY_STATIC_DATA		"Copying static data"
+
 #endif

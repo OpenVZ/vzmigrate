@@ -98,6 +98,7 @@ CVZMOptions::CVZMOptions()
 	data_sock = -1;
 	tmpl_data_sock = -1;
 	swap_sock = -1;
+	progress_fd = -1;
 };
 
 CVZMOptions::~CVZMOptions()
@@ -653,6 +654,10 @@ void parse_options (int argc, char **argv)
 		VZMoptions.data_sock = get_fd(argv[3]);
 		VZMoptions.tmpl_data_sock = get_fd(argv[4]);
 		VZMoptions.swap_sock = get_fd(argv[5]);
+
+		char *p = getenv("VZ_PROGRESS_FD");
+		if (p)
+			VZMoptions.progress_fd = atoi(p);
 
 		if ( VZMoptions.cmd_sock < 0 || VZMoptions.data_sock < 0 ||
 		     VZMoptions.tmpl_data_sock < 0 || VZMoptions.swap_sock < 0)

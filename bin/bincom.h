@@ -205,6 +205,7 @@ struct CVZMOptions
 	int data_sock;
 	int tmpl_data_sock;
 	int swap_sock;
+	int progress_fd;
 
 	CVZMOptions();
 	~CVZMOptions();
