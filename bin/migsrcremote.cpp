@@ -1727,13 +1727,13 @@ int MigrateStateRemote::runPhaulMigration()
 	// Transfer channels ownership from class object to local object
 	std::auto_ptr<PhaulChannels> channels = m_phaulChannels;
 	if (channels.get() == NULL)
-		return putErr(MIG_ERR_RUN_PHAUL, MIG_MSG_RUN_PHAUL);
+		return putErr(MIG_ERR_PHAUL, MIG_MSG_RUN_PHAUL);
 
 	// Exec phaul
 	std::vector<std::string> phaulArgs = getPhaulArgs(*channels);
 	pid_t phaulPid = execPhaul(phaulArgs);
 	if (phaulPid == -1)
-		return putErr(MIG_ERR_RUN_PHAUL, MIG_MSG_RUN_PHAUL);
+		return putErr(MIG_ERR_PHAUL, MIG_MSG_RUN_PHAUL);
 
 	// Close phaul channels ends
 	channels->closePhaulChannelFds();
@@ -1757,8 +1757,7 @@ int MigrateStateRemote::runPhaulMigration()
 	// Read CMD_RUN_PHAUL_MIGRATION command reply and check result
 	int remoteRc = channel.readReply();
 	if ((remoteRc != 0) || (rc != 0))
-		return putErr(MIG_ERR_RUN_PHAUL, MIG_MSG_RUN_PHAUL_LOG,
-			PHAUL_LOG_FILE);
+		return putErr(MIG_ERR_PHAUL, MIG_MSG_RUN_PHAUL_LOG, PHAUL_LOG_FILE);
 
 	logger(LOG_INFO, MIG_INFO_LIVE_COMPLETED);
 	return 0;

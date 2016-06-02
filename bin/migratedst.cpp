@@ -1152,7 +1152,7 @@ int MigrateStateDstRemote::cmdRunPhaulMigration()
 	}
 
 	if (rc != 0)
-		return putErr(MIG_ERR_RUN_PHAUL_SRV, MIG_MSG_RUN_PHAUL_SERVICE);
+		return putErr(MIG_ERR_PHAUL, MIG_MSG_RUN_PHAUL_SERVICE);
 
 	return 0;
 }
