@@ -117,6 +117,7 @@ private:
 	int postFinalStage();
 
 	int doOfflinePloopCtMigration();
+	int doOfflineSimfsCtMigration();
 	int doOnlinePloopCtMigration();
 	int doLegacyOnlinePloopCtMigration();
 

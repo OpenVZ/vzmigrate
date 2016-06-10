@@ -314,6 +314,12 @@ extern const char * getError();
 #define MIG_MSG_THESAME_SHARED	"Source and target %s resides "\
 	"on the same shared partition"
 
+#define MIG_MSG_VZFS_VEFORMAT		"Unable to migrate VZFS Container.\n"\
+	"To migrate a Container based on the VZFS file system use the --convert-vzfs option.\n"\
+	"Note: this will convert the Container to a new ploop-based layout.\n"
+#define MIG_MSG_SIMFS_TRYOFFLINE	"Unable to migrate running SIMFS container. "\
+	"Try offline migration."
+
 #define MIG_MSG_PREP_DST_PHAUL_CONN	"Can not prepare phaul connection on destination"
 #define MIG_MSG_PREP_SRC_PHAUL_CONN	"Can not prepare phaul connection on source"
 #define MIG_MSG_EXEC_PHAUL			"Can not exec phaul ('%s')"

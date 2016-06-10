@@ -567,7 +567,8 @@ int MigrateStateRemote::doCtMigration()
 		goto error;
 
 	// Handle migration of desired type
-	if ((srcVE->isrun()) && (VZMoptions.remote_version >= MIGRATE_VERSION_700))
+	if ((srcVE->isrun()) && (srcVE->layout >= VZCTL_LAYOUT_5) &&
+		(VZMoptions.remote_version >= MIGRATE_VERSION_700))
 		rc = doCtMigrationPhaul();
 	else
 		rc = doCtMigrationDefault();
@@ -587,9 +588,16 @@ int MigrateStateRemote::doCtMigrationDefault()
 	int rc = 0;
 
 	if (srcVE->isrun()) {
-		rc = doLegacyOnlinePloopCtMigration();
+		if (srcVE->layout >= VZCTL_LAYOUT_5)
+			rc = doLegacyOnlinePloopCtMigration();
+		else
+			rc = putErr(-1, MIG_MSG_SIMFS_TRYOFFLINE);
+
 	} else {
-		rc = doOfflinePloopCtMigration();
+		if (srcVE->layout >= VZCTL_LAYOUT_5)
+			rc = doOfflinePloopCtMigration();
+		else
+			rc = doOfflineSimfsCtMigration();
 	}
 
 	if (rc)
@@ -1586,10 +1594,13 @@ void MigrateStateRemote::finishDestination()
 		channel.readReply();
 }
 
-/* Offline migration with shared VE_PRIVATE
- * copy external disk and regiter on dst
- */
 int MigrateStateRemote::doOfflinePloopCtMigration()
+{
+	return copy_ct(NULL);
+}
+
+
+int MigrateStateRemote::doOfflineSimfsCtMigration()
 {
 	return copy_ct(NULL);
 }
