@@ -315,8 +315,7 @@ extern const char * getError();
 	"on the same shared partition"
 
 #define MIG_MSG_VZFS_VEFORMAT		"Unable to migrate VZFS Container.\n"\
-	"To migrate a Container based on the VZFS file system use the --convert-vzfs option.\n"\
-	"Note: this will convert the Container to a new ploop-based layout.\n"
+	"To be able to migrate a VZFS-based container, first convert it to the new ploop-based layout.\n"
 #define MIG_MSG_SIMFS_TRYOFFLINE	"Unable to migrate running SIMFS container. "\
 	"Try offline migration."
 
