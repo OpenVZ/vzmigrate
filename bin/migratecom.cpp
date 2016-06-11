@@ -1064,12 +1064,10 @@ int MigrateStateCommon::checkDstIDFree(const VEObj &ve)
 
 int MigrateStateCommon::checkCommonDst(const VEObj &ve)
 {
-	if (ve.layout < VZCTL_LAYOUT_5 && !isOptSet(OPT_CONVERT_VZFS))
-		return putErr(MIG_ERR_VZFS_ON_PSTORAGE,
-			"Unable to migrate the Container.\n"
-			"To migrate a Container based on the VZFS file system to a server\n"
-			"using a Parallels Cloud Storage, use the --convert-vzfs option.\n"
-			"Note: this will convert the Container to a new ploop-based layout.\n");
+	// VZFS containers not supported
+	if ((ve.layout < VZCTL_LAYOUT_5) && (ve.veformat != VZ_T_SIMFS) &&
+		(!isOptSet(OPT_CONVERT_VZFS)))
+		return putErr(MIG_ERR_VEFORMAT, MIG_MSG_VZFS_VEFORMAT);
 
 	return 0;
 }
