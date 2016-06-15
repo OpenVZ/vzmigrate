@@ -1065,8 +1065,7 @@ int MigrateStateCommon::checkDstIDFree(const VEObj &ve)
 int MigrateStateCommon::checkCommonDst(const VEObj &ve)
 {
 	// VZFS containers not supported
-	if ((ve.layout < VZCTL_LAYOUT_5) && (ve.veformat != VZ_T_SIMFS) &&
-		(!isOptSet(OPT_CONVERT_VZFS)))
+	if ((ve.layout < VZCTL_LAYOUT_5) && (ve.veformat != VZ_T_SIMFS))
 		return putErr(MIG_ERR_VEFORMAT, MIG_MSG_VZFS_VEFORMAT);
 
 	return 0;
