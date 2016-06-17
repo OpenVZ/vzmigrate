@@ -30,6 +30,7 @@
 #include <stdlib.h>
 
 #include "util.h"
+#include "ct_config.h"
 
 #define VZMIGRATE_COMPONENT_NAME	"vzmigrate"
 
