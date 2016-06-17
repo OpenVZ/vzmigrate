@@ -141,6 +141,7 @@ public:
 
 	int sendRequest(const char *buffer, long *retcode);
 	int adjustTimeout(struct timeout *tmo);
+	static int ploopHasSnapshot(const char *xmlconf, const char *guid, bool *exists);
 	/* create snapshot */
 	static int ploopCreateSnapshot(const char *xmlconf, const char *guid);
 	/* create temporary snapshot */
@@ -160,6 +161,7 @@ public:
 	int getActivePloopDelta(struct string_list *list);
 	int checkDstIDFree(const VEObj &ve);
 	int checkCommonDst(const VEObj &ve);
+	int deleteKeepDstSnapshots(const VEObj &ve);
 
 public:
 	int h_copy(const char * src, const char * dst);

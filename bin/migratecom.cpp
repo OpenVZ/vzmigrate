@@ -773,6 +773,39 @@ int MigrateStateCommon::adjustTimeout(struct timeout *tmo)
 	return 0;
 }
 
+int MigrateStateCommon::ploopHasSnapshot(
+		const char *xmlconf, const char *guid, bool *exists)
+{
+	int ret;
+	struct ploop_disk_images_data *di;
+
+	logger(LOG_DEBUG, "find snapshot %s for %s",
+			guid, xmlconf);
+	ret = ploop_open_dd(&di, xmlconf);
+	if (ret)
+		return putErr(MIG_ERR_PLOOP,
+			"ploop_open_dd() : %s", ploop_get_last_error());
+
+	ret = ploop_read_dd(di);
+	if (ret) {
+		ploop_close_dd(di);
+		return putErr(MIG_ERR_PLOOP,
+			"ploop_read_dd() : %s", ploop_get_last_error());
+	}
+
+	*exists = false;
+	for (int i = 0; i < di->nsnapshots; ++i) {
+		if (!strcmp(di->snapshots[i]->guid, guid)) {
+			*exists = true;
+			break;
+		}
+	}
+
+	ploop_close_dd(di);
+
+	return 0;
+}
+
 /* create snapshot */
 int MigrateStateCommon::ploopCreateSnapshot(const char *xmlconf, const char *guid)
 {
@@ -1069,6 +1102,29 @@ int MigrateStateCommon::checkCommonDst(const VEObj &ve)
 		return putErr(MIG_ERR_VEFORMAT, MIG_MSG_VZFS_VEFORMAT);
 
 	return 0;
+}
+
+int MigrateStateCommon::deleteKeepDstSnapshots(const VEObj &ve)
+{
+	int result = 0, rc;
+	// Merge snapshots with predefined GUID.
+	ct_disk disks(ve.m_disks.get(disk_is_non_shared));
+	for (ct_disk::iterator it = disks.begin(); it != disks.end(); ++it)
+	{
+		bool exists;
+		if ((rc = ploopHasSnapshot(get_dd_xml(it->image).c_str(), KEEP_DST_SNAPSHOT_GUID, &exists))) {
+			if (!result)
+				result = rc;
+			continue;
+		}
+		if (!exists)
+			continue;
+		if ((rc = ploopDeleteSnapshot(get_dd_xml(it->image).c_str(), KEEP_DST_SNAPSHOT_GUID))) {
+			if (!result)
+				result = rc;
+		}
+	}
+	return result;
 }
 
 int is_path_on_shared_storage(const char *path, int *is_shared, long *fstype)

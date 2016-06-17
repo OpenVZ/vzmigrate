@@ -192,11 +192,12 @@ int MigrateStateDstRemote::initVEMigration(VEObj * ve)
 	/* check old migrated directory exist */
 	string keepDir = string(ve->priv) + SUFFIX_MIGRATED;
 	if (access(keepDir.c_str(), F_OK) == 0) {
-		/* 1. Do not use keep dir for ploop based CT */
+		/* 1. Do not use keep dir for ploop based CT on vz6 and previous vz7 */
 		/* 2. If private exist then keep dir is obsoleted */
 		/* 3. Don's use on layout mismatch */
 		/* 4. Don's use on vzfs conversion */
-		if (m_initOptions & MIGINIT_LAYOUT_5 ||
+		if (((m_initOptions & MIGINIT_LAYOUT_5) &&
+					(VZMoptions.remote_version < MIGRATE_VERSION_701)) ||
 				access(ve->priv, F_OK) == 0 ||
 				vzctl2_env_layout_version(keepDir.c_str()) != ve->layout ||
 				isOptSet(OPT_CONVERT_VZFS)) {
@@ -752,6 +753,15 @@ int MigrateStateDstRemote::finalStage(int action)
 	}
 
 	if ((rc = registerOnHaCluster()))
+		return rc;
+
+	// Here we have invalid disks because .ve.layout was not copied
+	// on previous initialization.
+	// Let's use freshly created CT for simplicity.
+	VEObj ve(dstVE->ctid());
+	if ((rc = ve.init_existed()))
+		return rc;
+	if ((rc = deleteKeepDstSnapshots(ve)))
 		return rc;
 
 	if (action == DSTACT_START_VE)
