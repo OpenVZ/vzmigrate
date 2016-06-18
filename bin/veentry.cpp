@@ -46,6 +46,16 @@ const char * actionScripts[] =
     {"mount", "umount", "start", "stop", NULL
     };
 
+bool disk_is_shared(const disk_entry &d)
+{
+	return d.is_shared();
+}
+
+bool disk_is_secondary(const disk_entry &d)
+{
+	return d.is_secondary();
+}
+
 void VEObj::priv_init()
 {
 	root = priv = NULL;

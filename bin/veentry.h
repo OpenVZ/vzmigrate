@@ -72,10 +72,8 @@ public:
 	bool secondary;
 };
 
-inline bool disk_is_shared(const struct disk_entry &d)
-{
-	return d.is_shared();
-}
+bool disk_is_shared(const disk_entry &d);
+bool disk_is_secondary(const disk_entry &d);
 
 class ct_disk : public std::list<disk_entry> {
 public:
