@@ -1826,6 +1826,12 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 		args.push_back(sharedArg);
 	}
 
+	std::string secondaryDisksArg = getPhaulSecondaryDisksArg();
+	if (!secondaryDisksArg.empty()) {
+		args.push_back("--vz-secondary-disks");
+		args.push_back(secondaryDisksArg);
+	}
+
 	args.push_back("--img-path");
 	args.push_back(vzcnf->dumpdir);
 
@@ -1861,6 +1867,47 @@ std::string MigrateStateRemote::getPhaulSharedDisksArg() const
 	}
 	logger(LOG_INFO, "shared disks: %s", shared.str().c_str());
 	return shared.str();
+}
+
+/*
+ * Return value of --vz-secondary-disks argument. It contain list of secondary
+ * ploop disks in format %uuid%:%major%:%minor%[,...]. Consider all additional
+ * disks of container (second, third and so on) are secondary.
+ */
+std::string MigrateStateRemote::getPhaulSecondaryDisksArg() const
+{
+	ct_disk disks(srcVE->m_disks.get(disk_is_secondary));
+	char devname[PATH_MAX];
+	struct stat st;
+	int rc;
+
+	std::ostringstream arg;
+	const char* delim = "";
+	for (ct_disk::const_iterator it = disks.begin(); it != disks.end(); ++it) {
+
+		// Get device name
+		rc = vzctl2_get_ploop_dev(it->image.c_str(), devname, sizeof(devname));
+		if (rc != 0) {
+			logger(LOG_ERR, MIG_MSG_INTERNAL, "vzctl2_get_ploop_dev", rc);
+			continue;
+		}
+
+		// Stat device
+		if (stat(devname, &st) == -1) {
+			logger(LOG_ERR, MIG_MSG_INTERNAL, "stat", errno);
+			continue;
+		}
+
+		// Append disks separator
+		arg << delim;
+		delim = ",";
+
+		// Append %uuid%:%major%:%minor% tuple
+		arg << it->uuid << ":" << gnu_dev_major(st.st_rdev) << ":"
+			<< gnu_dev_minor(st.st_rdev);
+	}
+
+	return arg.str();
 }
 
 pid_t MigrateStateRemote::execPhaul(const std::vector<std::string>& args)
