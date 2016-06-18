@@ -25,6 +25,8 @@
 #ifndef __CT_CONFIG_H_
 #define __CT_CONFIG_H_
 
+#include <string>
+#include <list>
 #include <vzctl/libvzctl.h>
 #include "util.h"
 
@@ -87,6 +89,19 @@ public:
 };
 
 /*
+ * Container disk data.
+ */
+struct ve_disk_data {
+public:
+	ve_disk_data(const vzctl_disk_param& disk_param);
+
+public:
+	std::string m_path;
+	std::string m_uuid;
+	std::string m_mnt;
+};
+
+/*
  * Container config.
  */
 struct ve_data {
@@ -118,9 +133,9 @@ public:
 	unsigned long quotaugidlimit;
 	int ha_enable;
 	unsigned long ha_prio;
-	struct string_list _disk;
-	struct string_list _ext_disk;
-	struct string_list _np_disk;
+	std::list<ve_disk_data> disks;
+	std::list<ve_disk_data> ext_disks;
+	std::list<ve_disk_data> np_disks;
 	char *disk_raw_str;
 };
 

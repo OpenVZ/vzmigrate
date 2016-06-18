@@ -169,6 +169,13 @@ cleanup:
 	return rc;
 }
 
+ve_disk_data::ve_disk_data(const vzctl_disk_param& disk_param)
+	: m_path(disk_param.path)
+	, m_uuid(disk_param.uuid)
+	, m_mnt((disk_param.mnt != NULL) ? disk_param.mnt : "")
+{
+}
+
 ve_data::ve_data()
 	: name(NULL)
 	, uuid(NULL)
@@ -192,9 +199,6 @@ ve_data::ve_data()
 	string_list_init(&ipaddr);
 	string_list_init(&rate);
 	string_list_init(&templates);
-	string_list_init(&_disk);
-	string_list_init(&_ext_disk);
-	string_list_init(&_np_disk);
 }
 
 ve_data::~ve_data()
@@ -214,9 +218,6 @@ ve_data::~ve_data()
 	string_list_clean(&ipaddr);
 	string_list_clean(&rate);
 	string_list_clean(&templates);
-	string_list_clean(&_disk);
-	string_list_clean(&_ext_disk);
-	string_list_clean(&_np_disk);
 }
 
 int ve_data_load(const char *ctid, struct ve_data *ve)
@@ -507,17 +508,16 @@ int ve_data_load(const char *ctid, struct ve_data *ve)
 		/* FIXME: use normalized path */
 		if (disk.storage_url != NULL) {
 			logger(LOG_DEBUG, "non persistent disk %s", disk.path);
-			rc = string_list_add(&ve->_np_disk, disk.path);
+			ve->np_disks.push_back(ve_disk_data(disk));
+
 		} else if (strncmp(ve->priv, disk.path, strlen(ve->priv)) == 0) {
 			logger(LOG_DEBUG, "disk %s", disk.path);
-			rc = string_list_add(&ve->_disk, disk.path);
+			ve->disks.push_back(ve_disk_data(disk));
+
 		} else {
 			logger(LOG_DEBUG, "external disk %s", disk.path);
-			rc = string_list_add(&ve->_ext_disk, disk.path);
+			ve->ext_disks.push_back(ve_disk_data(disk));
 		}
-
-		if (rc)
-			goto cleanup;
 	}
 
 cleanup:

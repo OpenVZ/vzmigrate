@@ -95,16 +95,21 @@ int VEObj::init_existed()
 	layout = vzctl2_env_layout_version((char *)priv);
 
 	if (layout >= VZCTL_LAYOUT_5) {
-		struct string_list_el *e;
 
-		string_list_for_each(&ve_data._disk, e)
-			m_disks.push_back(disk_entry(e->s));
+		for (std::list<ve_disk_data>::iterator it = ve_data.disks.begin();
+			it != ve_data.disks.end(); ++it) {
+			m_disks.push_back(disk_entry(*it));
+		}
 
-		string_list_for_each(&ve_data._ext_disk, e)
-			m_disks.push_back(disk_entry(e->s, true));
+		for (std::list<ve_disk_data>::iterator it = ve_data.ext_disks.begin();
+			it != ve_data.ext_disks.end(); ++it) {
+			m_disks.push_back(disk_entry(*it, true));
+		}
 
-		string_list_for_each(&ve_data._np_disk, e)
-			m_disks.push_back(disk_entry(e->s, true, false));
+		for (std::list<ve_disk_data>::iterator it = ve_data.np_disks.begin();
+			it != ve_data.np_disks.end(); ++it) {
+			m_disks.push_back(disk_entry(*it, true, false));
+		}
 	}
 
 	/* get veformat */
