@@ -65,6 +65,14 @@
  * Global vz config.
  */
 struct vz_data {
+public:
+	vz_data();
+
+private:
+	vz_data(const vz_data&);
+	vz_data& operator =(const vz_data&);
+
+public:
 	char *root_orig;
 	char *priv_orig;
 	char *lockdir;
@@ -82,6 +90,15 @@ struct vz_data {
  * Container config.
  */
 struct ve_data {
+public:
+	ve_data();
+	~ve_data();
+
+private:
+	ve_data(const ve_data&);
+	ve_data& operator =(const ve_data&);
+
+public:
 	char *name;
 	char *uuid;
 	char *ostemplate;
@@ -113,23 +130,8 @@ struct ve_data {
 int vz_data_load(struct vz_data *vz);
 
 /*
- * Free global VZ config structure.
- */
-void vz_data_clean(struct vz_data *vz);
-
-/*
  * Read VE config.
  */
 int ve_data_load(const char *ctid, struct ve_data *ve);
-
-/*
- * Initialize VE config structure.
- */
-void ve_data_init(struct ve_data *ve);
-
-/*
- * Free VE config structure.
- */
-void ve_data_clean(struct ve_data *ve);
 
 #endif

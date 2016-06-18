@@ -50,8 +50,6 @@ void VEObj::priv_init()
 {
 	root = priv = NULL;
 	dumpfile = NULL;
-	ve_data_init(&ve_data);
-
 	lock_fd = -1;
 	layout = VZCTL_LAYOUT_5;
 }
@@ -67,7 +65,6 @@ VEObj::~VEObj()
 {
 	unlock();
 	free((void *)dumpfile);
-	ve_data_clean(&ve_data);
 }
 
 #define SUSPEND_FILE "Dump"

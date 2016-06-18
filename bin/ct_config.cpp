@@ -28,10 +28,20 @@
 #include "ct_config.h"
 #include "common.h"
 
-/*
- * Initialize global VZ config structure.
- */
-void vz_data_init(struct vz_data *vz);
+vz_data::vz_data()
+	: root_orig(NULL)
+	, priv_orig(NULL)
+	, lockdir(NULL)
+	, tmpldir(NULL)
+	, dumpdir(NULL)
+	, quota(0)
+	, use_ati(0)
+	, shaping(0)
+	, removemigrated(0)
+	, bcid(0)
+	, iolimit(0)
+{
+}
 
 int vz_data_load(struct vz_data *vz)
 {
@@ -39,8 +49,6 @@ int vz_data_load(struct vz_data *vz)
 	const char *data;
 	struct vzctl_env_handle *h;
 	struct vzctl_env_param *env;
-
-	vz_data_init(vz);
 
 	h = vzctl2_env_open_conf(0, VZ_CONF, VZCTL_CONF_SKIP_GLOBAL | VZCTL_CONF_SKIP_PARAM_ERRORS, &err);
 	if (err)
@@ -161,18 +169,54 @@ cleanup:
 	return rc;
 }
 
-void vz_data_init(struct vz_data *vz)
+ve_data::ve_data()
+	: name(NULL)
+	, uuid(NULL)
+	, ostemplate(NULL)
+	, technologies(0)
+	, bindmount(NULL)
+	, root(NULL)
+	, root_orig(NULL)
+	, priv(NULL)
+	, priv_orig(NULL)
+	, ve_type(NULL)
+	, slmmode(NULL)
+	, quotaugidlimit(0)
+	, ha_enable(1)
+	, ha_prio(0)
+	, disk_raw_str(NULL)
 {
-	memset((void *)vz, 0, sizeof(&vz));
+	memset(diskspace, 0, sizeof(diskspace));
+	memset(diskinodes, 0, sizeof(diskinodes));
+
+	string_list_init(&ipaddr);
+	string_list_init(&rate);
+	string_list_init(&templates);
+	string_list_init(&_disk);
+	string_list_init(&_ext_disk);
+	string_list_init(&_np_disk);
 }
 
-void vz_data_clean(struct vz_data *vz)
+ve_data::~ve_data()
 {
-	if (vz->lockdir)
-		free((void*)vz->lockdir);
-	if (vz->tmpldir)
-		free((void*)vz->tmpldir);
-	vz_data_init(vz);
+	free(name);
+	free(uuid);
+	free(ostemplate);
+	free(bindmount);
+	free(root);
+	free(root_orig);
+	free(priv);
+	free(priv_orig);
+	free(ve_type);
+	free(slmmode);
+	free(disk_raw_str);
+
+	string_list_clean(&ipaddr);
+	string_list_clean(&rate);
+	string_list_clean(&templates);
+	string_list_clean(&_disk);
+	string_list_clean(&_ext_disk);
+	string_list_clean(&_np_disk);
 }
 
 int ve_data_load(const char *ctid, struct ve_data *ve)
@@ -480,38 +524,4 @@ cleanup:
 	vzctl2_env_close(h);
 
 	return rc;
-}
-
-void ve_data_init(struct ve_data *ve)
-{
-	memset((void *)ve, 0, sizeof(struct ve_data));
-	string_list_init(&ve->ipaddr);
-	string_list_init(&ve->rate);
-	string_list_init(&ve->templates);
-	/* HA feature is enabled by default */
-	ve->ha_enable = 1;
-	string_list_init(&ve->_disk);
-	string_list_init(&ve->_ext_disk);
-	string_list_init(&ve->_np_disk);
-}
-
-void ve_data_clean(struct ve_data *ve)
-{
-	free((void *)ve->name);
-	free((void *)ve->ostemplate);
-	free((void *)ve->uuid);
-	free((void *)ve->bindmount);
-	free((void *)ve->root);
-	free((void *)ve->root_orig);
-	free((void *)ve->priv);
-	free((void *)ve->priv_orig);
-	free((void *)ve->ve_type);
-	string_list_clean(&ve->ipaddr);
-	string_list_clean(&ve->rate);
-	string_list_clean(&ve->templates);
-	string_list_clean(&ve->_disk);
-	string_list_clean(&ve->_ext_disk);
-	string_list_clean(&ve->_np_disk);
-	ve_data_init(ve);
-	free(ve->disk_raw_str);
 }

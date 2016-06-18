@@ -59,7 +59,6 @@ int main(int argc, char **argv)
 	int rc;
 
 	static struct vz_data vz_conf;
-	memset((void *)&vz_conf, 0, sizeof(vz_conf));
 
 	argv[0] = basename(argv[0]);
 
