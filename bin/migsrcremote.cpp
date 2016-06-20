@@ -1579,11 +1579,6 @@ void MigrateStateRemote::close_active_deltas()
 	m_deltas.clear();
 }
 
-static bool disk_is_non_shared(const struct disk_entry &d)
-{
-	return !d.is_shared();
-}
-
 // safe to call multiple times
 void MigrateStateRemote::finishDestination()
 {
