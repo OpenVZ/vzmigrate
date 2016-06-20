@@ -1774,24 +1774,6 @@ int MigrateStateRemote::runPhaulMigration()
 	return 0;
 }
 
-std::string MigrateStateRemote::getPhaulSharedDisksArg() const
-{
-	ct_disk disks(srcVE->m_disks.get(disk_is_shared));
-	if (disks.empty())
-		return "";
-
-	std::ostringstream shared;
-	const char* delim = "";
-	ct_disk::const_iterator it(disks.begin());
-	ct_disk::const_iterator last(disks.end());
-	for (; it != last; ++it) {
-		shared << delim << it->image;
-		delim = ",";
-	}
-	logger(LOG_INFO, "shared disks: %s", shared.str().c_str());
-	return shared.str();
-}
-
 /*
  * Return vector of command line arguments for p.haul exec.
  */
@@ -1861,6 +1843,24 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 		args.push_back("--keep-images");
 
 	return args;
+}
+
+std::string MigrateStateRemote::getPhaulSharedDisksArg() const
+{
+	ct_disk disks(srcVE->m_disks.get(disk_is_shared));
+	if (disks.empty())
+		return "";
+
+	std::ostringstream shared;
+	const char* delim = "";
+	ct_disk::const_iterator it(disks.begin());
+	ct_disk::const_iterator last(disks.end());
+	for (; it != last; ++it) {
+		shared << delim << it->image;
+		delim = ",";
+	}
+	logger(LOG_INFO, "shared disks: %s", shared.str().c_str());
+	return shared.str();
 }
 
 pid_t MigrateStateRemote::execPhaul(const std::vector<std::string>& args)
