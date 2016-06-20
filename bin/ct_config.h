@@ -34,11 +34,9 @@
 #define VZ_CONF_LOCKDIR	        "LOCKDIR"
 #define VZ_CONF_TMPLDIR         "TEMPLATE"
 #define VZ_CONF_DUMPDIR         "DUMPDIR"
-#define VZ_CONF_USE_ATI         "USE_ATI"
 #define VZ_CONF_QUOTA           "DISK_QUOTA"
 #define VZ_CONF_SHAPING         "TRAFFIC_SHAPING"
 #define VZ_CONF_REMOVEMIGRATED  "REMOVEMIGRATED"
-#define VZ_CONF_TOOLS_BCID      "VZ_TOOLS_BCID"
 #define VZ_CONF_TOOLS_IOLIMIT   "VZ_TOOLS_IOLIMIT"
 
 #define VE_CONF_PRIV            "VE_PRIVATE"
@@ -81,10 +79,8 @@ public:
 	char *tmpldir;
 	char *dumpdir;
 	int quota;
-	int use_ati;
 	int shaping;
 	int removemigrated;
-	unsigned long bcid;
 	unsigned long iolimit;
 };
 

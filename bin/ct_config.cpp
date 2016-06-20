@@ -35,10 +35,8 @@ vz_data::vz_data()
 	, tmpldir(NULL)
 	, dumpdir(NULL)
 	, quota(0)
-	, use_ati(0)
 	, shaping(0)
 	, removemigrated(0)
-	, bcid(0)
 	, iolimit(0)
 {
 }
@@ -117,10 +115,6 @@ int vz_data_load(struct vz_data *vz)
 	if ((rc = vzctl2_env_get_param(h, VZ_CONF_QUOTA, &data)) == 0 && data != NULL)
 		vz->quota = (strcasecmp(data, "yes") == 0);
 
-	/* read USE_ATI */
-	if ((rc = vzctl2_env_get_param(h, VZ_CONF_USE_ATI, &data)) == 0 && data != NULL)
-		vz->use_ati = (strcasecmp(data, "yes") == 0);
-
 	/* read TRAFFIC_SHAPING */
 	if ((rc = vzctl2_env_get_param(h, VZ_CONF_SHAPING, &data)) == 0 && data != NULL)
 		vz->shaping = (strcasecmp(data, "yes") == 0);
@@ -128,23 +122,6 @@ int vz_data_load(struct vz_data *vz)
 	/* read REMOVEMIGRATED */
 	if ((rc = vzctl2_env_get_param(h, VZ_CONF_REMOVEMIGRATED, &data)) == 0 && data != NULL)
 		vz->removemigrated = (strcasecmp(data, "yes") == 0);
-
-	/* read VZ_TOOLS_BCID */
-	vz->bcid = ULONG_MAX;	/* == NOT PROVIDED */
-	if ((rc = vzctl2_env_get_param(h, VZ_CONF_TOOLS_BCID, &data)) == 0 && data != NULL) {
-		unsigned long bcid = ULONG_MAX;
-		errno = 0;
-		bcid = strtoul(data, NULL, 10);
-		if (errno == 0) {
-			logger(LOG_INFO,
-				"vzctl2_env_get_param(" VZ_CONF_TOOLS_BCID ") return %ld",
-				bcid);
-			vz->bcid = bcid;
-		} else {
-			logger(LOG_ERR, "Unable to parse from global config %s=%s (%s)",
-				VZ_CONF_TOOLS_BCID, data, strerror(errno));
-		}
-	}
 
 	/* read VZ_TOOLS_IOLIMIT */
 	vz->iolimit = ULONG_MAX;	/* == NOT PROVIDED */
