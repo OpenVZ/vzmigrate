@@ -160,8 +160,7 @@ Print verbose information.
 Utility can migrate either stopped or running CT. For stopped CT, simple
 CT private area transfer is performed (\fBrsync(1)\fP is used for file
 transferring). For running CTs the migration may be slow (with minute or longer
-downtime), fast (seconds of downtime) or online (zero-downtime). For the
-fast migration the kernel support for \fIVZFS tracking\fP is required. 
+downtime), fast (seconds of downtime) or online (zero-downtime). 
 For the online migration kernel support of CPT is required.
 Utility also can migrate \fBshared\fP CTs, in this case it attempts to
 find suitable (templates set coincides with one of source CT) \fBshared
