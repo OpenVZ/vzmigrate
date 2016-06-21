@@ -320,7 +320,6 @@ int main(int argc, char *argv[])
 	int sock;
 
 	static struct vz_data vz_conf;
-	memset((void *)&vz_conf, 0, sizeof(vz_conf));
 
 	strncpy(progname, basename(argv[0]), sizeof(progname));
 	snprintf(pidfile, sizeof(pidfile), "/var/run/%s.pid", progname);

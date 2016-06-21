@@ -30,6 +30,7 @@
 #include <stdlib.h>
 
 #include "util.h"
+#include "ct_config.h"
 
 #define VZMIGRATE_COMPONENT_NAME	"vzmigrate"
 
@@ -47,23 +48,32 @@ extern const char * actionScripts[];
 typedef std::vector<string> IPList;
 
 struct disk_entry {
-	std::string image;
-	bool ext;
-	bool persistent;
-	bool shared;
-
-	disk_entry(const std::string &_image, bool _ext = false, bool _persistent = true) :
-		image(_image), ext(_ext), persistent(_persistent), shared(false)
-	{}
+public:
+	disk_entry(const ve_disk_data& data, bool _ext = false, bool _persistent = true)
+		: image(data.m_path)
+		, uuid(data.m_uuid)
+		, ext(_ext)
+		, persistent(_persistent)
+		, shared(false)
+		, secondary(data.m_mnt != "/")
+	{
+	}
 
 	bool is_external() const { return ext; }
 	bool is_shared() const { return shared; }
+	bool is_secondary() const { return secondary; }
+
+public:
+	std::string image;
+	std::string uuid;
+	bool ext;
+	bool persistent;
+	bool shared;
+	bool secondary;
 };
 
-inline bool disk_is_shared(const struct disk_entry &d)
-{
-	return d.is_shared();
-}
+bool disk_is_shared(const disk_entry &d);
+bool disk_is_secondary(const disk_entry &d);
 
 class ct_disk : public std::list<disk_entry> {
 public:

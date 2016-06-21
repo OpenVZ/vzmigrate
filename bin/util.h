@@ -33,42 +33,7 @@
 #include <ctype.h>
 #include <sys/queue.h>
 #include <string.h>
-
 #include <vzctl/libvzctl.h>
-
-#define VZ_CONF			VZ_GLOBAL_CFG
-
-#define VZ_CONF_LOCKDIR 	"LOCKDIR"
-#define VZ_CONF_TMPLDIR 	"TEMPLATE"
-#define VZ_CONF_DUMPDIR 	"DUMPDIR"
-#define VZ_CONF_USE_ATI 	"USE_ATI"
-#define VZ_CONF_QUOTA 		"DISK_QUOTA"
-#define VZ_CONF_SHAPING		"TRAFFIC_SHAPING"
-#define VZ_CONF_REMOVEMIGRATED	"REMOVEMIGRATED"
-#define VZ_CONF_TOOLS_BCID	"VZ_TOOLS_BCID"
-#define VZ_CONF_TOOLS_IOLIMIT	"VZ_TOOLS_IOLIMIT"
-
-#define VE_CONF_PRIV		"VE_PRIVATE"
-#define VE_CONF_ROOT		"VE_ROOT"
-#define VE_CONF_UUIDDIR 	"UUID"
-#define VE_CONF_TECHNOLOGIES 	"TECHNOLOGIES"
-#define VE_CONF_BINDMOUNT 	"BINDMOUNT"
-#define VE_CONF_NAME	 	"NAME"
-#define VE_CONF_OSTEMPLATE	"OSTEMPLATE"
-#define VE_CONF_IPADDR		"IP_ADDRESS"
-#define VE_CONF_VETYPE		"VE_TYPE"
-#define VE_CONF_DISKSPACE	"DISKSPACE"
-#define VE_CONF_DISKINODES	"DISKINODES"
-#define VE_CONF_RATE		"RATE"
-#define VE_CONF_UUID		"UUID"
-#define VE_CONF_TEMPLATES	"TEMPLATES"
-#define VE_CONF_SLMMODE		"SLMMODE"
-#define VE_CONF_QUOTAUGIDLIMIT	"QUOTAUGIDLIMIT"
-#define VE_CONF_HA_ENABLE	"HA_ENABLE"
-#define VE_CONF_HA_PRIO		"HA_PRIO"
-#define VE_CONF_JOURNALED_QUOTA	"JOURNALED_QUOTA"
-#define VE_CONF_VEFORMAT	"VEFORMAT"
-#define VE_CONF_DISK		"DISK"
 
 #define VE_PLOOP_BINDMOUNT_DIR	"/.bindmount"
 #define PFCACHE_BIN "/usr/libexec/vztt_pfcache_xattr"
@@ -83,84 +48,14 @@ struct string_list_el {
 	TAILQ_ENTRY(string_list_el) e;
 };
 
-/* global vz config */
-struct vz_data {
-	char *root_orig;
-	char *priv_orig;
-	char *lockdir;
-	char *tmpldir;
-	char *dumpdir;
-	int quota;
-	int use_ati;
-	int shaping;
-	int removemigrated;
-	unsigned long bcid;
-	unsigned long iolimit;
-};
-
-/* container config */
-struct ve_data {
-	char *name;
-	char *uuid;
-	char *ostemplate;
-	unsigned long technologies;
-	char *bindmount;
-	char *root;
-	char *root_orig;
-	char *priv;
-	char *priv_orig;
-	char *ve_type;
-	struct string_list ipaddr;
-	struct string_list rate;
-	unsigned long diskspace[2];
-	unsigned long diskinodes[2];
-	struct string_list templates;
-	char *slmmode;
-	unsigned long quotaugidlimit;
-	int ha_enable;
-	unsigned long ha_prio;
-	struct string_list _disk;
-	struct string_list _ext_disk;
-	struct string_list _np_disk;
-	char *disk_raw_str;
-};
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* global config */
-/* read global VZ config */
-int vz_data_load(struct vz_data *vz);
-void vz_data_clean(struct vz_data *vz);
 /* limit IO rate of itself
    according to global VZ config settings */
 int vz_setiolimit();
 
-/* container config functions */
-void ve_data_init(struct ve_data *ve);
-void ve_data_clean(struct ve_data *ve);
-/* read VE config */
-int ve_data_load(const char *ctid, struct ve_data *ve);
-
-/* char* double-linked list */
-/* sample of using:
-	struct string_list urls;
-	struct string_list_el *p;
-
-	init_string_list(&urls);
-
-	if (read_string_list(path, &urls))
-		return 0;
-
-	for (p = urls.tqh_first; p != NULL; p = p->e.tqe_next) {
-		printf("%s\n", p->s);
-	}
-	clean_string_list(&urls);
-
-  List functions alloc and free <char *>
-*/
 /* list initialization */
 static inline void string_list_init(struct string_list *ls)
 {

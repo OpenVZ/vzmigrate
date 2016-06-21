@@ -19,7 +19,7 @@ SOURCE += $(OBJVZMIGRATE:.o=.c)
 
 TRG_VZMSRC = ${VZMROOT}/vzmsrc
 OBJSRC = vzmlocal.o bincom.o veentry.o migratecom.o migchannel.o vzacompat.o migssh.o \
-	migratesrc.o migsrcremote.o migsrclocal.o multiplexer.o
+	migratesrc.o migsrcremote.o migsrclocal.o multiplexer.o ct_config.o
 LIBSRC = ${LIBDIR}/${LIBVZM} ${LIBVZ_SRC} ${LIBVZL}
 ifdef __ia64__
 LIBSRC += "/lib/libia64_syscall.a"
@@ -28,13 +28,13 @@ SOURCE += $(OBJSRC:.o=.cpp)
 
 TRG_VZMDEST = ${VZMROOT}/vzmdest
 OBJDST = vzmdest.o bincom.o veentry.o migratecom.o migchannel.o vzacompat.o \
-	migratedst.o server.o migssh.o multiplexer.o
+	migratedst.o server.o migssh.o multiplexer.o ct_config.o
 LIBDST = ${LIBDIR}/${LIBVZM} ${LIBVZ_DST}
 SOURCE += $(OBJDST:.o=.cpp)
 
 TRG_VZMD = ${VZMROOT}/vzmd
 OBJVZMD = vzmd.o migchannel.o vzacompat.o veentry.o migratecom.o migratedst.o bincom.o \
-	server.o migssh.o multiplexer.o
+	server.o migssh.o multiplexer.o ct_config.o
 SOURCE += $(OBJVZMD:.o=.cpp)
 
 PROGS = ${TRG_VZMPIPE} ${TRG_VZMLOCAL} ${TRG_VZMSRC} ${TRG_VZMDEST} \

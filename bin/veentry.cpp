@@ -46,12 +46,20 @@ const char * actionScripts[] =
     {"mount", "umount", "start", "stop", NULL
     };
 
+bool disk_is_shared(const disk_entry &d)
+{
+	return d.is_shared();
+}
+
+bool disk_is_secondary(const disk_entry &d)
+{
+	return d.is_secondary();
+}
+
 void VEObj::priv_init()
 {
 	root = priv = NULL;
 	dumpfile = NULL;
-	ve_data_init(&ve_data);
-
 	lock_fd = -1;
 	layout = VZCTL_LAYOUT_5;
 }
@@ -67,7 +75,6 @@ VEObj::~VEObj()
 {
 	unlock();
 	free((void *)dumpfile);
-	ve_data_clean(&ve_data);
 }
 
 #define SUSPEND_FILE "Dump"
@@ -98,16 +105,21 @@ int VEObj::init_existed()
 	layout = vzctl2_env_layout_version((char *)priv);
 
 	if (layout >= VZCTL_LAYOUT_5) {
-		struct string_list_el *e;
 
-		string_list_for_each(&ve_data._disk, e)
-			m_disks.push_back(disk_entry(e->s));
+		for (std::list<ve_disk_data>::iterator it = ve_data.disks.begin();
+			it != ve_data.disks.end(); ++it) {
+			m_disks.push_back(disk_entry(*it));
+		}
 
-		string_list_for_each(&ve_data._ext_disk, e)
-			m_disks.push_back(disk_entry(e->s, true));
+		for (std::list<ve_disk_data>::iterator it = ve_data.ext_disks.begin();
+			it != ve_data.ext_disks.end(); ++it) {
+			m_disks.push_back(disk_entry(*it, true));
+		}
 
-		string_list_for_each(&ve_data._np_disk, e)
-			m_disks.push_back(disk_entry(e->s, true, false));
+		for (std::list<ve_disk_data>::iterator it = ve_data.np_disks.begin();
+			it != ve_data.np_disks.end(); ++it) {
+			m_disks.push_back(disk_entry(*it, true, false));
+		}
 	}
 
 	/* get veformat */
