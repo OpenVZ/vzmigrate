@@ -31,6 +31,7 @@
 #include "common.h"
 
 int debug_level = LOG_DEBUG;
+int is_quiet_logger = 0;
 const char * log_name = NULL;
 
 void print_def(int level, const char * s);
@@ -86,7 +87,16 @@ void vprint_log(int level, const char* oformat, va_list pvar)
 		}
 	}
 	vsnprintf(buf + point, sizeof(buf) - point, oformat, pvar);
-	print_func(level, buf);
+	if (!is_quiet_logger)
+		print_func(level, buf);
+}
+
+/*
+ * Mute/unmute logger output.
+ */
+void quiet_log(int quiet)
+{
+	is_quiet_logger = quiet;
 }
 
 void print_log(int level, const char* oformat, ...)
