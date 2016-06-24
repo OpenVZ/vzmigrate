@@ -1120,6 +1120,9 @@ int MigrateStateDstRemote::cmdRunPhaulMigration()
 {
 	assert(m_phaulChannels.get() != NULL);
 
+	// Mute logger output to protect master connection of io multiplexer
+	quiet_log(1);
+
 	// Transfer channels ownership from class object to local object
 	std::auto_ptr<PhaulChannels> channels = m_phaulChannels;
 
@@ -1148,8 +1151,14 @@ int MigrateStateDstRemote::cmdRunPhaulMigration()
 
 		// Run io multiplexing abort if failed to start phaul-service
 		ioMultiplexer.runMultiplexingAbort();
-		rc = putErr(-1, MIG_MSG_EXEC_PHAUL_SERVICE, BIN_PHAUL_SRV);
+		rc = -1;
 	}
+
+	// Unmute logger output
+	quiet_log(0);
+
+	if (phaulServicePid == -1)
+		logger(LOG_ERR, MIG_MSG_EXEC_PHAUL_SERVICE, BIN_PHAUL_SRV);
 
 	if (rc != 0)
 		return putErr(MIG_ERR_PHAUL, MIG_MSG_RUN_PHAUL_SERVICE);
