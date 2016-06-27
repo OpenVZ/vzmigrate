@@ -307,7 +307,7 @@ void MigrateStateCommon::addCleanerRename(const char * src, const char * dest, i
 	       success ? "on success" : "on failure", src_path, dst_path);
 }
 
-int MigrateStateCommon::clean_delEntry(const void * arg, const void *)
+int MigrateStateCommon::clean_delVeobj(const void * arg, const void *)
 {
 	VEObj * e = (VEObj *) arg;
 	delete e;

@@ -54,7 +54,7 @@ MigrateStateDstRemote::MigrateStateDstRemote(VEObj * ve, int options)
 {
 	assert(dstVE != NULL);
 
-	addCleaner(clean_delEntry, dstVE, NULL, ANY_CLEANER);
+	addCleaner(clean_delVeobj, dstVE, NULL, ANY_CLEANER);
 
 	func_copyFirst = &MigrateStateDstRemote::h_copy_remote_tar;
 	func_copyFile = &MigrateStateDstRemote::h_copy_remote_rsync_file;

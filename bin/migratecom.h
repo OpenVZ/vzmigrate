@@ -107,7 +107,7 @@ public:
 	void addCleaner(MigrateCleanFunc _func, const void * _arg1 = NULL,
 	                const void * _arg2 = NULL, int type = ERROR_CLEANER);
 
-	static int clean_delEntry(const void * arg, const void * dummy);
+	static int clean_delVeobj(const void * arg, const void * dummy);
 //	static int clean_channel(const void * arg, const void * dummy);
 	static int clean_rmDir(const void * arg, const void * dummy);
 	static int clean_removeDir(const void * arg, const void * dummy = NULL);
