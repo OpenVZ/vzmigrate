@@ -66,7 +66,9 @@ extern int terminated;
 
 void print_log(int level, const char* oformat, ...);
 void vprint_log(int level, const char* oformat, va_list pvar);
+void quiet_log(int quiet);
 void open_logger(const char * name);
+
 #define logger(level, fmt, args...) do {	\
 	if (debug_level >= (level))		\
 		print_log(level, fmt, ##args);	\
