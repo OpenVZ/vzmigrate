@@ -91,8 +91,8 @@ int MigrateChannel::createSockChannel(const char * args[])
 		return putErr(MIG_ERR_VZSOCK, "vzsock_init() return %d", ret);
 
 	vzsock_set(&ctx, VZSOCK_DATA_DEBUG, (void *)&debug, sizeof(debug));
-	vzsock_set(&ctx, VZSOCK_DATA_LOGGER, (void *)vzsock_logger, sizeof(&vzsock_logger));
-	vzsock_set(&ctx, VZSOCK_DATA_FILTER, (void *)recv_filter, sizeof(&recv_filter));
+	vzsock_set(&ctx, VZSOCK_DATA_LOGGER, (void *)&vzsock_logger, 0);
+	vzsock_set(&ctx, VZSOCK_DATA_FILTER, (void *)&recv_filter, 0);
 	if ((ret = vzsock_set(&ctx, VZSOCK_DATA_TMO, (void *)&VZMoptions.tmo.val, sizeof(VZMoptions.tmo.val)))) {
 		rc = putErr(MIG_ERR_CONN_BROKEN, "vzsock_set() return %d", ret);
 		goto cleanup_0;
@@ -201,8 +201,8 @@ int MigrateChannel::createSshChannel(
 			"vzsock_init() return %d", ret);
 
 	vzsock_set(&ctx, VZSOCK_DATA_DEBUG, (void *)&debug, sizeof(debug));
-	vzsock_set(&ctx, VZSOCK_DATA_LOGGER, (void *)vzsock_logger, sizeof(&vzsock_logger));
-	vzsock_set(&ctx, VZSOCK_DATA_FILTER, (void *)recv_filter, sizeof(&recv_filter));
+	vzsock_set(&ctx, VZSOCK_DATA_LOGGER, (void *)&vzsock_logger, 0);
+	vzsock_set(&ctx, VZSOCK_DATA_FILTER, (void *)&recv_filter, 0);
 	if ((ret = vzsock_set(&ctx, VZSOCK_DATA_TMO, (void *)&VZMoptions.tmo.val, sizeof(VZMoptions.tmo.val)))) {
 		rc = putErr(MIG_ERR_CONN_BROKEN, "vzsock_set() return %d", ret);
 		goto cleanup_0;
@@ -259,8 +259,7 @@ int MigrateChannel::createChannel()
 			"vzsock_init() return %d", ret);
 
 	vzsock_set(&ctx, VZSOCK_DATA_DEBUG, (void *)&debug, sizeof(debug));
-	vzsock_set(&ctx, VZSOCK_DATA_LOGGER, (void *)vzsock_logger, sizeof(&vzsock_logger));
-//	vzsock_set(&ctx, VZSOCK_DATA_FILTER, (void *)recv_filter, sizeof(&recv_filter));
+	vzsock_set(&ctx, VZSOCK_DATA_LOGGER, (void *)&vzsock_logger, 0);
 	if ((ret = vzsock_set(&ctx, VZSOCK_DATA_TMO, (void *)&VZMoptions.tmo.val, sizeof(VZMoptions.tmo.val)))) {
 		rc = putErr(MIG_ERR_CONN_BROKEN, "vzsock_set() return %d", ret);
 		goto cleanup_0;
@@ -317,10 +316,8 @@ int MigrateChannel::createParallelsServerChannel()
 	if ((ret = vzsock_init(VZSOCK_FD, &ctx)))
 		return putErr(MIG_ERR_VZSOCK, "vzsock_init() return %d", ret);
 	vzsock_set(&ctx, VZSOCK_DATA_DEBUG, (void *)&debug, sizeof(debug));
-	vzsock_set(&ctx, VZSOCK_DATA_LOGGER,
-			(void *)vzsock_logger, sizeof(&vzsock_logger));
-	vzsock_set(&ctx, VZSOCK_DATA_FILTER,
-			(void *)recv_filter, sizeof(&recv_filter));
+	vzsock_set(&ctx, VZSOCK_DATA_LOGGER, (void *)&vzsock_logger, 0);
+	vzsock_set(&ctx, VZSOCK_DATA_FILTER, (void *)&recv_filter, 0);
 
 	if ((ret = vzsock_open(&ctx))) {
 		rc = putErr(MIG_ERR_VZSOCK, "vzsock_open() return %d\n", ret);
