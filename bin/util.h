@@ -41,6 +41,8 @@
 
 #define fl_prls_release	"/etc/parallels-release"
 
+#define VE_RUNNING_FILE	".running"
+
 /* char* double-linked list */
 TAILQ_HEAD(string_list, string_list_el);
 struct string_list_el {

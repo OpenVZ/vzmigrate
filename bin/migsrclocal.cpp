@@ -1028,6 +1028,8 @@ int MigrateStateLocal::copyBundles()
 				string_list_add_str(&exclude, delta);
 			}
 		}
+		// Add .running file to list of excludes
+		string_list_add_str(&exclude, VE_RUNNING_FILE);
 		rc = copy_local(rsync_dir(b.src), b.dst, &exclude);
 		if (rc)
 			goto exit;
