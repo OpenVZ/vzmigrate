@@ -102,10 +102,8 @@ int vza_init_cli(struct vzsock_ctx *ctx, void **conn)
 		goto cleanup_0;
 	}
 	vzsock_set(ctx, VZSOCK_DATA_DEBUG, (void *)&debug, sizeof(debug));
-	vzsock_set(ctx, VZSOCK_DATA_LOGGER,
-			(void *)vzsock_logger, sizeof(&vzsock_logger));
-	vzsock_set(ctx, VZSOCK_DATA_FILTER,
-			(void *)recv_filter, sizeof(&recv_filter));
+	vzsock_set(ctx, VZSOCK_DATA_LOGGER, (void *)&vzsock_logger, 0);
+	vzsock_set(ctx, VZSOCK_DATA_FILTER, (void *)&recv_filter, 0);
 
 	if ((ret = vzsock_open(ctx))) {
 		rc = putErr(MIG_ERR_VZSOCK, "vzsock_open() return %d\n", ret);
@@ -199,7 +197,7 @@ static int _vza_init_srv(
 		return putErr(MIG_ERR_CONN_BROKEN, "vzsock_init() return %d", ret);
 
 	vzsock_set(ctx, VZSOCK_DATA_DEBUG, (void *)&debug, sizeof(debug));
-	vzsock_set(ctx, VZSOCK_DATA_LOGGER, (void *)vzsock_logger, sizeof(&vzsock_logger));
+	vzsock_set(ctx, VZSOCK_DATA_LOGGER, (void *)&vzsock_logger, 0);
 	/* do not add filter on dst side */
 	if ((ret = vzsock_set(ctx, VZSOCK_DATA_ARGS, (void *)ssh_args, sizeof(ssh_args)))) {
 		rc = putErr(MIG_ERR_CONN_BROKEN, "vzsock_set() return %d", ret);
