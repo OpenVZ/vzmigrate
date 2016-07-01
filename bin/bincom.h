@@ -81,7 +81,8 @@ typedef vector<string> TemplOptEntries;
 
 #define VZMDEST_REPLY		"migrate %d"
 
-#define MIGRATE_VERSION			MIGRATE_VERSION_700
+#define MIGRATE_VERSION			MIGRATE_VERSION_701
+#define MIGRATE_VERSION_701		701
 #define MIGRATE_VERSION_700		700
 #define MIGRATE_VERSION_612		612
 #define MIGRATE_VERSION_611 	611
@@ -259,6 +260,10 @@ extern const char * ssh_test[];
 #ifndef PCS_SUPER_MAGIC
 #define PCS_SUPER_MAGIC			0x65735546
 #endif
+
+#define KEEP_DST_SNAPSHOT_GUID \
+    "{767a6d69-6772-6174-6500-000000000000}"
+//    v z m i  g r  a t  e
 
 /*
  AFAIK there are free ports, according

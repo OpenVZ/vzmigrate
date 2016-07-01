@@ -682,6 +682,33 @@ int MigrateStateRemote::checkRemoteVersion()
 				"The migration via rsync is not supported for ploop-based CT");
 }
 
+int MigrateStateRemote::createKeepDstSnapshots()
+{
+	int rc;
+	std::list<std::string> created;
+	ct_disk disks(srcVE->m_disks.get(disk_is_non_shared));
+	// Create snapshots with predefined GUID.
+	for (ct_disk::iterator it = disks.begin(); it != disks.end(); ++it)
+	{
+		bool exists;
+		if ((rc = ploopHasSnapshot(get_dd_xml(it->image).c_str(), KEEP_DST_SNAPSHOT_GUID, &exists)))
+			break;
+		if (exists)
+			continue;
+		if ((rc = ploopCreateSnapshot(get_dd_xml(it->image).c_str(), KEEP_DST_SNAPSHOT_GUID)))
+			break;
+		created.push_back(it->image);
+	}
+
+	if (rc) {
+		for (std::list<std::string>::iterator it = created.begin(); it != created.end(); ++it)
+		{
+			ploopDeleteSnapshot(get_dd_xml(*it).c_str(), KEEP_DST_SNAPSHOT_GUID);
+		}
+	}
+	return rc;
+}
+
 int MigrateStateRemote::preMigrateStage()
 {
 	int rc;
@@ -859,6 +886,11 @@ int MigrateStateRemote::preMigrateStage()
 
 	if ((rc = checkPloopFormat()))
 		return rc;
+
+	if (!isOptSet(OPT_READONLY) && isOptSet(OPT_KEEP_DST) && srcVE->layout >= VZCTL_LAYOUT_5) {
+		if ((rc = createKeepDstSnapshots()))
+			return rc;
+	}
 
 	END_STAGE();
 
@@ -1140,7 +1172,16 @@ int MigrateStateRemote::postFinalStage()
 	// destroy source VE
 
 	// bug #68013
-	if (isOptSet(OPT_READONLY) || isOptSet(OPT_KEEP_SRC))
+	if (isOptSet(OPT_READONLY))
+	{
+		END_STAGE();
+		return 0;
+	}
+
+	if (isOptSet(OPT_KEEP_SRC) || !isOptSet(OPT_REMOVE))
+		deleteKeepDstSnapshots(*srcVE);
+
+	if (isOptSet(OPT_KEEP_SRC))
 	{
 		END_STAGE();
 		return 0;
@@ -1577,11 +1618,6 @@ void MigrateStateRemote::close_active_deltas()
 		free(*it);
 	}
 	m_deltas.clear();
-}
-
-static bool disk_is_non_shared(const struct disk_entry &d)
-{
-	return !d.is_shared();
 }
 
 // safe to call multiple times

@@ -152,6 +152,7 @@ private:
 	void finishDestination();
 
 	void deletePloopStatfsFiles();
+	int createKeepDstSnapshots();
 };
 
 #endif
