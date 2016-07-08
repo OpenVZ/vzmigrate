@@ -296,6 +296,12 @@ int main(int argc, char **argv)
 	// Apply IO limits if any
 	vz_setiolimit();
 
+	// Explicitly forbid std templates migration as obsoleted
+	if ((VZMoptions.bintype == BIN_DEST_TEMPL) && !isOptSet(OPT_EZTEMPLATE)) {
+		logger(LOG_ERR, MIG_MSG_STD_TEMPL);
+		exitM(MIG_ERR_OBSOLETE);
+	}
+
 	if (isOptSet(OPT_PS_MODE) || isOptSet(OPT_NOEVENT))
 	{
 		/*

@@ -127,6 +127,7 @@ extern const char * getError();
 #define MIG_ERR_PKG_DEPS	-11
 #define MIG_ERR_IP_IN_USE	-12
 #define MIG_ERR_ACTIONS		-13
+#define MIG_ERR_OBSOLETE	-14
 
 #define MIG_ERR_CONN_BROKEN	-21
 #define MIG_ERR_CONN_TIMEOUT	-22
@@ -233,6 +234,7 @@ extern const char * getError();
 #define MIG_MSG_LOCK		"can't lock CT %s : %s"
 #define MIG_MSG_NOEXIST		"CT %s doesn't exist"
 #define MIG_MSG_TEMPL_LOCK	"can't lock template \"%s\""
+#define MIG_MSG_STD_TEMPL	"Migration of standard templates is no longer supported. EZ templates can be migrated with the '-z' option."
 #define MIG_MSG_TEMPL_NOEXIST	"Template \"%s\" doesn't exist"
 #define MIG_MSG_VELIST		"can't get list of containers"
 #define MIG_MSG_TEMIMPROPER	"Template \"%s\" is broken"

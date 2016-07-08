@@ -105,6 +105,12 @@ int main(int argc, char** argv)
 		vzctl2_set_flags(VZCTL_FLAG_DONT_SEND_EVT);
 	}
 
+	// Explicitly forbid std templates migration as obsoleted
+	if (!isOptSet(OPT_EZTEMPLATE)) {
+		logger(LOG_ERR, MIG_MSG_STD_TEMPL);
+		exitM(MIG_ERR_OBSOLETE);
+	}
+
 	if ((conn = new MigrateStateCommon()) == NULL) {
 		logger(LOG_ERR, "new() : %m");
 		exitM(-MIG_ERR_SYSTEM);
