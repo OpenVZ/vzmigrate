@@ -34,7 +34,7 @@ install:: all
 	install -d ${DESTDIR}/${sbindir}
 	install -d ${DESTDIR}/${datadir}
 	install -d ${DESTDIR}/${logrotatedir}
-	install -m 755 vzmsrc vzmdest vzmpipe ${DESTDIR}/${sbindir}
+	install -m 755 vzmsrc vzmdest vzmpipe vzmtemplate ${DESTDIR}/${sbindir}
 	install -m 755 vzmd ${DESTDIR}/${sbindir}
 	install -m 755 vzmigrate ${DESTDIR}/${sbindir}
 	install -m 644 logrotate/vzmigrate ${DESTDIR}/${logrotatedir}
@@ -49,7 +49,7 @@ install:: all
 	# install man pages
 	install -d ${DESTDIR}/${mandir}/man8
 	install -m 644 man/vzmigrate.8 man/vzmlocal.8 man/vzmsrc.8 \
-		man/vzmpipe.8 ${DESTDIR}/${mandir}/man8/
+		man/vzmpipe.8 man/vzmtemplate.8 ${DESTDIR}/${mandir}/man8/
 
 	ln -sf vzmsrc.8 ${DESTDIR}/${mandir}/man8/vzmdest.8
 	ln -sf vzmsrc.8 ${DESTDIR}/${mandir}/man8/vzmdestmpl.8
