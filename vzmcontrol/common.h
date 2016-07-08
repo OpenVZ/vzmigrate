@@ -128,7 +128,6 @@ extern const char * getError();
 #define MIG_ERR_IP_IN_USE	-12
 #define MIG_ERR_ACTIONS		-13
 
-
 #define MIG_ERR_CONN_BROKEN	-21
 #define MIG_ERR_CONN_TIMEOUT	-22
 /* connection to ssl server refused */
@@ -153,6 +152,7 @@ extern const char * getError();
 #define MIG_ERR_VZCACHE2	-40
 #define MIG_ERR_SUSPENDED	-41
 #define MIG_ERR_VZCTL		-43
+#define MIG_ERR_VZTT		-44
 #define MIG_ERR_NAME_CONFLICT	-45
 #define MIG_ERR_NONSHAREDFS	-46
 #define MIG_ERR_UNKNOWN_CMD	-47
@@ -232,11 +232,11 @@ extern const char * getError();
 #define MIG_MSG_NOT_INSTALL	"seems you need install migrate package on destination node"
 #define MIG_MSG_LOCK		"can't lock CT %s : %s"
 #define MIG_MSG_NOEXIST		"CT %s doesn't exist"
+#define MIG_MSG_TEMPL_LOCK	"can't lock template \"%s\""
 #define MIG_MSG_TEMPL_NOEXIST	"Template \"%s\" doesn't exist"
 #define MIG_MSG_VELIST		"can't get list of containers"
 #define MIG_MSG_TEMIMPROPER	"Template \"%s\" is broken"
 #define MIG_MSG_EXISTS		"CT %s already exists"
-#define MIG_MSG_TEMPL_EXISTS	"Later or the same template version \"%s/%s\" already exists on destination"
 //TODO: friendly text
 #define MIG_MSG_EZTEMPL_EXISTS	"EZ template \"%s\" already exists on destination"
 #define MIG_MSG_OS_EZTEMPL_NOT_EXISTS	"EZ ostemplate for \"%s\" does not exists on destination"

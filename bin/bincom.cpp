@@ -228,6 +228,8 @@ static void usage()
 	} else {
 		if (VZMoptions.bintype == BIN_LOCAL)
 			ustr = VZMLOCAL_USAGE;
+		else if (VZMoptions.bintype == BIN_TEMPL)
+			ustr = VZMTEMPLATE_USAGE;
 	}
 	fprintf(stderr, ustr, prog_name, prog_name, prog_name);
 
@@ -361,116 +363,137 @@ static int ve_list_process_old(char **argv, CVZMOptions *opts)
 			logger(LOG_ERR, "Memory allocation failure");
 			exit(-MIG_ERR_SYSTEM);
 		}
-		char *arg = argv[point];
-		char *p;
-		/* Read entry as :
-		<src_ctid>[:<dst_ctid>[:<dst_priv_dir>[:<dst_root_dir>]]]
-		*/
-
-		// Read 'source' ctid
-		if ((p = strchr(arg, ':')) == NULL) {
-			get_ctid(arg, entry);
-			SET_CTID(entry->dst_ctid, entry->src_ctid);
-			goto finish;
-		} else {
-			*p = '\0';
-			get_ctid(arg, entry);
-			SET_CTID(entry->dst_ctid, entry->src_ctid);
-		}
-
-		// Read 'dst' ctid
-		arg = ++p;
-		if ((p = strchr(arg, ':')) == NULL) {
-			if (strlen(arg))
-				get_ctid_opt(arg, entry->dst_ctid);
-			goto finish;
-		} else {
-			*p = '\0';
-			if (strlen(arg))
-				get_ctid_opt(arg, entry->dst_ctid);
-		}
-
-		// Read 'dst' priv_path
-		arg = ++p;
-		if ((p = strchr(arg, ':')) == NULL) {
-			if (strlen(arg)) {
-				if (check_path(arg))
-					usage();
-				entry->priv_path = strdup(arg);
+		if (opts->bintype == BIN_TEMPL || opts->bintype == BIN_DEST_TEMPL)
+		{
+			if (strchr(argv[point], '/'))
+			{
+				fprintf(stderr, "Invalid template name \"%s\". "
+					"Only whole template migrating is supported.\n",
+					argv[point]);
+				usage();
 			}
-			goto finish;
-		} else {
-			*p = '\0';
-			if (strlen(arg)) {
-				if (check_path(arg))
-					usage();
-				entry->priv_path = strdup(arg);
+			std::string templ(argv[point]);
+			opts->templMigrateList.push_back(templ.c_str());
+			size = strlen(argv[point]) + 3;
+			if ((VEArgs[point] = (const char*)malloc(size)) == NULL) {
+				logger(LOG_ERR, "Memory allocation failure");
+				exit(-MIG_ERR_SYSTEM);
 			}
+			snprintf((char *)VEArgs[point], size, "'%s'", argv[point]);
 		}
+		else
+		{
+			char *arg = argv[point];
+			char *p;
+			/* Read entry as :
+			<src_ctid>[:<dst_ctid>[:<dst_priv_dir>[:<dst_root_dir>]]]
+			*/
 
-		// Read 'dst' root_path
-		arg = ++p;
-		if ((p = strchr(arg, ':')) == NULL) {
-			if (strlen(arg)) {
-				if (check_path(arg))
-					usage();
-				entry->root_path = strdup(arg);
+			// Read 'source' ctid
+			if ((p = strchr(arg, ':')) == NULL) {
+				get_ctid(arg, entry);
+				SET_CTID(entry->dst_ctid, entry->src_ctid);
+				goto finish;
+			} else {
+				*p = '\0';
+				get_ctid(arg, entry);
+				SET_CTID(entry->dst_ctid, entry->src_ctid);
 			}
-			goto finish;
-		} else {
-			*p = '\0';
-			if (strlen(arg)) {
-				if (check_path(arg))
-					usage();
-				entry->root_path = strdup(arg);
-			}
-		}
 
-		if ((p = strchr(++p, ':')))
-			usage();
+			// Read 'dst' ctid
+			arg = ++p;
+			if ((p = strchr(arg, ':')) == NULL) {
+				if (strlen(arg))
+					get_ctid_opt(arg, entry->dst_ctid);
+				goto finish;
+			} else {
+				*p = '\0';
+				if (strlen(arg))
+					get_ctid_opt(arg, entry->dst_ctid);
+			}
+
+			// Read 'dst' priv_path
+			arg = ++p;
+			if ((p = strchr(arg, ':')) == NULL) {
+				if (strlen(arg)) {
+					if (check_path(arg))
+						usage();
+					entry->priv_path = strdup(arg);
+				}
+				goto finish;
+			} else {
+				*p = '\0';
+				if (strlen(arg)) {
+					if (check_path(arg))
+						usage();
+					entry->priv_path = strdup(arg);
+				}
+			}
+
+			// Read 'dst' root_path
+			arg = ++p;
+			if ((p = strchr(arg, ':')) == NULL) {
+				if (strlen(arg)) {
+					if (check_path(arg))
+						usage();
+					entry->root_path = strdup(arg);
+				}
+				goto finish;
+			} else {
+				*p = '\0';
+				if (strlen(arg)) {
+					if (check_path(arg))
+						usage();
+					entry->root_path = strdup(arg);
+				}
+			}
+
+			if ((p = strchr(++p, ':')))
+				usage();
 finish:
-		if (opts->bintype == BIN_LOCAL
-			&& CMP_CTID(entry->src_ctid, entry->dst_ctid) == 0
-			&& (isOptSet(OPT_COPY) || (entry->priv_path == NULL)))
-			usage();
+			if (opts->bintype == BIN_LOCAL
+				&& CMP_CTID(entry->src_ctid, entry->dst_ctid) == 0
+				&& (isOptSet(OPT_COPY) || (entry->priv_path == NULL)))
+				usage();
 
-		opts->veMigrateList.push_back(entry);
+			opts->veMigrateList.push_back(entry);
 
-		// save and transform arguments to pass on destination part
-		// ssh call 'bash -c' on destination side, so we need transformation
-		// replace ve name to veid
-		size = 100;
-		if (entry->priv_path)
-			size += strlen(entry->priv_path) + 1;
-		if (entry->root_path) {
-			size += strlen(entry->root_path) + 1;
-			if (entry->priv_path == NULL)
-				size += 1;
-		}
-		if ((VEArgs[point] = (const char *)malloc(size)) == NULL) {
-			logger(LOG_ERR, "Memory allocation failure");
-			exit(-MIG_ERR_SYSTEM);
-		}
-		snprintf((char *)VEArgs[point], size, "'%s:%s",
-			entry->src_ctid, entry->dst_ctid);
-		if (entry->priv_path) {
-			strncat((char *)VEArgs[point], ":",
-				size - strlen(VEArgs[point]) - 1);
-			strncat((char *)VEArgs[point], entry->priv_path,
-				size - strlen(VEArgs[point]) - 1);
-		}
-		if (entry->root_path) {
-			if (!entry->priv_path) {
+			// save and transform arguments to pass on destination part
+			// ssh call 'bash -c' on destination side, so we need transformation
+			// replace ve name to veid
+			size = 100;
+			if (entry->priv_path)
+				size += strlen(entry->priv_path) + 1;
+			if (entry->root_path) {
+				size += strlen(entry->root_path) + 1;
+				if (entry->priv_path == NULL)
+					size += 1;
+			}
+			if ((VEArgs[point] = (const char *)malloc(size)) == NULL) {
+				logger(LOG_ERR, "Memory allocation failure");
+				exit(-MIG_ERR_SYSTEM);
+			}
+			snprintf((char *)VEArgs[point], size, "'%s:%s",
+				entry->src_ctid, entry->dst_ctid);
+			if (entry->priv_path) {
 				strncat((char *)VEArgs[point], ":",
 					size - strlen(VEArgs[point]) - 1);
+				strncat((char *)VEArgs[point], entry->priv_path,
+					size - strlen(VEArgs[point]) - 1);
 			}
-			strncat((char *)VEArgs[point], ":",
-				size - strlen(VEArgs[point]) - 1);
-			strncat((char *)VEArgs[point], entry->root_path,
+			if (entry->root_path) {
+				if (!entry->priv_path) {
+					strncat((char *)VEArgs[point], ":",
+						size - strlen(VEArgs[point]) - 1);
+				}
+				strncat((char *)VEArgs[point], ":",
+					size - strlen(VEArgs[point]) - 1);
+				strncat((char *)VEArgs[point], entry->root_path,
+					size - strlen(VEArgs[point]) - 1);
+			}
+			strncat((char *)VEArgs[point], "'",
 				size - strlen(VEArgs[point]) - 1);
 		}
-		strncat((char *)VEArgs[point], "'",
-			size - strlen(VEArgs[point]) - 1);
 	}
 
 	VEArgs[point+1] = NULL;
@@ -760,9 +783,11 @@ void parse_options (int argc, char **argv)
 			break;
 		case 'f':
 		{
-			if (VZMoptions.bintype != BIN_SRC && VZMoptions.bintype != BIN_LOCAL
-			        && strcmp(prog_name, BNAME_PM_C2C))
+			if (VZMoptions.bintype != BIN_SRC && VZMoptions.bintype != BIN_LOCAL &&
+				VZMoptions.bintype != BIN_TEMPL && strcmp(prog_name, BNAME_PM_C2C))
+			{
 				usage();
+			}
 			if (optarg == NULL)
 			{
 				setOpt(OPT_FORCE);
@@ -1023,6 +1048,7 @@ void parse_options (int argc, char **argv)
 		if (VZMoptions.bintype != BIN_SRC && isOptSet(OPT_REMOVE))
 			usage();
 		if (VZMoptions.bintype != BIN_SRC &&
+			VZMoptions.bintype != BIN_TEMPL &&
 			(isOptSet(OPT_FORCE) || isOptSet(OPT_SKIP_CHECKCPU) ||
 			isOptSet(OPT_FORCE) || isOptSet(OPT_SKIP_DISKSPACE) ||
 			isOptSet(OPT_SKIP_TECHNOLOGIES) ||
@@ -1070,6 +1096,7 @@ void parse_options (int argc, char **argv)
 	case BIN_LOCAL:
 		break;
 	case BIN_SRC:
+	case BIN_TEMPL:
 		if (isOptSet(OPT_AGENT))
 		{
 			// src & dest
@@ -1104,6 +1131,7 @@ void parse_options (int argc, char **argv)
 		}
 		break;
 	case BIN_DEST:
+	case BIN_DEST_TEMPL:
 		if (isOptSet(OPT_AGENT))
 		{
 			// src & dest
@@ -1248,18 +1276,34 @@ void parse_options (int argc, char **argv)
 		VZMoptions.bigname += VZMoptions.src_addr;
 		VZMoptions.bigname += VZMoptions.dst_addr;
 
-		for (VEOptEntries::const_iterator it = VZMoptions.veMigrateList.begin();
-			it != VZMoptions.veMigrateList.end(); ++it) {
-			VZMoptions.bigname += std::string(":") + (*it)->src_ctid;
-			VZMoptions.bigname += std::string(":") + (*it)->dst_ctid;
+		if (VZMoptions.bintype == BIN_TEMPL || VZMoptions.bintype == BIN_DEST_TEMPL) {
+			for (TemplOptEntries::const_iterator it = VZMoptions.templMigrateList.begin();
+				it != VZMoptions.templMigrateList.end(); ++it)
+			{
+				VZMoptions.bigname += ":" + *it;
+			}
+		} else {
+			for (VEOptEntries::const_iterator it = VZMoptions.veMigrateList.begin();
+				it != VZMoptions.veMigrateList.end(); ++it)
+			{
+				VZMoptions.bigname += std::string(":") + (*it)->src_ctid;
+				VZMoptions.bigname += std::string(":") + (*it)->dst_ctid;
+			}
 		}
 	}
 
 	if (isOptSet(OPT_PS_MODE))
 	{
-		if (VZMoptions.veMigrateList.size() != 1) {
-			logger(LOG_ERR, "You must specify only one CT in -ps mode");
-			exit(-MIG_ERR_USAGE);
+		if (VZMoptions.bintype == BIN_TEMPL || VZMoptions.bintype == BIN_DEST_TEMPL) {
+			if (VZMoptions.templMigrateList.size() != 1) {
+				logger(LOG_ERR, "You must specify only one template in -ps mode");
+				exit(-MIG_ERR_USAGE);
+			}
+		} else {
+			if (VZMoptions.veMigrateList.size() != 1) {
+				logger(LOG_ERR, "You must specify only one CT in -ps mode");
+				exit(-MIG_ERR_USAGE);
+			}
 		}
 	}
 
@@ -1382,7 +1426,7 @@ int init_connection(MigrateStateCommon *st)
 
 	if (isOptSet(OPT_SUDO))
 		string_list_add(&args_list, BIN_SUDO);
-	string_list_add(&args_list, (char *)BIN_VZMDEST);
+	string_list_add(&args_list, VZMoptions.bintype == BIN_TEMPL ? (char*)BIN_VZMDESTEMPL : (char*)BIN_VZMDEST);
 	string_list_add(&args_list, version);
 	if (debug_level >= LOG_DEBUG)
 		string_list_add(&args_list, "-v");

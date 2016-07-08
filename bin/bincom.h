@@ -37,6 +37,7 @@ using namespace std;
 #define BNAME_TEMPLATE		"vzmtemplate"
 #define BNAME_PM_C2C		"pmigrate.c2c"
 #define BNAME_DEST		"vzmdest"
+#define BNAME_DEST_TEMPL	"vzmdestmpl"
 
 #include "common.h"
 #include "util.h"
@@ -114,7 +115,9 @@ typedef vector<string> TemplOptEntries;
 
 #define BIN_LOCAL	0
 #define BIN_SRC		1
+#define BIN_TEMPL	2
 #define BIN_DEST	3
+#define BIN_DEST_TEMPL	4
 
 #define OPT_COPY	(1ULL << 0)
 #define OPT_AGENT	(1ULL << 1)

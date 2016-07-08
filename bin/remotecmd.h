@@ -74,6 +74,7 @@
 #define CMD_ITERCH		"iterch" /* unused */
 #define CMD_INVERTLAZY		"invertlazy"
 
+#define CMD_INITEMPL		"initempl"
 #define CMD_FIRSTEMPL		"firstempl"
 #define CMD_FINTEMPL		"fintempl"
 #define CMD_SYNCTT		"synctt"

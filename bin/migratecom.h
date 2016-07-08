@@ -44,12 +44,6 @@ using namespace std;
 		"%s/" VZCTL_VE_ROOTHDD_DIR "/" DISKDESCRIPTOR_XML, (private));
 
 class MigrateSshChannel;
-int get_real_tmpl_path(
-		const char *vztemplate,
-		const char *src_path,
-		int step,
-		char *dst_path,
-		size_t sz);
 
 // internal migration source flags
 #define VZMSRC_SHARED_PRIV	(1ULL << 0)

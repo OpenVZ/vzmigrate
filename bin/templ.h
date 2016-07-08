@@ -21,48 +21,43 @@
  * Schaffhausen, Switzerland.
  *
  */
-#ifndef __SERVER_H__
-#define __SERVER_H__
 
-#include "bincom.h"
-#include "common.h"
-#include "migratedst.h"
-#include "migdsttempl.h"
-#include "migssh.h"
-#include "remotecmd.h"
-#include "veentry.h"
-#include "templ.h"
+#ifndef __TEMPL_H_
+#define __TEMPL_H_
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <sys/wait.h>
-#include <sstream>
-
-#include <libgen.h>
-
-#include <fstream>
-#include <memory>
+#include <vz/vztt.h>
 #include <string>
-#include <map>
 
-class CNewVEsList : public std::map<std::string, VEObj*> {
+class TmplEntry {
 public:
-	~CNewVEsList();
+	TmplEntry(const std::string& id);
+	int init();
+
+public:
+	std::string m_id;
+	std::string m_tpath;
+	std::string m_path;
 };
 
-class CNewTemplsList : public std::map<std::string, TmplEntryEz*> {
+class TmplEntryEz : public TmplEntry {
 public:
-	~CNewTemplsList();
+	TmplEntryEz(const std::string& id);
+	~TmplEntryEz();
+
+	int list();
+	int lock();
+	void unlock();
+	int isAppTemplate();
+	int getLastVersion(std::string* add);
+	int getMaskTechnologies(unsigned long* tech_mask);
+	char* getOsTemplate();
+	int check();
+
+public:
+	char* ostemplate;
+	void* lockdata;
+	int m_isapptempl;
+	tmpl_info info;
 };
-
-extern CNewVEsList* g_veList;
-extern std::map<std::string, std::string>* g_ctidMap;
-extern MigrateStateDstRemote* state;
-
-extern CNewTemplsList* g_templList;
-extern MigrateStateDstTempl* g_stateTempl;
-
-int main_loop();
 
 #endif

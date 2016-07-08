@@ -1,0 +1,90 @@
+.TH vzmtemplate 8 "October 2009" "@PRODUCT_NAME_LONG@"
+
+.SH NAME
+vzmtemplate - utility for migration @PRODUCT_NAME_LONG@ templates between
+nodes.
+
+.SH SYNOPSIS
+.TP
+.B vzmtemplate [-bhz] [--ssh=<ssh_options>]
+\fI<[user@]destination_node_address>\fP \fItemplate ...\fP
+
+.SH DESCRIPTION
+This utility is used for template(s) migrating from one (source)
+node to another (destination) node. It requires that you have root@
+access on destination node. Unlike \fBvzmigrate\fP, \fBvzmtemplate\fP
+doesn't remove template from source node.
+
+.SH OPTIONS
+.TP
+\fB\-b, --batch\fP
+Run in batch mode to facilitate utility output analyzing by calling
+script.
+
+.TP
+\fB\-h, --help\fP
+Get usage info.
+
+.TP
+\fB\-z, --eztempl\fP
+Set templates to eztemplate.
+
+.TP
+\fB\--ssh=<ssh options>\fP
+Additional options that will be passed ssh during establishing
+connection with destination node. Please be carefully with passed
+options, DON'T pass destination hostname.
+
+.SH MIGRATION
+Utility can migrate either application or OS templates. Migration OS
+template also migrate tarballs of this templates. Now utility migrates
+template at whole (all base versions & updates).
+
+.SH EXAMPLES
+To migrate standart template vzredhat-7.3 to \fI192.168.1.130\fR:
+.br
+\f(CR	vzmtemplate 192.168.1.130 vzredhat-7.3
+\fR
+.br
+To migrate ez os-template centos-4-x86 to \fI192.168.1.130\fR:
+.br
+\f(CR	vzmtemplate -z 192.168.1.130 centos-4-x86
+\fR
+.br
+To migrate ez app-template mod_ssl for centos-4-x86 to \fI192.168.1.130\fR:
+.br
+\f(CR	vzmtemplate -z 192.168.1.130 mod_ssl@centos-4-x86
+\fR
+
+.SH EXIT STATUS
+.TP
+.B 0 EXIT_OK
+Command completed successfully.
+.TP
+.B 1 EXIT_USAGE
+Bad command line options.
+.TP
+.B 2 EXIT_SYSTEM
+System error.
+.TP
+.B 3 EXIT_LOCK
+Can't lock template.
+.TP
+.B 4 EXIT_CONNECT
+Can't connect to destination (source) node.
+.TP
+.B 6 EXIT_COPY
+Template area copying failed.
+.TP
+.B 9 EXIT_EXISTS
+Template with more last version already exists on destination node.
+.TP
+.B 10 EXIT_NOTEXIST
+Template doesn't exist on source node.
+
+.SH SEE ALSO
+.BR vzmigrate (8)
+.BR vz (5)
+
+.SH COPYRIGHT
+Copyright (c) 2001-@LAST_COPYRIGHT_YEAR@, @COPYRIGHT_OWNER@. All rights reserved.
