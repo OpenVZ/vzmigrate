@@ -49,38 +49,6 @@
 #include "ssl.h"
 #include "remotecmd.h"
 
-/*
-   This is workaround:
-   vzmsrc send full path for EZ template (with TEMPLATE variable from vz.conf).
-   vzmdest check this path on dst node. But TEMPLATE differ on dst and src nodes,
-   vzmdest will check and copy template area in wrong path.
-   As workaround will cut out lase <step> subdirs from source path
-   and add TEMPLATE before.
-*/
-int get_real_tmpl_path(
-		const char *vztemplate,
-		const char *src_path,
-		int step,
-		char *dst_path,
-		size_t sz)
-{
-	char *p;
-	int i;
-
-	p = (char *)src_path + strlen(src_path) - 1;
-	while((p > src_path) && (*p == '/')) p--;
-
-	for (i = step; i > 0; i--) {
-		while((p > src_path) && (*p != '/')) p--;
-		if (p < src_path)
-			return putErr(MIG_ERR_SYSTEM,
-				"Bad path for template area : %s", src_path);
-		while((p > src_path) && (*p == '/')) p--;
-	}
-	snprintf(dst_path, sz, "%s/%s", vztemplate, p + 2);
-	return 0;
-}
-
 extern struct vz_data *vzcnf;
 
 int CWD::chdir(const char * dir)
@@ -307,7 +275,7 @@ void MigrateStateCommon::addCleanerRename(const char * src, const char * dest, i
 	       success ? "on success" : "on failure", src_path, dst_path);
 }
 
-int MigrateStateCommon::clean_delEntry(const void * arg, const void *)
+int MigrateStateCommon::clean_delVeobj(const void * arg, const void *)
 {
 	VEObj * e = (VEObj *) arg;
 	delete e;

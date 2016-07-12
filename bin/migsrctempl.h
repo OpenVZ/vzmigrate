@@ -21,48 +21,28 @@
  * Schaffhausen, Switzerland.
  *
  */
-#ifndef __SERVER_H__
-#define __SERVER_H__
 
-#include "bincom.h"
-#include "common.h"
-#include "migratedst.h"
-#include "migdsttempl.h"
-#include "migssh.h"
-#include "remotecmd.h"
-#include "veentry.h"
-#include "templ.h"
+#ifndef __MIGSRCTEMPL_H_
+#define __MIGSRCTEMPL_H_
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <sys/wait.h>
-#include <sstream>
-
-#include <libgen.h>
-
-#include <fstream>
-#include <memory>
 #include <string>
-#include <map>
+#include <memory>
+#include "templ.h"
+#include "migratecom.h"
 
-class CNewVEsList : public std::map<std::string, VEObj*> {
+class MigrateStateTemplate : public MigrateStateCommon {
 public:
-	~CNewVEsList();
+	MigrateStateTemplate(const std::string& id);
+	int doMigration();
+	int checkTechnologies();
+
+private:
+	int copyEZDirSocket(char* const* const vzdir);
+	int fillEZDirList(char* const* const vzdir, char* dir, unsigned dsize,
+		char* file, unsigned fsize);
+
+private:
+	std::auto_ptr<TmplEntryEz> srcTempl;
 };
-
-class CNewTemplsList : public std::map<std::string, TmplEntryEz*> {
-public:
-	~CNewTemplsList();
-};
-
-extern CNewVEsList* g_veList;
-extern std::map<std::string, std::string>* g_ctidMap;
-extern MigrateStateDstRemote* state;
-
-extern CNewTemplsList* g_templList;
-extern MigrateStateDstTempl* g_stateTempl;
-
-int main_loop();
 
 #endif

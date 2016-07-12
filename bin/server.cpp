@@ -47,14 +47,24 @@ using namespace std;
 
 CNewVEsList::~CNewVEsList()
 {
-	for (std::map<std::string, VEObj *>::const_iterator it = this->begin();
-			it != this->end(); it++)
+	for (CNewVEsList::iterator it = begin(); it != end(); ++it) {
 		delete it->second;
+	}
+}
+
+CNewTemplsList::~CNewTemplsList()
+{
+	for (CNewTemplsList::iterator it = begin(); it != end(); ++it) {
+		delete it->second;
+	}
 }
 
 CNewVEsList * g_veList = NULL;
 std::map<std::string, std::string> * g_ctidMap = NULL;
 MigrateStateDstRemote * state = NULL;
+
+CNewTemplsList* g_templList = NULL;
+MigrateStateDstTempl* g_stateTempl = NULL;
 
 static int cmdVersion(istringstream & is, ostringstream & os)
 {
@@ -63,7 +73,7 @@ static int cmdVersion(istringstream & is, ostringstream & os)
 		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
 	VZMoptions.remote_version = remote_version;
 	if (VZMoptions.remote_version < MIGRATE_VERSION_400) {
-		if (state->is_priv_on_shared)
+		if (state && state->is_priv_on_shared)
 			return putErr(MIG_ERR_SYSTEM,
 				"Can't migrate this private area "
 				"on shared FS (old version)");
@@ -148,9 +158,32 @@ static int cmdInitMigration(istringstream & is)
 	return state->initMigration();
 }
 
+static int cmdInitTemplMigration(istringstream & is)
+{
+	std::string pkg;
+	std::string version;
+
+	if ((is >> pkg >> version) == NULL)
+		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
+
+	CNewTemplsList::iterator it = g_templList->find(pkg);
+	if (it == g_templList->end())
+		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
+
+	g_stateTempl = new MigrateStateDstTempl(it->second);
+	if (g_stateTempl == NULL)
+		return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
+
+	g_templList->erase(it);
+	return g_stateTempl->initMigration(version);
+}
+
 static int cmdCheckTechnologies(istringstream & is, ostringstream & os)
 {
-	return state->cmdCheckTechnologies(is, os);
+	if (VZMoptions.bintype == BIN_DEST_TEMPL)
+		return g_stateTempl->cmdCheckTechnologies(is, os);
+	else
+		return state->cmdCheckTechnologies(is, os);
 }
 
 static int cmdAdjustTimeout(istringstream & is, ostringstream & os)
@@ -163,6 +196,22 @@ static int cmdAdjustTimeout(istringstream & is, ostringstream & os)
 	logger(LOG_DEBUG, "Set custom timeout %ld sec", VZMoptions.tmo.val);
 	os << "1";
 	return 0;
+}
+
+static int cmdCheckEZDir(istringstream & is, ostringstream & os)
+{
+	if (VZMoptions.bintype == BIN_DEST_TEMPL)
+		return g_stateTempl->cmdCheckEZDir(is, os);
+	else
+		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
+}
+
+static int cmdCopyEZDirTar(istringstream & is)
+{
+	if (VZMoptions.bintype == BIN_DEST_TEMPL)
+		return g_stateTempl->cmdCopyEZDirTar(is);
+	else
+		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
 }
 
 static int cmdMountPloop(istringstream & is)
@@ -190,13 +239,27 @@ static void log_cmd(const std::string& cmd)
 		logger(LOG_DEBUG, "Command : %s", cmd.c_str());
 }
 
+static bool check_cmd(const char* cmd)
+{
+	bool initCmd;
+	bool stateCreated;
+
+	if (VZMoptions.bintype == BIN_DEST_TEMPL) {
+		initCmd = (strcmp(cmd, CMD_INITEMPL) == 0);
+		stateCreated = (g_stateTempl != NULL);
+	} else {
+		initCmd = (strcmp(cmd, CMD_INIT) == 0);
+		stateCreated = (state != NULL);
+	}
+
+	return ((initCmd && !stateCreated) || (!initCmd && stateCreated));
+}
+
 static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 {
 	int rc;
 
-	bool init_cmd = strcmp(cmd, CMD_INIT) == 0;
-	if ((init_cmd && state != NULL) || 
-		(!init_cmd && state == NULL))
+	if (!check_cmd(cmd))
 		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
 
 	if (strcmp(cmd, CMD_INIT) == 0) {
@@ -269,6 +332,12 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 	} else if (strcmp(cmd, CMD_CHECK_CLUSTER) == 0) {
 		// checking - all added in 4.0
 		return state->cmdCheckClusterID(is, os);
+	} else if (strcmp(cmd, CMD_CHECK_EZDIR) == 0) {
+		// checking - all added in 4.0
+		return cmdCheckEZDir(is, os);
+	} else if (strcmp(cmd, CMD_COPY_EZDIR_TAR) == 0) {
+		// added in 4.0
+		return cmdCopyEZDirTar(is);
 	} else if (strcmp(cmd, CMD_CHECK_SHARED_PRIV) == 0) {
 		// checking - all added in 4.0
 		return state->cmdCheckSharedPriv(is, os);
@@ -308,6 +377,14 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 	} else if (strcmp(cmd, CMD_INVERTLAZY) == 0) {
 		// invert LAZY flag for iteration migration - added in 4.0
 		return cmdInvertLazyFlag();
+	} else if (strcmp(cmd, CMD_INITEMPL) == 0) {
+		return cmdInitTemplMigration(is);
+	} else if (strcmp(cmd, CMD_FIRSTEMPL) == 0) {
+		return g_stateTempl->copyStage();
+	} else if (strcmp(cmd, CMD_FINTEMPL) == 0) {
+		return g_stateTempl->finalStage();
+	} else if (strcmp(cmd, CMD_COPY_EZCACHE) == 0) {
+		return g_stateTempl->cmdCopyEzCache(is);
 	} else if (strcmp(cmd, CMD_SYNCTT) == 0) {
 		return state->cmdTemplateSync(is);
 	} else if (strcmp(cmd, CMD_ADJUST_TMO) == 0) {
@@ -347,15 +424,22 @@ static int doGoodbye(int status_, const std::string& message_)
 	if (0 != status_)
 		return doReply(status_, message_);
 
+	MigrateStateCommon* migrateState =
+		((VZMoptions.bintype == BIN_DEST_TEMPL)
+			? static_cast<MigrateStateCommon*>(g_stateTempl)
+			: static_cast<MigrateStateCommon*>(state));
+
 	// success cleaning
-	state->doCleaning(SUCCESS_CLEANER);
+	migrateState->doCleaning(SUCCESS_CLEANER);
+
 	int output = doReply(status_, message_);
 	if (0 == output)
 	{
 		// clean MigrateState Cleaners
-		state->erase();
-		xdelete(state);
+		migrateState->erase();
+		xdelete(migrateState);
 	}
+
 	return output;
 }
 

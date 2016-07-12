@@ -138,7 +138,8 @@ int MigrateChannel::establish(const char * args[])
 	char *p;
 
 	/* send binary name */
-	snprintf(buffer, sizeof(buffer), CMD_BINARY " vzmigrate");
+	snprintf(buffer, sizeof(buffer), CMD_BINARY " %s",
+		(VZMoptions.bintype == BIN_TEMPL) ? "vzmtemplate" : "vzmigrate");
 	if ((rc = sendBuf(buffer, strlen(buffer) + 1)))
 		return rc;
 

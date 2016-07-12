@@ -97,7 +97,7 @@ MigrateStateRemote::MigrateStateRemote(
 	/* TODO: check g_keeperCTID */
 	if (isOptSet(OPT_KEEPER)) {
 		keepVE = new VEObj(g_keeperCTID);
-		addCleaner(clean_delEntry, keepVE, NULL, ANY_CLEANER);
+		addCleaner(clean_delVeobj, keepVE, NULL, ANY_CLEANER);
 	}
 };
 

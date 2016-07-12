@@ -21,48 +21,31 @@
  * Schaffhausen, Switzerland.
  *
  */
-#ifndef __SERVER_H__
-#define __SERVER_H__
 
-#include "bincom.h"
-#include "common.h"
-#include "migratedst.h"
-#include "migdsttempl.h"
-#include "migssh.h"
-#include "remotecmd.h"
-#include "veentry.h"
-#include "templ.h"
+#ifndef __MIGDSTTEMPL_H_
+#define __MIGDSTTEMPL_H_
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <sys/wait.h>
-#include <sstream>
-
-#include <libgen.h>
-
-#include <fstream>
-#include <memory>
 #include <string>
-#include <map>
+#include <memory>
+#include "templ.h"
+#include "migratecom.h"
 
-class CNewVEsList : public std::map<std::string, VEObj*> {
+class MigrateStateDstTempl : public MigrateStateCommon {
 public:
-	~CNewVEsList();
+	MigrateStateDstTempl(TmplEntryEz* entry);
+	int initMigration(const std::string& ver);
+	int copyStage();
+	int finalStage();
+	int copyTarball(const std::string& mark);
+	int cmdCheckTechnologies(std::istringstream& is, std::ostringstream& os);
+	int cmdCheckEZDir(std::istringstream& is, std::ostringstream& os);
+	int cmdCopyEZDirTar(std::istringstream& is);
+	int cmdCopyEzCache(std::istringstream& is);
+private:
+	std::auto_ptr<TmplEntryEz> dstTempl;
 };
 
-class CNewTemplsList : public std::map<std::string, TmplEntryEz*> {
-public:
-	~CNewTemplsList();
-};
-
-extern CNewVEsList* g_veList;
-extern std::map<std::string, std::string>* g_ctidMap;
-extern MigrateStateDstRemote* state;
-
-extern CNewTemplsList* g_templList;
-extern MigrateStateDstTempl* g_stateTempl;
-
-int main_loop();
+int get_real_tmpl_path(const char* vztemplate, const char* src_path,
+	int step, char* dst_path, size_t sz);
 
 #endif

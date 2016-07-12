@@ -83,6 +83,7 @@ static void exitM(int rc)
 {
 	delete g_veList;
 	delete g_ctidMap;
+	delete g_templList;
 	exit(-rc);
 }
 
@@ -117,11 +118,37 @@ static int initializeVEs()
 	return 0;
 }
 
+static int initializeTempls()
+{
+	g_templList = new CNewTemplsList();
+	if (g_templList == NULL)
+		return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
+
+	for (TemplOptEntries::const_iterator it = VZMoptions.templMigrateList.begin();
+		it != VZMoptions.templMigrateList.end(); ++it)
+	{
+		TmplEntryEz* tmpl = new TmplEntryEz(*it);
+		if (tmpl == NULL)
+			return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
+
+		(*g_templList)[*it] = tmpl;
+
+		int rc = tmpl->init();
+		if (rc != 0)
+			return rc;
+	}
+
+	return 0;
+}
+
 void sigterm(int signum)
 {
 	logger(LOG_ERR, VZM_MSG_TERM);
 
-	xdelete(state);
+	if (VZMoptions.bintype == BIN_DEST_TEMPL)
+		xdelete(g_stateTempl);
+	else
+		xdelete(state);
 
 	// send sigterm to all processes in group
 	kill(0, signum);
@@ -237,6 +264,8 @@ int main(int argc, char **argv)
 
 	if (strcmp(argv[0], BNAME_DEST) == 0)
 		INIT_BIN(BIN_DEST, LOG_INFO, "vzmdest");
+	else if (strcmp(argv[0], BNAME_DEST_TEMPL) == 0)
+		INIT_BIN(BIN_DEST_TEMPL, LOG_INFO, "vzmdestmpl");
 	else
 	{
 		logger(LOG_ERR, VZM_MSG_UNKBIN, argv[0]);
@@ -263,8 +292,15 @@ int main(int argc, char **argv)
 	parse_options(argc, argv);
 
 	init_sig_handlers(sigterm);
+
 	// Apply IO limits if any
 	vz_setiolimit();
+
+	// Explicitly forbid std templates migration as obsoleted
+	if ((VZMoptions.bintype == BIN_DEST_TEMPL) && !isOptSet(OPT_EZTEMPLATE)) {
+		logger(LOG_ERR, MIG_MSG_STD_TEMPL);
+		exitM(MIG_ERR_OBSOLETE);
+	}
 
 	if (isOptSet(OPT_PS_MODE) || isOptSet(OPT_NOEVENT))
 	{
@@ -355,8 +391,11 @@ int main(int argc, char **argv)
 		close(fd);
 	}
 
-	// initialize VEs
-	rc = initializeVEs();
+	if (VZMoptions.bintype == BIN_DEST_TEMPL)
+		rc = initializeTempls();
+	else
+		rc = initializeVEs();
+
 	if (rc != 0)
 	{
 		if (isOptSet(OPT_AGENT))
@@ -379,7 +418,10 @@ int main(int argc, char **argv)
 
 	main_loop();
 
-	xdelete(state);
+	if (VZMoptions.bintype == BIN_DEST_TEMPL)
+		xdelete(g_stateTempl);
+	else
+		xdelete(state);
 
 	vzctl2_lib_close();
 

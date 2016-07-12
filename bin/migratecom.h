@@ -44,12 +44,6 @@ using namespace std;
 		"%s/" VZCTL_VE_ROOTHDD_DIR "/" DISKDESCRIPTOR_XML, (private));
 
 class MigrateSshChannel;
-int get_real_tmpl_path(
-		const char *vztemplate,
-		const char *src_path,
-		int step,
-		char *dst_path,
-		size_t sz);
 
 // internal migration source flags
 #define VZMSRC_SHARED_PRIV	(1ULL << 0)
@@ -107,7 +101,7 @@ public:
 	void addCleaner(MigrateCleanFunc _func, const void * _arg1 = NULL,
 	                const void * _arg2 = NULL, int type = ERROR_CLEANER);
 
-	static int clean_delEntry(const void * arg, const void * dummy);
+	static int clean_delVeobj(const void * arg, const void * dummy);
 //	static int clean_channel(const void * arg, const void * dummy);
 	static int clean_rmDir(const void * arg, const void * dummy);
 	static int clean_removeDir(const void * arg, const void * dummy = NULL);

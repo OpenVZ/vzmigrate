@@ -54,7 +54,7 @@ MigrateStateDstRemote::MigrateStateDstRemote(VEObj * ve, int options)
 {
 	assert(dstVE != NULL);
 
-	addCleaner(clean_delEntry, dstVE, NULL, ANY_CLEANER);
+	addCleaner(clean_delVeobj, dstVE, NULL, ANY_CLEANER);
 
 	func_copyFirst = &MigrateStateDstRemote::h_copy_remote_tar;
 	func_copyFile = &MigrateStateDstRemote::h_copy_remote_rsync_file;
@@ -1187,31 +1187,30 @@ int MigrateStateDstRemote::clean_umountImage(const void *arg, const void *)
 };
 
 int isJquotaSupported(const char *ostemplate, bool &supported)
-{       
-        FILE *fd;
-        char buf[4096];
-        char *p;
-        int status;
-                
-        snprintf(buf, sizeof(buf), BIN_VZPKG " info %s -q jquota 2>/dev/null", 
-                        ostemplate);
-        logger(LOG_DEBUG, buf);         
-        if ((fd = popen(buf, "r")) == NULL)
-                return putErr(MIG_ERR_SYSTEM, "popen('%s') error: %m", buf);
+{
+	FILE *fd;
+	char buf[4096];
+	char *p;
+	int status;
 
-        *buf = 0;
-        while((p = fgets(buf, sizeof(buf), fd)));
-                        
-        status = pclose(fd);            
-        if ((WIFEXITED(status) && WEXITSTATUS(status)) ||
-                        WIFSIGNALED(status))
-                return MIG_ERR_SYSTEM;
+	snprintf(buf, sizeof(buf), BIN_VZPKG " info %s -q jquota 2>/dev/null",
+		ostemplate);
+	logger(LOG_DEBUG, buf);
+	if ((fd = popen(buf, "r")) == NULL)
+		return putErr(MIG_ERR_SYSTEM, "popen('%s') error: %m", buf);
 
-        logger(LOG_DEBUG, "jquota=%s", buf);
-                
-        supported = (strncmp(buf, "yes", 3) == 0);
+	*buf = 0;
+	while((p = fgets(buf, sizeof(buf), fd)));
 
-        return 0;       
+	status = pclose(fd);
+	if ((WIFEXITED(status) && WEXITSTATUS(status)) || WIFSIGNALED(status))
+		return MIG_ERR_SYSTEM;
+
+	logger(LOG_DEBUG, "jquota=%s", buf);
+
+	supported = (strncmp(buf, "yes", 3) == 0);
+
+	return 0;
 } 
 
 static int fix_conf(VEObj *ve,  unsigned long size)

@@ -137,6 +137,17 @@ finish:
 	return 0;
 }
 
+static int parse_tmpl_entry(char* name, CNewTemplsList* tmpl_list)
+{
+	TmplEntryEz* tmpl = new TmplEntryEz(name);
+	if (tmpl == NULL)
+		return putErr(MIG_ERR_SYSTEM, "new() : %m");
+
+	(*tmpl_list)[name] = tmpl;
+
+	return tmpl->init();
+}
+
 int process_connection(struct vzsock_ctx *ctx, int sock)
 {
 	int rc;
@@ -181,8 +192,11 @@ int process_connection(struct vzsock_ctx *ctx, int sock)
 			goto cleanup_1;
 		}
 	} else if (strcmp(p, "vzmtemplate") == 0) {
-		rc = putErr(MIG_ERR_PROTOCOL, "vzmtemplate is not supported for PCS7", p);
-		goto cleanup_1;
+		VZMoptions.bintype = BIN_DEST_TEMPL;
+		if ((g_templList = new CNewTemplsList()) == NULL) {
+			rc = putErr(MIG_ERR_SYSTEM, "new() : %m");
+			goto cleanup_1;
+		}
 	} else {
 		rc = putErr(MIG_ERR_PROTOCOL, "unknown binary %s", p);
 		goto cleanup_1;
@@ -225,9 +239,15 @@ int process_connection(struct vzsock_ctx *ctx, int sock)
 	for (p = reply + strlen(CMD_ARGUMENTS) + 1; ;p = NULL) {
 		if ((token = strtok(p, " ")) == NULL)
 			break;
-		/* process VEID:private:root record */
-		if ((rc = parse_ve_entry(token, g_veList)))
-			goto cleanup_2;
+		if (VZMoptions.bintype == BIN_DEST) {
+			/* process VEID:private:root record */
+			if ((rc = parse_ve_entry(token, g_veList)))
+				goto cleanup_2;
+		} else {
+			/* template record */
+			if ((rc = parse_tmpl_entry(token, g_templList)))
+				goto cleanup_2;
+		}
 	}
 
 	if ((rc = conn->channel.sendReply(0, "")))
@@ -238,11 +258,18 @@ int process_connection(struct vzsock_ctx *ctx, int sock)
 	print_func = print_func_old;
 
 cleanup_2:
-	delete g_veList;
-	g_veList = NULL;
+	if (VZMoptions.bintype == BIN_DEST) {
+		delete g_veList;
+		g_veList = NULL;
+	} else {
+		delete g_templList;
+		g_templList = NULL;
+	}
+
 cleanup_1:
 	delete conn;
 	conn = NULL;
+
 cleanup_0:
 	vzsock_close_conn(ctx, cn);
 

@@ -53,8 +53,8 @@ MigrateStateSrc::MigrateStateSrc(const char * src_ctid, const char * dst_ctid,
 	// We should destroy VEs in cleaner, not in destructor,
 	// 'cause in some cleaner actions on MigrateCommon destructor MigrateStateSrc doesn't
 	// exist already
-	addCleaner(clean_delEntry, dstVE, NULL, ANY_CLEANER);
-	addCleaner(clean_delEntry, srcVE, NULL, ANY_CLEANER);
+	addCleaner(clean_delVeobj, dstVE, NULL, ANY_CLEANER);
+	addCleaner(clean_delVeobj, srcVE, NULL, ANY_CLEANER);
 
 	m_convertQuota2[0] = '\0';
 }
