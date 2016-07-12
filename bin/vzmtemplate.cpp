@@ -96,6 +96,9 @@ int main(int argc, char** argv)
 
 	parse_options(argc, argv);
 
+	// Unconditionally specify template as ez
+	setOpt(OPT_EZTEMPLATE);
+
 	if (isOptSet(OPT_PS_MODE)) {
 		/*
 		   to forbid to send vzevents by libvzctl to avoid race
@@ -103,12 +106,6 @@ int main(int argc, char** argv)
 		   https://jira.sw.ru/browse/PSBM-9463
 		*/
 		vzctl2_set_flags(VZCTL_FLAG_DONT_SEND_EVT);
-	}
-
-	// Explicitly forbid std templates migration as obsoleted
-	if (!isOptSet(OPT_EZTEMPLATE)) {
-		logger(LOG_ERR, MIG_MSG_STD_TEMPL);
-		exitM(MIG_ERR_OBSOLETE);
 	}
 
 	if ((conn = new MigrateStateCommon()) == NULL) {

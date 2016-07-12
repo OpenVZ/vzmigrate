@@ -203,7 +203,7 @@ VZMIGRATE_OPTIONS \
 #define VZMTEMPLATE_USAGE								\
 "This programm is used for remote template(s) migrating\n"					\
 "Usage:\n"										\
-"\t%s [-h] [-b] [-z] [--ssh <options>] <[user@]destination_HN_address> template ...\n"
+"\t%s [-b] [-h] [--ssh <options>] <[user@]destination_HN_address> template ...\n"
 
 #define PMIGRATE_C2C_USAGE	VZMIGRATE_OPTIONS
 
