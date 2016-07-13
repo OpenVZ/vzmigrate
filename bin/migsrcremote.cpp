@@ -684,7 +684,7 @@ int MigrateStateRemote::checkRemoteVersion()
 
 int MigrateStateRemote::createKeepDstSnapshots()
 {
-	int rc;
+	int rc = 0;
 	std::list<std::string> created;
 	ct_disk disks(srcVE->m_disks.get(disk_is_non_shared));
 	// Create snapshots with predefined GUID.
