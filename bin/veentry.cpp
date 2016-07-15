@@ -77,7 +77,6 @@ VEObj::~VEObj()
 	free((void *)dumpfile);
 }
 
-#define SUSPEND_FILE "Dump"
 #define SUSPEND_DIR "dump"
 
 int VEObj::init_existed()
