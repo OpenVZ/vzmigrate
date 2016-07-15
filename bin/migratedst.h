@@ -85,6 +85,7 @@ protected:
 	int h_copy_remote_tar(const char *dst);
 
 	int registerOnHaCluster();
+	int rereadVeDisksFromConfig();
 
 	std::vector<std::string> getPhaulSrvArgs(const PhaulChannels& channels);
 	pid_t execPhaulSrv(const std::vector<std::string>& args);

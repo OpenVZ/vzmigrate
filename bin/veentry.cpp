@@ -105,21 +105,7 @@ int VEObj::init_existed()
 	layout = vzctl2_env_layout_version((char *)priv);
 
 	if (layout >= VZCTL_LAYOUT_5) {
-
-		for (std::list<ve_disk_data>::iterator it = ve_data.disks.begin();
-			it != ve_data.disks.end(); ++it) {
-			m_disks.push_back(disk_entry(*it));
-		}
-
-		for (std::list<ve_disk_data>::iterator it = ve_data.ext_disks.begin();
-			it != ve_data.ext_disks.end(); ++it) {
-			m_disks.push_back(disk_entry(*it, true));
-		}
-
-		for (std::list<ve_disk_data>::iterator it = ve_data.np_disks.begin();
-			it != ve_data.np_disks.end(); ++it) {
-			m_disks.push_back(disk_entry(*it, true, false));
-		}
+		init_disks(ve_data);
 	}
 
 	/* get veformat */
@@ -843,6 +829,30 @@ int VEObj::init_empty()
 		return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
 
 	return 0;
+}
+
+void VEObj::init_disks(const struct ve_data& data)
+{
+	this->ve_data.disks = data.disks;
+	this->ve_data.ext_disks = data.ext_disks;
+	this->ve_data.np_disks = data.np_disks;
+
+	m_disks.clear();
+
+	for (std::list<ve_disk_data>::const_iterator it = data.disks.begin();
+		it != data.disks.end(); ++it) {
+		m_disks.push_back(disk_entry(*it));
+	}
+
+	for (std::list<ve_disk_data>::const_iterator it = data.ext_disks.begin();
+		it != data.ext_disks.end(); ++it) {
+		m_disks.push_back(disk_entry(*it, true));
+	}
+
+	for (std::list<ve_disk_data>::const_iterator it = data.np_disks.begin();
+		it != data.np_disks.end(); ++it) {
+		m_disks.push_back(disk_entry(*it, true, false));
+	}
 }
 
 /* set layout for new VE */
