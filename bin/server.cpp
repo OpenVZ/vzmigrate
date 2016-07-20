@@ -437,7 +437,10 @@ static int doGoodbye(int status_, const std::string& message_)
 	{
 		// clean MigrateState Cleaners
 		migrateState->erase();
-		xdelete(migrateState);
+		if (VZMoptions.bintype == BIN_DEST_TEMPL)
+			xdelete(g_stateTempl);
+		else
+			xdelete(state);
 	}
 
 	return output;
