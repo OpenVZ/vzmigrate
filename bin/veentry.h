@@ -141,6 +141,8 @@ public:
 	virtual ~VEObj();
 	int init_existed();
 	int init_empty();
+	void init_disks(const struct ve_data& data);
+
 	int lock ();
 	void unlock();
 	int islocked();

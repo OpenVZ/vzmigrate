@@ -887,7 +887,9 @@ int MigrateStateRemote::preMigrateStage()
 	if ((rc = checkPloopFormat()))
 		return rc;
 
-	if (!isOptSet(OPT_READONLY) && isOptSet(OPT_KEEP_DST) && srcVE->layout >= VZCTL_LAYOUT_5) {
+	if (!isOptSet(OPT_READONLY) && isOptSet(OPT_KEEP_DST) &&
+		(srcVE->layout >= VZCTL_LAYOUT_5) &&
+		(VZMoptions.remote_version >= MIGRATE_VERSION_701)) {
 		if ((rc = createKeepDstSnapshots()))
 			return rc;
 	}

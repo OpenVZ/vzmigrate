@@ -755,13 +755,11 @@ int MigrateStateDstRemote::finalStage(int action)
 	if ((rc = registerOnHaCluster()))
 		return rc;
 
-	// Here we have invalid disks because .ve.layout was not copied
-	// on previous initialization.
-	// Let's use freshly created CT for simplicity.
-	VEObj ve(dstVE->ctid());
-	if ((rc = ve.init_existed()))
+	// Reread information about CT disks from config
+	if ((rc = rereadVeDisksFromConfig()))
 		return rc;
-	if ((rc = deleteKeepDstSnapshots(ve)))
+
+	if ((rc = deleteKeepDstSnapshots(*dstVE)))
 		return rc;
 
 	if (action == DSTACT_START_VE)
@@ -830,6 +828,23 @@ int MigrateStateDstRemote::registerOnHaCluster()
 		return putErr(rc, "Can't register resource %s at HA cluster", dstVE->ctid());
 
 	addCleaner(clean_unregisterOnHaCluster, dstVE, strdup(m_sHaClusterNodeID.c_str()));
+	return 0;
+}
+
+/*
+ * Information about CT disks is missing after initial read of CT config due
+ * to some peculiarity of libvzctl. Need to reread disks information later as
+ * workaround.
+ */
+int MigrateStateDstRemote::rereadVeDisksFromConfig()
+{
+	ve_data veData;
+
+	int rc = ve_data_load(dstVE->ctid(), &veData);
+	if (rc)
+		return rc;
+
+	dstVE->init_disks(veData);
 	return 0;
 }
 
