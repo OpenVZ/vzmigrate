@@ -315,10 +315,6 @@ int main(int argc, char **argv)
 	// Channel initialization
 	if (isOptSet(OPT_AGENT))
 	{
-		/* assume old client, new client will redefine version
-		   via "version" command in agent mode */
-		VZMoptions.remote_version = MIGRATE_VERSION_250;
-
 		if ((rc = vza_init_srv(&MigrateStateCommon::channel.ctx,
 				&MigrateStateCommon::channel.conn)))
 		{

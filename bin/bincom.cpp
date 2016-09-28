@@ -30,6 +30,8 @@
 #include <netdb.h>
 #include <ifaddrs.h>
 #include <net/if.h>
+#include <boost/uuid/string_generator.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 #include <vzctl/libvzctl.h>
 
@@ -1268,28 +1270,32 @@ void parse_options (int argc, char **argv)
 	}
 
 	// create bigname, that consist of src/dst addresses and list of VEs
-	// it needs to create unical (known) socket name by 'vzmpipe'
+	// it needs to be a unique (known) socket name for 'vzmpipe' and 'vzmdest' communication
 	// Only for agent mode.
 	if (isOptSet(OPT_AGENT))
 	{
 		assert(VZMoptions.src_addr && VZMoptions.dst_addr);
-		VZMoptions.bigname += VZMoptions.src_addr;
-		VZMoptions.bigname += VZMoptions.dst_addr;
+
+		std::string name = VZMoptions.src_addr;
+		name += VZMoptions.dst_addr;
 
 		if (VZMoptions.bintype == BIN_TEMPL || VZMoptions.bintype == BIN_DEST_TEMPL) {
 			for (TemplOptEntries::const_iterator it = VZMoptions.templMigrateList.begin();
 				it != VZMoptions.templMigrateList.end(); ++it)
 			{
-				VZMoptions.bigname += ":" + *it;
+				name += ":" + *it;
 			}
 		} else {
 			for (VEOptEntries::const_iterator it = VZMoptions.veMigrateList.begin();
 				it != VZMoptions.veMigrateList.end(); ++it)
 			{
-				VZMoptions.bigname += std::string(":") + (*it)->src_ctid;
-				VZMoptions.bigname += std::string(":") + (*it)->dst_ctid;
+				name += std::string(":") + (*it)->src_ctid;
+				name += std::string(":") + (*it)->dst_ctid;
 			}
 		}
+
+		boost::uuids::string_generator gen;
+		VZMoptions.bigname += boost::uuids::to_string(gen(name));
 	}
 
 	if (isOptSet(OPT_PS_MODE))

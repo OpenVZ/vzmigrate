@@ -25,6 +25,7 @@ LDFLAGS += -L/usr/kerberos/lib64
 else
 LDFLAGS += -L/usr/kerberos/lib
 endif
+LDFLAGS += -g
 
 # Set include 
 INCDIRS = vzmcontrol
