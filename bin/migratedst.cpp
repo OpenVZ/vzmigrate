@@ -154,8 +154,9 @@ int MigrateStateDstRemote::initVEMigration(VEObj * ve)
 	ve->setLayout(option_to_vzlayout(m_initOptions));
 	ve->veformat = option_to_veformat(m_initOptions);
 
-	logger(LOG_INFO, "Start of CT %s migration (private %s, root %s, opt=%d)",
-			ve->ctid(), ve->priv, ve->root, m_initOptions);
+	logger(LOG_INFO, "Start of CT %s migration (private %s, root %s, opt=%d, version remote %d, local %d)",
+		ve->ctid(), ve->priv, ve->root, m_initOptions,
+		VZMoptions.remote_version, MIGRATE_VERSION);
 
 	/* migration to 7.0 from versions lower than 612 is not supported */
 	if (VZMoptions.remote_version < MIGRATE_VERSION_612)

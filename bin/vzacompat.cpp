@@ -54,7 +54,7 @@ static int vza_open_sock(const char *sfx, int *sock)
 	char root[PATH_MAX + 1];
 
 	if (VZMoptions.version <= MIGRATE_VERSION_202 || isOptSet(OPT_AGENT40)) {
-		strcpy(root, "/");
+		strcpy(root, "");
 	} else {
 		if ((rc = get_ve_root(SERVICE_CTID, root, sizeof(root))))
 			return rc;
@@ -71,7 +71,7 @@ static int vza_open_sock(const char *sfx, int *sock)
 
 	if (connect(*sock, (sockaddr *)&addr, sizeof(addr)) < 0) {
 		rc = putErr(MIG_ERR_CONN_BROKEN,
-			"Can not connect to %s", addr.sun_path);
+			"Can not connect to %s (%s)", addr.sun_path, strerror(errno));
 		goto cleanup_0;
 	}
 //	do_noclo(*sock);
