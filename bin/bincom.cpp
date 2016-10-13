@@ -333,12 +333,12 @@ static void get_ctid_opt(const char * opt, ctid_t ctid)
 		usage();
 }
 
-static void get_ctid(char *arg, VEOptEntry *entry)
+static void get_ctid(char *arg, ctid_t ctid_)
 {
 	int rc;
 	char *name = NULL;
 
-	if ((rc = get_ctid_or_name(arg, entry->src_ctid, &name)))
+	if ((rc = get_ctid_or_name(arg, ctid_, &name)))
 		exit(-rc);
 
 	if (name) {
@@ -347,7 +347,7 @@ static void get_ctid(char *arg, VEOptEntry *entry)
 			logger(LOG_ERR, "Invalid source CT name specified: %s", arg);
 			exit(-MIG_ERR_SYSTEM);
 		}
-		SET_CTID(entry->src_ctid, ctid);
+		SET_CTID(ctid_, ctid);
 		free(name);
 	}
 }
@@ -393,12 +393,12 @@ static int ve_list_process_old(char **argv, CVZMOptions *opts)
 
 			// Read 'source' ctid
 			if ((p = strchr(arg, ':')) == NULL) {
-				get_ctid(arg, entry);
+				get_ctid(arg, entry->src_ctid);
 				SET_CTID(entry->dst_ctid, entry->src_ctid);
 				goto finish;
 			} else {
 				*p = '\0';
-				get_ctid(arg, entry);
+				get_ctid(arg, entry->src_ctid);
 				SET_CTID(entry->dst_ctid, entry->src_ctid);
 			}
 
@@ -986,13 +986,8 @@ void parse_options (int argc, char **argv)
 				   new ct name from --new_name parameter only.
 				   will ignore name (https://jira.sw.ru/browse/PCLIN-27852)
 				*/
-				char *name = NULL;
 				*p++ = '\0';
-				rc = get_ctid_or_name(p, entry->dst_ctid, &name);
-				if (rc)
-					exit(-rc);
-				if (name)
-					free(name);
+				get_ctid(p, entry->dst_ctid);
 			}
 			if ((rc = parse_UPH(argv[1],
 					&VZMoptions.dst_addr,
@@ -1206,7 +1201,7 @@ void parse_options (int argc, char **argv)
 			} else {
 				p = argv[0];
 			}
-			get_ctid(p, entry);
+			get_ctid(p, entry->src_ctid);
 
 			if (EMPTY_CTID(entry->dst_ctid))
 				SET_CTID(entry->dst_ctid, entry->src_ctid);
@@ -1216,7 +1211,7 @@ void parse_options (int argc, char **argv)
 						"with --new-* options: %s", argv[0]);
 				usage();
 			}
-			get_ctid(argv[0], entry);
+			get_ctid(argv[0], entry->src_ctid);
 
 			if (EMPTY_CTID(entry->dst_ctid))
 				SET_CTID(entry->dst_ctid, entry->src_ctid);
