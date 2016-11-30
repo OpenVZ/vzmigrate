@@ -1886,6 +1886,9 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 	if (isOptSet(OPT_KEEP_IMAGES))
 		args.push_back("--keep-images");
 
+	if (isOptSet(OPT_NOSTART))
+		args.push_back("--nostart");
+
 	return args;
 }
 
