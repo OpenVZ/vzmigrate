@@ -7,6 +7,10 @@
 
 VZMROOT = .
 
+define do_rebrand
+	sed -e "s,@PRODUCT_NAME_SHORT@,$(PRODUCT_NAME_SHORT),g" -i $(1) || exit 1;
+endef
+
 all depend ::
 	for i in ${SUBDIRS} ; do \
 		(cd $$i && ${MAKE} $@) || exit 1;\
@@ -48,8 +52,10 @@ install:: all
 
 	# install man pages
 	install -d ${DESTDIR}/${mandir}/man8
-	install -m 644 man/vzmigrate.8 man/vzmlocal.8 man/vzmsrc.8 \
-		man/vzmpipe.8 man/vzmtemplate.8 ${DESTDIR}/${mandir}/man8/
+	for man in vzmigrate.8 vzmlocal.8 vzmsrc.8 vzmpipe.8 vzmtemplate.8; do \
+		install -m 644 man/$$man ${DESTDIR}/${mandir}/man8/; \
+		$(call do_rebrand,${DESTDIR}/${mandir}/man8/$$man) \
+	done
 
 	ln -sf vzmsrc.8 ${DESTDIR}/${mandir}/man8/vzmdest.8
 	ln -sf vzmsrc.8 ${DESTDIR}/${mandir}/man8/vzmdestmpl.8
