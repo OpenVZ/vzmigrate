@@ -1270,27 +1270,37 @@ void parse_options (int argc, char **argv)
 	if (isOptSet(OPT_AGENT))
 	{
 		assert(VZMoptions.src_addr && VZMoptions.dst_addr);
+		std::size_t pos;
+		std::string compat_id;
 
-		std::string name = VZMoptions.src_addr;
-		name += VZMoptions.dst_addr;
+		VZMoptions.bigname += VZMoptions.src_addr;
+		VZMoptions.bigname += VZMoptions.dst_addr;
 
 		if (VZMoptions.bintype == BIN_TEMPL || VZMoptions.bintype == BIN_DEST_TEMPL) {
 			for (TemplOptEntries::const_iterator it = VZMoptions.templMigrateList.begin();
 				it != VZMoptions.templMigrateList.end(); ++it)
 			{
-				name += ":" + *it;
+				VZMoptions.bigname += ":" + *it;
 			}
 		} else {
 			for (VEOptEntries::const_iterator it = VZMoptions.veMigrateList.begin();
 				it != VZMoptions.veMigrateList.end(); ++it)
 			{
-				name += std::string(":") + (*it)->src_ctid;
-				name += std::string(":") + (*it)->dst_ctid;
+				compat_id = (*it)->src_ctid;
+				pos = compat_id.find("-");
+				if (pos != std::string::npos)
+					VZMoptions.bigname += std::string(":") + compat_id.substr(0, pos);
+				else
+					VZMoptions.bigname += std::string(":") + (*it)->src_ctid;
+
+				compat_id = (*it)->dst_ctid;
+				pos = compat_id.find("-");
+				if (pos != std::string::npos)
+					VZMoptions.bigname += std::string(":") + compat_id.substr(0, pos);
+				else
+					VZMoptions.bigname += std::string(":") + (*it)->dst_ctid;
 			}
 		}
-
-		boost::uuids::string_generator gen;
-		VZMoptions.bigname += boost::uuids::to_string(gen(name));
 	}
 
 	if (isOptSet(OPT_PS_MODE))
