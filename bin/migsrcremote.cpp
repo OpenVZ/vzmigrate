@@ -1851,8 +1851,10 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 	// Explicitly enable or disable predumps creation (iterations)
 	if (isOptSet(OPT_NOITER))
 		args.push_back("--no-pre-dump");
-	else
+	else {
 		args.push_back("--pre-dump");
+		args.push_back("--auto-dedup");
+	}
 
 	// Specify force option to skip cpu compatibility checks if needed
 	if (isOptSet(OPT_SKIP_CHECKCPU))
