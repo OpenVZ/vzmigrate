@@ -7,6 +7,8 @@
 
 VZMROOT = .
 
+include ${VZMROOT}/Makefile.inc
+
 define do_rebrand
 	sed -e "s,@PRODUCT_NAME_SHORT@,$(PRODUCT_NAME_SHORT),g" -i $(1) || exit 1;
 endef

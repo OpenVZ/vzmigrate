@@ -64,8 +64,6 @@ ifeq "$(TARCH)" "ia64"
 CXXFLAGS += -D_REENTRANT
 endif
 
-PRODUCT_NAME_SHORT?=OpenVZ
-
 #.SUFFIXES: .o .cpp .c
 
 #.c.o:
