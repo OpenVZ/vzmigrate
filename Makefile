@@ -7,7 +7,7 @@
 
 VZMROOT = .
 
-include ${VZMROOT}/Makefile.inc
+include ${VZMROOT}/Makefile.incl
 
 define do_rebrand
 	sed -e "s,@PRODUCT_NAME_SHORT@,$(PRODUCT_NAME_SHORT),g" -i $(1) || exit 1;
@@ -32,7 +32,7 @@ mandir ?=		/usr/share/man/
 datadir ?=		/usr/share/pmigrate/
 logrotatedir ?=		/etc/logrotate.d/
 
-include ${VZMROOT}/Makefile.incl
+include ${VZMROOT}/Makefile.inc
 
 install:: all
 

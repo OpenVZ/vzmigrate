@@ -4,7 +4,7 @@ OBJ = common.o
 SOURCE = $(OBJ:.o=.c)
 TARGET = ${LIBVZM}
 
-include ${VZMROOT}/Makefile.incl
+include ${VZMROOT}/Makefile.inc
 
 all:: ${TARGET} Makefile
 

@@ -51,7 +51,7 @@ PROGS = ${TRG_VZMPIPE} ${TRG_VZMLOCAL} ${TRG_VZMSRC} ${TRG_VZMDEST} \
 
 OBJ = ${OBJPIPE} ${OBJLOCAL} ${OBJDST} ${OBJSRC} ${OBJTEMPL} ${OBJVZAC} ${OBJMIGRATE} ${OBJC}
 
-include ${VZMROOT}/Makefile.incl
+include ${VZMROOT}/Makefile.inc
 
 all:: ${PROGS}
 
