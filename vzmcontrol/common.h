@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2001-2016 Parallels IP Holdings GmbH
+ * Copyright (c) 2001-2017, Parallels International GmbH
  *
  * Common programm undependent routines.
  *
@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301, USA.
  *
- * Our contact details: Parallels IP Holdings GmbH, Vordergasse 59, 8200
+ * Our contact details: Parallels International GmbH, Vordergasse 59, 8200
  * Schaffhausen, Switzerland.
  *
  */

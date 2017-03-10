@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2001-2003 by SWsoft
+# Copyright (c) 2001-2017, Parallels International GmbH.
 # All rights reserved.
 #
 # Makefile for migrate
