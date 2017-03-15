@@ -1,5 +1,4 @@
-/* $Id$
- *
+/*
  * Copyright (c) 2006-2017, Parallels International GmbH
  *
  * This file is part of OpenVZ. OpenVZ is free software; you can redistribute
