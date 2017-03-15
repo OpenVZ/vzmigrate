@@ -1,6 +1,6 @@
 # $Id$
 #
-# Copyright (c) 2002 by SWsoft
+# Copyright (c) 2002-2017, Parallels International GmbH
 # All rights reserved.
 #
 # Makefile for vzt-common (for build at freeBSD)
