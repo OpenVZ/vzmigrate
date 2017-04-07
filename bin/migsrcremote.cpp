@@ -1871,8 +1871,11 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 		args.push_back(secondaryDisksArg);
 	}
 
+	std::string dumpdir(vzcnf->dumpdir);
+	dumpdir.append("/").append(srcVE->ctid());
+
 	args.push_back("--img-path");
-	args.push_back(vzcnf->dumpdir);
+	args.push_back(dumpdir);
 
 	// Specify path to phaul log
 	args.push_back("--log-file");
