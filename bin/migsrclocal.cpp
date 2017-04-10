@@ -1129,20 +1129,24 @@ int MigrateStateLocal::ploopCtMove()
 	struct string_list exclude;
 	char path[PATH_MAX];
 	std::map<std::string, bundle>::const_iterator itb;
+	bool run = srcVE->isrun();
 
 	string_list_init(&exclude);
 
 	if (!is_thesame_location) {
-		// #TODO snapshot only internal disks
-		rc = srcVE->tsnapshot(srcVE->gen_snap_guid());
-		if (rc)
-			goto err;
+		if (run) {
+			// #TODO snapshot only internal disks
+			rc = srcVE->tsnapshot(srcVE->gen_snap_guid());
+			if (rc)
+				goto err;
+			addCleaner(clean_deleteSnapshot, srcVE,
+					srcVE->snap_guid(), ERROR_CLEANER);
 
-		addCleaner(clean_deleteSnapshot, srcVE,	srcVE->snap_guid(), ERROR_CLEANER);
-
-		rc = getActivePloopDelta(srcVE->m_disks.get(disk_is_internal), &exclude);
-		if (rc)
-			goto err;
+			rc = getActivePloopDelta(srcVE->m_disks.
+					get(disk_is_internal), &exclude);
+			if (rc)
+				goto err;
+		}
 
 		rc = copy_local(rsync_dir(srcVE->priv).c_str(),
 				dstVE->priv, &exclude);
@@ -1151,10 +1155,15 @@ int MigrateStateLocal::ploopCtMove()
 	}
 
 	/* suspend CT */
-	if (srcVE->isrun() && (rc = stopVE()))
+	if (run && (rc = stopVE()))
 		goto err;
 
-	if (!is_thesame_location) {
+	if (is_thesame_location) {
+		logger(LOG_ERR, "Move %s %s", srcVE->priv, dstVE->priv);
+		rc = h_rename(srcVE->priv, dstVE->priv);
+		if (rc)
+			goto err;
+	} else if (run) {
 		struct string_list_el *e;
 		char dst[PATH_MAX];
 
@@ -1172,11 +1181,6 @@ int MigrateStateLocal::ploopCtMove()
 
 		// #TODO umount instead
 		srcVE->tsnapshot_delete(srcVE->snap_guid());
-
-	} else {
-		rc = h_rename(srcVE->priv, dstVE->priv);
-		if (rc)
-			goto err;
 	}
 
 	// rename bundles
