@@ -323,26 +323,27 @@ int MigrateStateCommon::h_rename(const char * src, const char * dst)
 }
 
 // single file backup
-int MigrateStateCommon::h_backup(const char * src)
+int MigrateStateCommon::h_backup(const char *src)
 {
 	int rc;
 	char tmpdir[PATH_MAX+1];
 	char path[PATH_MAX + 1];
 	int fd;
-	string tmp;
+	char *p;
 
-	/* get temporary directory */
-	if (get_tmp_dir(tmpdir, sizeof(tmpdir)))
-		tmpdir[0] = '\0';
+	if (strlen(src) >= sizeof(tmpdir))
+		return putErr(MIG_ERR_SYSTEM, "h_backup: string overflow");
+
+	strcpy(tmpdir, src);
+	p = strrchr(tmpdir, '/' );
+	if (p != NULL)
+		*p = '\0';
 
 	snprintf(path, sizeof(path), "%s/vzmtmpfile.XXXXXX", tmpdir);
 	if ((fd = mkstemp(path)) == -1)
 			return putErr(MIG_ERR_SYSTEM, "mkstemp(%s) : %m", path);
 	close(fd);
-	tmp = path;
 
-	// save for cleaning
-	tmpFiles.push_back(tmp);
 	if ((rc = copy_file(path, src)))
 		return rc;
 	// add clean renamer
