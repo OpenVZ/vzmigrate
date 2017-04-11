@@ -442,36 +442,22 @@ int MigrateStateLocal::preFinalStage()
 	int rc;
 	START_STAGE();
 
-	logger(LOG_INFO, "Copying/modifying config scripts of CT %s ...",
-		srcVE->ctid());
-
-	if (is_thesame_ctid) {
-		/* create config backup */
+	if (!isOptSet(OPT_COPY)) {
+		/* Backup src config */
 		if ((rc = h_backup(dstVE->confRealPath().c_str())))
 			return rc;
-		/* modify original config */
-		unlink(dstVE->confPath().c_str());
-		if ((rc = copy_file(dstVE->confPath().c_str(),
-				dstVE->confRealPath().c_str())))
-			return rc;
-		if ((rc = dstVE->updateConfig(VE_CONF_PRIV, dstVE->getPrivateConf().c_str())))
-			return rc;
-		if ((rc = dstVE->updateConfig(VE_CONF_ROOT, dstVE->getRootConf().c_str())))
-			return rc;
-	} else if (!isOptSet(OPT_COPY)) {
-		/* rewrote symlink to ve config by original file for VE moving.
-		   It's needs for vzctl destroy */
-		if (access(dstVE->confRealPath().c_str(), F_OK))
-			return putErr(MIG_ERR_COPY, "File not found: %s",
-				dstVE->confRealPath().c_str());
-		unlink(srcVE->confPath().c_str());
-		if (copy_file(srcVE->confPath().c_str(),
-				dstVE->confRealPath().c_str()))
-			return putErr(MIG_ERR_COPY, MIG_MSG_COPY_FILE,
-				dstVE->confRealPath().c_str(),
-				srcVE->confPath().c_str(),
-				getError());
 	}
+
+	logger(LOG_INFO, "Copying/modifying config scripts of CT %s ...",
+		srcVE->ctid());
+	if (is_thesame_ctid) {
+		if ((rc = h_backup(dstVE->confPath().c_str())))
+			return rc;
+	}
+
+	logger(LOG_INFO, "Register CT", srcVE->ctid());
+	if ((rc = dstVE->registration()))
+		return rc;
 
 	rc = updateDiskPath();
 	if (rc)
@@ -479,7 +465,7 @@ int MigrateStateLocal::preFinalStage()
 
 	if ((dstVE->ve_data.name == NULL) && (!isOptSet(OPT_COPY))) {
 		/* New name for target VE does not defined.
-		Try to get name of source VE. */
+		   Try to get name of source VE. */
 		if (srcVE->ve_data.name)
 			dstVE->ve_data.name = strdup(srcVE->ve_data.name);
 	}
@@ -524,11 +510,6 @@ int MigrateStateLocal::preFinalStage()
 		}
 	}
 
-	/* vzctl register for new layout VE */
-	if ((rc = dstVE->veRegister()))
-		return rc;
-	if (!isOptSet(OPT_COPY))
-		addCleaner(clean_registerVE, srcVE);
 
 	/*
 	 * Update MAC-addresses for all network interfaces in cloned VE (#PSBM-15447).
@@ -1129,20 +1110,24 @@ int MigrateStateLocal::ploopCtMove()
 	struct string_list exclude;
 	char path[PATH_MAX];
 	std::map<std::string, bundle>::const_iterator itb;
+	bool run = srcVE->isrun();
 
 	string_list_init(&exclude);
 
 	if (!is_thesame_location) {
-		// #TODO snapshot only internal disks
-		rc = srcVE->tsnapshot(srcVE->gen_snap_guid());
-		if (rc)
-			goto err;
+		if (run) {
+			// #TODO snapshot only internal disks
+			rc = srcVE->tsnapshot(srcVE->gen_snap_guid());
+			if (rc)
+				goto err;
+			addCleaner(clean_deleteSnapshot, srcVE,
+					srcVE->snap_guid(), ERROR_CLEANER);
 
-		addCleaner(clean_deleteSnapshot, srcVE,	srcVE->snap_guid(), ERROR_CLEANER);
-
-		rc = getActivePloopDelta(srcVE->m_disks.get(disk_is_internal), &exclude);
-		if (rc)
-			goto err;
+			rc = getActivePloopDelta(srcVE->m_disks.
+					get(disk_is_internal), &exclude);
+			if (rc)
+				goto err;
+		}
 
 		rc = copy_local(rsync_dir(srcVE->priv).c_str(),
 				dstVE->priv, &exclude);
@@ -1151,10 +1136,15 @@ int MigrateStateLocal::ploopCtMove()
 	}
 
 	/* suspend CT */
-	if (srcVE->isrun() && (rc = stopVE()))
+	if (run && (rc = stopVE()))
 		goto err;
 
-	if (!is_thesame_location) {
+	if (is_thesame_location) {
+		logger(LOG_ERR, "Move %s %s", srcVE->priv, dstVE->priv);
+		rc = h_rename(srcVE->priv, dstVE->priv);
+		if (rc)
+			goto err;
+	} else if (run) {
 		struct string_list_el *e;
 		char dst[PATH_MAX];
 
@@ -1172,11 +1162,6 @@ int MigrateStateLocal::ploopCtMove()
 
 		// #TODO umount instead
 		srcVE->tsnapshot_delete(srcVE->snap_guid());
-
-	} else {
-		rc = h_rename(srcVE->priv, dstVE->priv);
-		if (rc)
-			goto err;
 	}
 
 	// rename bundles
