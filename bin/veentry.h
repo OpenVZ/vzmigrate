@@ -162,7 +162,7 @@ public:
 	int cmd_restore();
 	int unSet(const char *param);
 	int updateConfig(const char *param, const char *uuid = NULL);
-	int registration();
+	int registration(const char *uuid = NULL);
 	int unregister();
 	int createDevmap();
 

@@ -456,7 +456,7 @@ int MigrateStateLocal::preFinalStage()
 	}
 
 	logger(LOG_INFO, "Register CT", srcVE->ctid());
-	if ((rc = dstVE->registration()))
+	if ((rc = dstVE->registration(m_uuid)))
 		return rc;
 
 	rc = updateDiskPath();
