@@ -55,6 +55,7 @@ protected:
 	static int clean_rollbackIPs(const void * arg, const void *);
 	static int clean_deletePloopSnapshot(const void * arg, const void * arg2);
 	static int clean_registerVE(const void * arg1, const void * arg2);
+	static int clean_register(const void * arg1, const void * arg2);
 	static int clean_deleteSnapshot(const void * arg1, const void * arg2);
 
 	int exchangeKeeperIPs();

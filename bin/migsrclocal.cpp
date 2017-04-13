@@ -442,33 +442,23 @@ int MigrateStateLocal::preFinalStage()
 	int rc;
 	START_STAGE();
 
-	if (!isOptSet(OPT_COPY)) {
-		/* Backup src config */
-		if ((rc = h_backup(dstVE->confRealPath().c_str())))
-			return rc;
-	}
-
-	logger(LOG_INFO, "Copying/modifying config scripts of CT %s ...",
-		srcVE->ctid());
-	if (is_thesame_ctid) {
-		if ((rc = h_backup(dstVE->confPath().c_str())))
-			return rc;
-	}
+	/* Try to get source VE name if target VE name is not defined. */
+	if (dstVE->ve_data.name == NULL && srcVE->ve_data.name != NULL&&
+			(!isOptSet(OPT_COPY))) 
+		dstVE->ve_data.name = strdup(srcVE->ve_data.name);
 
 	logger(LOG_INFO, "Register CT", srcVE->ctid());
 	if ((rc = dstVE->registration(m_uuid)))
 		return rc;
 
+        if (!is_thesame_location)
+                addCleaner(clean_register, srcVE);
+
+	logger(LOG_INFO, "Copying/modifying config scripts of CT %s ...",
+			srcVE->ctid());
 	rc = updateDiskPath();
 	if (rc)
 		return rc;
-
-	if ((dstVE->ve_data.name == NULL) && (!isOptSet(OPT_COPY))) {
-		/* New name for target VE does not defined.
-		   Try to get name of source VE. */
-		if (srcVE->ve_data.name)
-			dstVE->ve_data.name = strdup(srcVE->ve_data.name);
-	}
 
 	if (srcVE->ve_data.ha_enable) {
 		if (isOptSet(OPT_COPY)) {
@@ -567,12 +557,6 @@ int MigrateStateLocal::postFinalStage()
 		strbuf.append("/.uptime");
 		clean_removeFile(strbuf.c_str(), NULL);
 	}
-
-	/* set ve name */
-	if (dstVE->ve_data.name)
-		if ((rc = dstVE->setName(dstVE->ve_data.name)))
-			return putErr(rc, MIG_MSG_SET_DST_NAME, dstVE->ve_data.name);
-
 
 	if (isOptSet(OPT_COPY)) {
 		/* to execute /etc/sysconfig/vz-scripts/vps.clone
@@ -1139,8 +1123,12 @@ int MigrateStateLocal::ploopCtMove()
 	if (run && (rc = stopVE()))
 		goto err;
 
+	if ((rc = h_backup(srcVE->confRealPath().c_str())))
+		goto err;
+
 	if (is_thesame_location) {
 		logger(LOG_ERR, "Move %s %s", srcVE->priv, dstVE->priv);
+		addCleaner(clean_register, srcVE);
 		rc = h_rename(srcVE->priv, dstVE->priv);
 		if (rc)
 			goto err;
