@@ -658,7 +658,7 @@ int VEObj::veRegister()
 	return registration();
 }
 
-int VEObj::registration()
+int VEObj::registration(const char *uuid)
 {
 	// will rewrite old owner on force registration
 	// vzmigrate will itself to register CT on HA cluster
@@ -667,9 +667,11 @@ int VEObj::registration()
 	struct vzctl_reg_param reg;
 	memset(&reg, 0, sizeof(struct vzctl_reg_param));
 	SET_CTID(reg.ctid, ctid());
+	reg.uuid = uuid;
+	reg.name = ve_data.name;
 
-	logger(LOG_DEBUG, "vzctl2_env_register(%s, %s, %d)",
-			priv, ctid(), flags);
+	logger(LOG_DEBUG, "vzctl2_env_register(%s ctid='%s' uuid='%s' name='%s' %d)",
+			priv, ctid(), uuid?: "", ve_data.name ?: "", flags);
 
 	if (vzctl2_env_register((char *)priv, &reg, flags) == -1)
 		return putErr(MIG_ERR_VZCTL,

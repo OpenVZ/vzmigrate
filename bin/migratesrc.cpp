@@ -208,6 +208,13 @@ int MigrateStateSrc::clean_registerVE(const void * arg1, const void *)
 	return 0;
 }
 
+int MigrateStateSrc::clean_register(const void * arg1, const void *)
+{
+	VEObj *ve = (VEObj *)arg1;
+	logger(LOG_DEBUG, "Register CT %s", ve->ctid());
+	return ve->registration();
+}
+
 /* exclude active delta */
 int MigrateStateSrc::excludeActiveDelta(const char *dd_xml, char *path,
 		size_t size)
