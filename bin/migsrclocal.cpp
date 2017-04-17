@@ -411,19 +411,6 @@ int MigrateStateLocal::preMigrateStage()
 
 		if ((rc = dstVE->prepareConfig()))
 			return rc;
-		if (isOptSet(OPT_COPY)) {
-			/* regenerate uuid if not provided in clone mode */
-			if (uuid.empty()) {
-				char u[39] = "";
-
-				gen_uuid(u);
-				logger(LOG_INFO, "Generate CT uuid %s", u);
-				uuid = u;
-			}
-		}
-
-		if ((rc = dstVE->updateConfig(VE_CONF_UUID, uuid.empty() ? NULL : uuid.c_str())))
-			return rc;
 	}
 
 	/* load config data of destination VE */
@@ -439,16 +426,27 @@ int MigrateStateLocal::preMigrateStage()
 
 int MigrateStateLocal::preFinalStage()
 {
+	char u[39] = "";
+	const char *uuid = m_uuid;
 	int rc;
 	START_STAGE();
 
-	/* Try to get source VE name if target VE name is not defined. */
+	/* Try to get source VE name if target VE name is not defined.
 	if (dstVE->ve_data.name == NULL && srcVE->ve_data.name != NULL&&
 			(!isOptSet(OPT_COPY))) 
 		dstVE->ve_data.name = strdup(srcVE->ve_data.name);
+	*/
 
-	logger(LOG_INFO, "Register CT", srcVE->ctid());
-	if ((rc = dstVE->registration(m_uuid)))
+	if (isOptSet(OPT_COPY)) {
+		/* regenerate uuid if not provided in clone mode */
+		if (m_uuid == NULL) {
+			gen_uuid(u);
+			uuid = u;
+		}
+	}
+
+	logger(LOG_INFO, "Register CT %s uuid=%s", dstVE->ctid(), uuid ?: "");
+	if ((rc = dstVE->registration(uuid)))
 		return rc;
 
         if (!is_thesame_location)
@@ -500,14 +498,19 @@ int MigrateStateLocal::preFinalStage()
 		}
 	}
 
-
+	if (isOptSet(OPT_COPY)) {
 	/*
 	 * Update MAC-addresses for all network interfaces in cloned VE (#PSBM-15447).
 	 * XXX: do it after veRegister(), otherwize vzctl fails to update MACs.
 	 */
-	if (isOptSet(OPT_COPY)) {
 		if ((rc = dstVE->updateMAC()))
 			return rc;
+
+		/* remove src NAME */
+		if (dstVE->ve_data.name == NULL) {
+			if ((rc = dstVE->updateConfig(VE_CONF_NAME, NULL)))
+				return rc;
+		}
 	}
 
 	END_STAGE();
