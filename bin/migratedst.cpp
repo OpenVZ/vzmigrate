@@ -739,6 +739,13 @@ int MigrateStateDstRemote::finalVEtuning()
 			return rc;
 	}
 
+	if (m_initOptions & MIGINIT_KEEP_SRC) {
+		if (dstVE->mount() == 0) {
+			regenerate_fs_uuid(dstVE->root);
+			dstVE->umount();
+		}
+	}
+
 	logger(LOG_INFO, "End of CT %s migration", dstVE->ctid());
 	return rc;
 }

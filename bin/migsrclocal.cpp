@@ -519,22 +519,6 @@ int MigrateStateLocal::preFinalStage()
 
 const char* const vzaEnvEIDPath = "/.vza/eid.conf";
 
-int MigrateStateLocal::regenerate_fs_uuid()
-{
-	char device[PATH_MAX+1];
-	char * const args[] =
-		{(char *)"tune2fs", (char *)"-U", (char *)"random", device, NULL};
-
-	logger(LOG_INFO, "Generate a new fs uuid...");
-	if (ploop_get_partition_by_mnt((char *)dstVE->root, device, sizeof(device)))
-		return putErr(MIG_ERR_SYSTEM, "ploop_get_dev_by_mnt() : %s", ploop_get_last_error());
-	/* should be done on unmounted fs */
-	if (::umount(dstVE->root))
-		return putErr(MIG_ERR_SYSTEM, "Failed to unmount %s: %m", dstVE->root);
-
-	return vzm_execve(args, NULL, -1, -1, NULL);
-}
-
 int MigrateStateLocal::postFinalStage()
 {
 	int rc;
@@ -582,7 +566,7 @@ int MigrateStateLocal::postFinalStage()
 
 		/* change FS uuid for cloned CT (https://jira.sw.ru/browse/PSBM-11961) */
 		if (dstVE->mount() == 0) {
-			regenerate_fs_uuid();
+			MigrateStateCommon::regenerate_fs_uuid(dstVE->root);
 			dstVE->umount();
 		} else {
 			logger(LOG_ERR, "CT mount failed, can not change disk uuid");

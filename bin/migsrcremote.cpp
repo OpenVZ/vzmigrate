@@ -654,6 +654,8 @@ int MigrateStateRemote::sendInitCmd()
 	options |= vzlayout_to_option(srcVE->layout);
 	options |= veformat_to_option(srcVE->veformat);
 	options |= isOptSet(OPT_KEEP_DST) ? MIGINIT_KEEP_DST : 0;
+	if (isOptSet(OPT_KEEP_SRC))
+		options |= MIGINIT_KEEP_SRC; 
 
 	return channel.sendCommand(CMD_INIT " %s %d", dstVE->ctid(), options);
 }
