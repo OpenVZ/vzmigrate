@@ -155,6 +155,7 @@ public:
 	int checkDstIDFree(const VEObj &ve);
 	int checkCommonDst(const VEObj &ve);
 	int deleteKeepDstSnapshots(const VEObj &ve);
+	int regenerate_fs_uuid(const char *root);
 
 public:
 	int h_copy(const char * src, const char * dst);

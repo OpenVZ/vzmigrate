@@ -288,6 +288,7 @@ enum {
 	MIGINIT_LAYOUT_5	= (1<<3),
 	MIGINIT_SIMFS		= (1<<4),
 	MIGINIT_CONVERT_VZFS	= (1<<5),
+	MIGINIT_KEEP_SRC	= (1<<6),
 };
 
 int vzlayout_to_option(int layout);

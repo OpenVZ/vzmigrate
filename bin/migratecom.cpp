@@ -36,6 +36,7 @@
 #include <stdarg.h>
 #include <sys/ioctl.h>
 #include <sstream>
+#include <sys/mount.h>
 
 #include "remotecmd.h"
 #include "migratecom.h"
@@ -1093,6 +1094,23 @@ int MigrateStateCommon::deleteKeepDstSnapshots(const VEObj &ve)
 		}
 	}
 	return result;
+}
+
+int MigrateStateCommon::regenerate_fs_uuid(const char *root)
+{
+	char device[PATH_MAX+1];
+	char *const args[] =
+	{(char *)"tune2fs", (char *)"-U", (char *)"random", device, NULL};
+
+	logger(LOG_INFO, "Generate a new fs uuid...");
+	if (ploop_get_partition_by_mnt((char *)root, device, sizeof(device)))
+		return putErr(MIG_ERR_SYSTEM, "ploop_get_dev_by_mnt() : %s",
+				ploop_get_last_error());
+	/* should be done on unmounted fs */
+	if (::umount(root))
+		return putErr(MIG_ERR_SYSTEM, "Failed to unmount %s: %m", root);
+
+	return vzm_execve(args, NULL, -1, -1, NULL);
 }
 
 int is_path_on_shared_storage(const char *path, int *is_shared, long *fstype)
