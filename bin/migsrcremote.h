@@ -117,6 +117,7 @@ private:
 
 	int doOfflinePloopCtMigration();
 	int doOfflineSimfsCtMigration();
+	int doPloopCtClone();
 	int doOnlinePloopCtMigration();
 	int doLegacyOnlinePloopCtMigration();
 
@@ -133,6 +134,7 @@ private:
 
 	int sendHaClusterID();
 	void unregisterHA();
+	int backup_dd_xml(const ct_disk &disks);
 	int copy_disk(const ct_disk &disks, struct string_list *exclude);
 	int copy_ve_layout();
 	int copy_ct(struct string_list *exclude);

@@ -565,11 +565,14 @@ int MigrateStateRemote::doCtMigration()
 	if (rc)
 		goto error;
 
-	// Handle migration of desired type
-	if ((srcVE->isrun()) && (srcVE->layout >= VZCTL_LAYOUT_5) &&
-		(VZMoptions.remote_version >= MIGRATE_VERSION_700))
-		rc = doCtMigrationPhaul();
-	else
+	if (srcVE->isrun() && srcVE->layout >= VZCTL_LAYOUT_5 &&
+			VZMoptions.remote_version >= MIGRATE_VERSION_700)
+	{
+		if (isOptSet(OPT_KEEP_SRC))
+			rc = doPloopCtClone();
+		else
+			rc = doCtMigrationPhaul();
+	} else
 		rc = doCtMigrationDefault();
 
 	if (rc)
@@ -1390,6 +1393,26 @@ int MigrateStateRemote::copy_remote(const char *src, struct string_list *exclude
 	return rc;
 }
 
+int MigrateStateRemote::backup_dd_xml(const ct_disk &disks)
+{
+	int rc;
+
+	for (ct_disk::const_iterator it = disks.begin();
+			it != disks.end(); ++it)
+	{
+		std::string s = get_dd_xml(it->image.c_str());
+		std::string d = s + ".mig";
+
+		rc = copy_file(d.c_str(), s.c_str());
+		if (rc)
+			return rc;
+
+		addCleanerRemove(clean_removeFile, d.c_str(), ANY_CLEANER);
+	}
+
+	return 0;
+}
+		
 int MigrateStateRemote::copy_disk(const ct_disk &disks, struct string_list *exclude)
 {
 	for (ct_disk::const_iterator it = disks.begin();
@@ -1642,6 +1665,37 @@ int MigrateStateRemote::doOfflinePloopCtMigration()
 int MigrateStateRemote::doOfflineSimfsCtMigration()
 {
 	return copy_ct(NULL);
+}
+
+int MigrateStateRemote::doPloopCtClone()
+{
+	int rc;
+	StringListWrapper active_delta;
+
+	rc = backup_dd_xml(srcVE->m_disks);
+	if (rc)
+		return rc;
+
+	rc = srcVE->tsnapshot(srcVE->gen_snap_guid());
+	if (rc)
+		return rc;
+
+	addCleaner(clean_deleteSnapshot, srcVE, srcVE->snap_guid(), ANY_CLEANER);
+
+	rc = getActivePloopDelta(srcVE->m_disks.get(disk_is_non_shared),
+		&active_delta.getList());
+	if (rc)
+		return rc;
+
+	rc = copy_ct(&active_delta.getList());
+	if (rc)
+		return rc;
+
+	rc = srcVE->tsnapshot_delete(srcVE->snap_guid());
+	if (rc)
+		return rc;
+
+	return channel.sendCommand(CMD_FINAL " %d", DSTACT_NOTHING);
 }
 
 /* Handle online migration using p.haul */

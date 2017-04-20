@@ -729,6 +729,25 @@ int MigrateStateDstRemote::copySetConf()
 	return rc;
 }
 
+int MigrateStateDstRemote::restore_dd_xml(const ct_disk &disks)
+{
+	int rc;
+
+	for (ct_disk::const_iterator it = disks.begin();
+			it != disks.end(); ++it)
+	{
+		std::string d = get_dd_xml(it->image.c_str());
+		std::string s = d + ".mig";
+
+		logger(LOG_INFO, "Restore %s", d.c_str());
+		if (::rename(s.c_str(), d.c_str()) && errno != ENOENT)
+			return putErr(MIG_ERR_SYSTEM, "rename(%s, %s) : %m",
+					s.c_str(), d.c_str());
+	}
+
+	return 0;
+}
+
 /* final VE operation before start/mounting */
 int MigrateStateDstRemote::finalVEtuning()
 {
@@ -740,6 +759,10 @@ int MigrateStateDstRemote::finalVEtuning()
 	}
 
 	if (m_initOptions & MIGINIT_KEEP_SRC) {
+		rc = restore_dd_xml(dstVE->m_disks);
+		if (rc)
+			return rc;
+
 		if (dstVE->mount() == 0) {
 			regenerate_fs_uuid(dstVE->root);
 			dstVE->umount();
