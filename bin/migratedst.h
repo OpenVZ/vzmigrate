@@ -149,6 +149,7 @@ public:
 
 	int copySetConf();
 
+	int restore_dd_xml(const ct_disk &disks);
 	/* final VE operation before start/mounting */
 	int finalVEtuning();
 	int finalStage(int action);
