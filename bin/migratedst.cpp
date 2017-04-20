@@ -767,6 +767,10 @@ int MigrateStateDstRemote::finalVEtuning()
 			regenerate_fs_uuid(dstVE->root);
 			dstVE->umount();
 		}
+	
+		rc = dstVE->renewMAC();
+		if (rc)
+			return rc;
 	}
 
 	logger(LOG_INFO, "End of CT %s migration", dstVE->ctid());
