@@ -174,7 +174,7 @@ public:
 	int issuspended();
 
 	/* register ve with new layout */
-	int veRegister();
+	int veRegister(const char *uuid = NULL);
 	/* exec post create VE action: randomize cron too */
 	int ExecPostCreate();
 
