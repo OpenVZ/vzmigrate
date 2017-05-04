@@ -630,7 +630,7 @@ void VEObj::clean()
    Rewrote config in private by valid config content, remove
    config from etc and 'register' VE.
 */
-int VEObj::veRegister()
+int VEObj::veRegister(const char *uuid)
 {
 	int rc;
 	char tmpfile[PATH_MAX + 1];
@@ -655,7 +655,7 @@ int VEObj::veRegister()
 		unlink(tmpfile);
 
 	/* vzctl register for new layout VE */
-	return registration();
+	return registration(uuid);
 }
 
 int VEObj::registration(const char *uuid)
