@@ -446,6 +446,20 @@ int MigrateStateLocal::preFinalStage()
 	} else if (NULL == uuid && !is_thesame_ctid) {
 		uuid = dstVE->ctid();
 	}
+	if (is_thesame_ctid) {
+		/* create config backup */
+		if ((rc = h_backup(dstVE->confRealPath().c_str())))
+			return rc;
+		/* modify original config */
+		unlink(dstVE->confPath().c_str());
+		if ((rc = copy_file(dstVE->confPath().c_str(),
+			dstVE->confRealPath().c_str())))
+			return rc;
+		if ((rc = dstVE->updateConfig(VE_CONF_PRIV, dstVE->getPrivateConf().c_str())))
+			return rc;
+		if ((rc = dstVE->updateConfig(VE_CONF_ROOT, dstVE->getRootConf().c_str())))
+			return rc;
+	}
 
 	logger(LOG_INFO, "Copying/modifying config scripts of CT %s ...",
 			srcVE->ctid());
