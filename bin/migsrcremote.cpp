@@ -729,6 +729,9 @@ int MigrateStateRemote::preMigrateStage()
 	if ((rc = srcVE->init_existed()))
 		return rc;
 
+	if (isOptSet(OPT_AGENT) && isOptSet(OPT_ONLINE) && !srcVE->isrun())
+		unSetOpt(OPT_ONLINE);
+
 	if (!isOptSet(OPT_READONLY)) {
 		if ((rc = srcVE->lock()))
 			return rc;
