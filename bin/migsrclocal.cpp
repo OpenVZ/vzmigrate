@@ -443,20 +443,36 @@ int MigrateStateLocal::preFinalStage()
 			gen_uuid(u);
 			uuid = u;
 		}
+	} else if (NULL == uuid && !is_thesame_ctid) {
+		uuid = dstVE->ctid();
 	}
-
-	logger(LOG_INFO, "Register CT %s uuid=%s", dstVE->ctid(), uuid ?: "");
-	if ((rc = dstVE->registration(uuid)))
-		return rc;
-
-        if (!is_thesame_location)
-                addCleaner(clean_register, srcVE);
+	if (is_thesame_ctid) {
+		/* create config backup */
+		if ((rc = h_backup(dstVE->confRealPath().c_str())))
+			return rc;
+		/* modify original config */
+		unlink(dstVE->confPath().c_str());
+		if ((rc = copy_file(dstVE->confPath().c_str(),
+			dstVE->confRealPath().c_str())))
+			return rc;
+		if ((rc = dstVE->updateConfig(VE_CONF_PRIV, dstVE->getPrivateConf().c_str())))
+			return rc;
+		if ((rc = dstVE->updateConfig(VE_CONF_ROOT, dstVE->getRootConf().c_str())))
+			return rc;
+	}
 
 	logger(LOG_INFO, "Copying/modifying config scripts of CT %s ...",
 			srcVE->ctid());
 	rc = updateDiskPath();
 	if (rc)
 		return rc;
+
+	logger(LOG_INFO, "Register CT %s uuid=%s", dstVE->ctid(), uuid ?: "");
+	if ((rc = dstVE->veRegister(uuid)))
+		return rc;
+
+        if (!is_thesame_location)
+                addCleaner(clean_register, srcVE);
 
 	if (srcVE->ve_data.ha_enable) {
 		if (isOptSet(OPT_COPY)) {
@@ -505,12 +521,12 @@ int MigrateStateLocal::preFinalStage()
 	 */
 		if ((rc = dstVE->updateMAC()))
 			return rc;
-
-		/* remove src NAME */
-		if (dstVE->ve_data.name == NULL) {
-			if ((rc = dstVE->updateConfig(VE_CONF_NAME, NULL)))
-				return rc;
-		}
+	} else if (NULL == dstVE->ve_data.name && srcVE->ve_data.name != NULL) {
+		// New name for the target VE is undefined.
+		// Try to get name of the source one.
+		dstVE->ve_data.name = strdup(srcVE->ve_data.name);
+		if ((rc = dstVE->updateConfig(VE_CONF_NAME, dstVE->ve_data.name)))
+			return rc;
 	}
 
 	END_STAGE();
