@@ -1180,7 +1180,7 @@ void remove_trail_slashes(char *path)
 {
 	char *p;
 
-	for (p = path + strlen(path); p != path && *p == '/'; p--) *p = '\0';
+	for (p = path + strlen(path) - 1; p != path && *p == '/'; p--) *p = '\0';
 }
 
 std::string remove_trail_slashes(const char *path)
