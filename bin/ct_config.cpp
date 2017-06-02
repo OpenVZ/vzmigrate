@@ -26,6 +26,7 @@
 
 #include "ct_config.h"
 #include "common.h"
+#include "veentry.h"
 
 vz_data::vz_data()
 	: root_orig(NULL)
@@ -251,6 +252,7 @@ int ve_data_load(const char *ctid, struct ve_data *ve)
 		rc = putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
 		goto cleanup;
 	}
+	remove_trail_slashes(ve->priv);
 
 	/* read OSTEMPLATE */
 	if ((rc = vzctl2_env_get_param(h, VE_CONF_OSTEMPLATE, &data))) {
