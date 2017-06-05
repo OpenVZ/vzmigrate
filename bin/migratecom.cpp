@@ -1098,16 +1098,21 @@ int MigrateStateCommon::deleteKeepDstSnapshots(const VEObj &ve)
 
 int MigrateStateCommon::regenerate_fs_uuid(const char *root)
 {
-	char device[PATH_MAX+1];
+	char part[256];
 	char *const tune2fs[] =
-	{(char *)"tune2fs", (char *)"-U", (char *)"random", device, NULL};
+		{(char *)"tune2fs", (char *)"-U", (char *)"random", part, NULL};
+	char dev[256];
 	char *const sqdisk[] =
-	{(char *)"sgdisk", (char *)"-G", device, NULL};
+		{(char *)"sgdisk", (char *)"-G", dev, NULL};
 
 	logger(LOG_INFO, "Generate a new fs uuid...");
-	if (ploop_get_partition_by_mnt((char *)root, device, sizeof(device)))
+	if (ploop_get_partition_by_mnt(root, part, sizeof(part)))
+		return putErr(MIG_ERR_SYSTEM, "ploop_get_partition_by_mnt() : %s",
+			ploop_get_last_error());
+	if (ploop_get_dev_by_mnt(root, dev, sizeof(dev)))
 		return putErr(MIG_ERR_SYSTEM, "ploop_get_dev_by_mnt() : %s",
-				ploop_get_last_error());
+			ploop_get_last_error());
+
 	/* should be done on unmounted fs */
 	if (::umount(root))
 		return putErr(MIG_ERR_SYSTEM, "Failed to unmount %s: %m", root);
