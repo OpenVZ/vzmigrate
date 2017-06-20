@@ -180,10 +180,10 @@ static int call_pmigrate(char *src_ct, char *dst_hn, char *dst_ct, char **narg)
 "      --new-root=<CT root>   Set destination CT root.\n"			\
 "      --nonsharedfs          Force migrate of CT private from shared partition\n" \
 "                             to non-shared.\n"  \
-"      --whole-file           Use rsync --whole-file option\n" \
-"      --no-ssl               Do not use ssl transport\n" \
-"  -t, --timeout              Connection timeout in seconds\n" \
-"      --nocompress           Do not compress disk image data on online ploop migration\n" \
+"      --whole-file           Use rsync --whole-file option.\n" \
+"      --no-ssl               Do not use ssl transport.\n" \
+"  -t, --timeout              Connection timeout in seconds.\n" \
+"      --nocompress           Do not compress transferred data.\n" \
 "  -v, --verbose              Print verbose information.\n\n" \
 "Online option: \n" 									\
 "      --online               Perform online (zero-downtime) migration.\n"		\
