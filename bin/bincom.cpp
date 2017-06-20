@@ -177,9 +177,9 @@ ctid_t g_keeperCTID = "\0";
 "      --config=<config path> Set source config file.\n"			\
 "      --nonsharedfs          Force migrate of CT private from shared partition\n" \
 "                             to non-shared.\n"  \
-"      --whole-file           Use rsync --whole-file option\n" \
-"  -t, --timeout              Connection timeout in seconds\n" \
-"      --nocompress           Do not compress disk image data on online ploop migration\n" \
+"      --whole-file           Use rsync --whole-file option.\n" \
+"  -t, --timeout              Connection timeout in seconds.\n" \
+"      --nocompress           Do not compress transferred data.\n" \
 "  -v, --verbose              Print verbose information.\n\n" \
 "Online option: \n" 									\
 "      --online               Perform online (zero-downtime) migration.\n"		\
@@ -941,6 +941,9 @@ void parse_options (int argc, char **argv)
 			usage();
 		}
 	}
+
+	if (!isOptSet(OPT_NOCOMPRESS))
+		string_list_add(&VZMoptions.ssh_options, "-C");
 
 	/* initialize destination CTID using uuid if it was not explicitly specified */
 	if (EMPTY_CTID(entry->dst_ctid) && (entry->uuid != NULL))
