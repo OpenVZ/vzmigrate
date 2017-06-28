@@ -104,6 +104,34 @@ int MigrateStateSrc::startVEStage()
 	return rc;
 }
 
+vzctl_env_handle* MigrateStateSrc::setBandwidth(unsigned long long speed_limit)
+{
+	vzctl_env_handle *h = vzctl2_alloc_env_handle();
+	if (!h) {
+		logger(LOG_ERR, "vzctl2_alloc_env_handle() : %m");
+		return NULL;
+	}
+
+	vzctl2_env_set_iolimit(vzctl2_get_env_param(h), speed_limit);
+	if (vzctl2_set_limits(h, 0)) {
+		logger(LOG_ERR, "vzctl2_env_set_iolimit() : %m");
+		vzctl2_env_close(h);
+		return NULL;
+	}
+
+	logger(LOG_WARNING, "IOlimit set to %lld", speed_limit);
+	return h;
+}
+
+void MigrateStateSrc::unsetBandwidth(vzctl_env_handle *h)
+{
+	if (h) {
+		vzctl2_set_limits(h, 1);
+		vzctl2_env_close(h);
+	}
+}
+
+
 int MigrateStateSrc::doMigration()
 {
 	// Get status of container
@@ -111,8 +139,20 @@ int MigrateStateSrc::doMigration()
 	if (rc)
 		return rc;
 
+	vzctl_env_handle *h;
+	if (VZMoptions.speed_limit) {
+		h = setBandwidth(VZMoptions.speed_limit);
+		if (!h) {
+			rc = putErr(-1, MIG_MSG_SET_IOLIMIT, VZMoptions.speed_limit);
+			return rc;
+		}
+	}
+
 	// Migrate container
 	rc = doCtMigration();
+
+	unsetBandwidth(h);
+
 	if (rc)
 		return rc;
 

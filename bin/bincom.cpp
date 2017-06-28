@@ -100,6 +100,7 @@ CVZMOptions::CVZMOptions()
 	tmpl_data_sock = -1;
 	swap_sock = -1;
 	progress_fd = -1;
+	speed_limit = 0;
 };
 
 CVZMOptions::~CVZMOptions()
@@ -178,6 +179,7 @@ ctid_t g_keeperCTID = "\0";
 "      --nonsharedfs          Force migrate of CT private from shared partition\n" \
 "                             to non-shared.\n"  \
 "      --whole-file           Use rsync --whole-file option.\n" \
+"  -l, --limit-speed          Limit maximum writing speed, in bytes per second.\n" \
 "  -t, --timeout              Connection timeout in seconds.\n" \
 "      --nocompress           Do not compress transferred data.\n" \
 "  -v, --verbose              Print verbose information.\n\n" \
@@ -279,6 +281,7 @@ const char * VEArgs[MAX_ARGS + 1] =
 #define CONVERT_VZFS_OPTS	25
 #define IGNORE_BACKUP_DISK_OPTS	26
 #define NOEVENT_OPTS		27
+#define LIMIT_SPEED_OPTS	28
 
 /* parse user:password@host */
 static int parse_UPH(
@@ -594,7 +597,7 @@ void parse_options (int argc, char **argv)
 
 	char c;
 
-	static char short_options[] = "hCvr:fszbWt:";
+	static char short_options[] = "hCvr:fszbWtl:";
 
 	static struct option long_options[] =
 	    {
@@ -645,6 +648,7 @@ void parse_options (int argc, char **argv)
 		{"nocompress", no_argument, NULL, NOCOMPRESS_OPTS},
 		{"ignore-backup-disk", no_argument, NULL, IGNORE_BACKUP_DISK_OPTS},
 		{"noevent", no_argument, NULL, NOEVENT_OPTS},
+		{"limit-speed", required_argument, NULL, LIMIT_SPEED_OPTS},
 		{0, 0, 0, 0}
 	    };
 	prog_name = argv[0];
@@ -935,6 +939,9 @@ void parse_options (int argc, char **argv)
 			break;
 		case NOEVENT_OPTS:
 			setOpt(OPT_NOEVENT);
+			break;
+		case LIMIT_SPEED_OPTS:
+			VZMoptions.speed_limit = atoll(optarg);
 			break;
 		case 'h':
 		default:

@@ -54,6 +54,7 @@
 #define CONVERT_VZFS_OPTS	25
 #define IGNORE_BACKUP_DISK_OPTS	26
 #define NOEVENT_OPTS		27
+#define LIMIT_SPEED_OPTS	28
 
 #define MAX_VE_AVAILABLE	512
 
@@ -182,6 +183,7 @@ static int call_pmigrate(char *src_ct, char *dst_hn, char *dst_ct, char **narg)
 "                             to non-shared.\n"  \
 "      --whole-file           Use rsync --whole-file option.\n" \
 "      --no-ssl               Do not use ssl transport.\n" \
+"  -l, --limit-speed          Limit maximum writing speed, in bytes per second.\n" \
 "  -t, --timeout              Connection timeout in seconds.\n" \
 "      --nocompress           Do not compress transferred data.\n" \
 "  -v, --verbose              Print verbose information.\n\n" \
@@ -208,7 +210,7 @@ static void usage(void)
 
 int main(int argc, char **argv)
 {
-	static char short_options[] = "hCvr:fszbWt";
+	static char short_options[] = "hCvr:fszbWtl";
 	static struct option long_options[] =
 	{
 		{"remove-area", required_argument, NULL, 'r'},
@@ -237,6 +239,7 @@ int main(int argc, char **argv)
 		{"verbose", no_argument, NULL, 'v'},
 		{"timeout", required_argument, NULL, TIMEOUT_OPTS},
 		{"no-ssl", no_argument, NULL, NO_SSL_OPTS},
+		{"limit-speed", required_argument, NULL, LIMIT_SPEED_OPTS},
 		{"certificate", required_argument, NULL, CERTIFICATE_OPTS},
 		{"privatekey", required_argument, NULL, PRIVATEKEY_OPTS},
 		{"ciphers", required_argument, NULL, CIPHERS_OPTS},
@@ -304,6 +307,7 @@ int main(int argc, char **argv)
 			CHECK_MOPT_ARG(PRIVATEKEY_OPTS, "--privatekey");
 			CHECK_MOPT_ARG(CIPHERS_OPTS, "--ciphers");
 			CHECK_MOPT_ARG('r', "--remove-area");
+			CHECK_MOPT_ARG(LIMIT_SPEED_OPTS, "--limit-speed");
 
 			CHECK_MOPT_NEW_ARG(NEW_PRIVATE_OPTS, "--new-private");
 			CHECK_MOPT_NEW_ARG(DST_OPTS, "--dst");
