@@ -102,6 +102,9 @@ protected:
 	void cleanExternalDisk();
 	void removeSrcPrivate();
 	int checkDisks();
+
+	static vzctl_env_handle* setBandwidth(unsigned long long speed_limit);
+	static void unsetBandwidth(vzctl_env_handle *h);
 };
 
 void add_excludes(std::list<std::string> &args, const std::list<std::string> *exclude);
