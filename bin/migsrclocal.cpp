@@ -444,8 +444,14 @@ int MigrateStateLocal::preFinalStage()
 			uuid = u;
 		}
 	} else if (NULL == uuid && !is_thesame_ctid) {
-		uuid = dstVE->ctid();
+		if (strlen(dstVE->ctid()) == 36) {
+			uuid = dstVE->ctid();
+		} else {
+			gen_uuid(u);
+			uuid = u;
+		}
 	}
+
 	if (is_thesame_ctid) {
 		/* create config backup */
 		if ((rc = h_backup(dstVE->confRealPath().c_str())))
