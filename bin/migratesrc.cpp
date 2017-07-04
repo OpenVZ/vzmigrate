@@ -139,7 +139,7 @@ int MigrateStateSrc::doMigration()
 	if (rc)
 		return rc;
 
-	vzctl_env_handle *h;
+	vzctl_env_handle *h = NULL;
 	if (VZMoptions.speed_limit) {
 		h = setBandwidth(VZMoptions.speed_limit);
 		if (!h) {
