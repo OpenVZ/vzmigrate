@@ -488,6 +488,7 @@ void VEObj::unlock()
 	if (!islocked())
 		return;
 
+	logger(LOG_ERR, "unlocking %s", ctid());
 	vzctl2_env_unlock_prvt(ctid(), lock_fd, priv);
 	lock_fd = -1;
 }
