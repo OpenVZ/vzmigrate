@@ -334,7 +334,7 @@ int ssh_recv_data(
 {
 	(void) ctx;
 	(void) args;
-	int rc, ret;
+	int ret;
 	char path[PATH_MAX+1];
 	char buf[BUFSIZ];
 	FILE *fp;
@@ -354,7 +354,7 @@ int ssh_recv_data(
 	/* and wait reply */
 	size = sizeof(buf);
 	if ((ret = vzsock_recv_str(ctx, conn, buf, &size)))
-		rc = putErr(MIG_ERR_VZSOCK, "vzsock_recv_str() return %d", ret);
+		putErr(MIG_ERR_VZSOCK, "vzsock_recv_str() return %d", ret);
 
 	tstart = time(NULL);
 	while (access(path, R_OK)) {
