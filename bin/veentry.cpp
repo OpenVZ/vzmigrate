@@ -755,7 +755,6 @@ int VEObj::createLayout()
 	char path[PATH_MAX];
 	char lnk[PATH_MAX];
 	struct stat st;
-	int rc;
 
 	if (layout == VZCTL_LAYOUT_3) {
 		return putErr(MIG_ERR_SYSTEM, "Can't create layout 3");
