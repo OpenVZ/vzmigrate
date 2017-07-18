@@ -195,7 +195,7 @@ public:
 	string tmplDir() const;
 	void setPrivate(const char *p);
 	void setRoot(const char *p);
-	int setNameData(const char *name);
+	void setNameData(const char *name);
 	std::string getPrivateConf();
 	std::string getRootConf();
 	int prepareConfig();

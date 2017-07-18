@@ -76,7 +76,7 @@ int init_sig_handlers(__sighandler_t handler)
 	return 0;
 }
 
-int disable_sig_handler()
+void disable_sig_handler()
 {
 	sig_handler_disabled = 1;
 }

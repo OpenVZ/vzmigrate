@@ -48,7 +48,7 @@ using namespace std;
 } while (0)
 
 int init_sig_handlers(__sighandler_t handler = NULL);
-int disable_sig_handler();
+void disable_sig_handler();
 void parse_options (int argc, char **argv);
 
 struct VEOptEntry

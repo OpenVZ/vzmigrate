@@ -808,7 +808,7 @@ bool VEObj::isNewTemOS()
 	return false;
 }
 
-int VEObj::setNameData(const char *name)
+void VEObj::setNameData(const char *name)
 {
 	free(ve_data.name);
 	if (name)
