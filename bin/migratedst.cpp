@@ -815,6 +815,8 @@ int MigrateStateDstRemote::finalStage(int action)
 	if ((rc = finalVEtuning()))
 		goto cleanup;
 
+	dstVE->unlock();
+
 	return 0;
 
 cleanup:
