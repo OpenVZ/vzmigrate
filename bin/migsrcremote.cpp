@@ -684,6 +684,8 @@ int MigrateStateRemote::checkRemoteVersion()
 	if (isOptSet(OPT_USE_RSYNC) && (srcVE->layout >= VZCTL_LAYOUT_5))
 		return putErr(MIG_ERR_LAYOUT,
 				"The migration via rsync is not supported for ploop-based CT");
+
+	return 0;
 }
 
 int MigrateStateRemote::createKeepDstSnapshots()
