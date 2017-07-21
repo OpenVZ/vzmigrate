@@ -355,7 +355,10 @@ int main(int argc, char *argv[])
 			rc = putErr(MIG_ERR_SYSTEM, "fopen('%s') : %m", pidfile);
 			goto cleanup_0;
 		}
-		fscanf(fp, "%d", &pid);
+		if ((rc = fscanf(fp, "%d", &pid))) {
+			rc = putErr(MIG_ERR_SYSTEM, "fscanf('%s') : %m", pidfile);
+			goto cleanup_0;
+		}
 		if (kill(pid, 0) == 0) {
 			rc = putErr(MIG_ERR_ALREDY_RUNNING,
 				"%s already running with pid %d",
@@ -431,7 +434,11 @@ int main(int argc, char *argv[])
 		 * group than process that started the
 		 * daemon. We also have no controlling
 		 * terminal */
-		chdir("/");
+		if ((rc = chdir("/"))) {
+			rc = putErr(MIG_ERR_SYSTEM, "chdir('/') : %m");
+			goto cleanup_5;
+		}
+		
 		umask(0);
 
 		fprintf(fp, "%d\n", getpid());

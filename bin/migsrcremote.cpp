@@ -71,13 +71,17 @@ static int copy_remote_tar(
 
 void reportStage(const char* stage)
 {
+        int rc;
+
 	if (VZMoptions.progress_fd <= 0 || fcntl(VZMoptions.progress_fd, F_GETFL) == -1
 		|| !stage || !stage[0])
 		return;
 
 	std::string s = stage;
 	s += "\n";
-	write(VZMoptions.progress_fd, s.c_str(), s.length());
+	rc = write(VZMoptions.progress_fd, s.c_str(), s.length());
+	if (rc != 0)
+		logger(LOG_ERR, "Failed to write inside reportStage");
 }
 
 MigrateStateRemote::MigrateStateRemote(
@@ -279,8 +283,6 @@ int MigrateStateRemote::checkOptions(unsigned long long *options)
 /* check that keep dir exist on destination node */
 int MigrateStateRemote::checkKeepDir()
 {
-	int rc;
-
 	if (m_nFlags & VZMSRC_SHARED_PRIV)
 		/* forget about it for private on the same
 		   shared cluster partition */
@@ -951,7 +953,10 @@ int MigrateStateRemote::stopVE()
 int MigrateStateRemote::startVE()
 {
 	int rc = 0;
+/* 'path' is required for code which is under 'if 0' atm */
+#if 0
 	char path[PATH_MAX+1];
+#endif
 
 	assert(!isOptSet(OPT_ONLINE));
 
@@ -1172,8 +1177,8 @@ int MigrateStateRemote::sendHaClusterID()
 
 int MigrateStateRemote::postFinalStage()
 {
-	int rc;
 	START_STAGE();
+	int rc;
 
 	// Remove VE:
 	// if remove=no
@@ -1218,7 +1223,9 @@ int MigrateStateRemote::postFinalStage()
 				srcVE->priv);
 			/* and create config for source VE as
 			symlink to backuped config, for vzctl destroy only */
-			symlink(path, srcVE->confPath().c_str());
+			rc = symlink(path, srcVE->confPath().c_str());
+			if (rc != 0)
+				logger(LOG_ERR, "Failed to create symlink");
 		}
 	}
 
@@ -1268,7 +1275,7 @@ int MigrateStateRemote::clean_restoreVEconf(const void * arg1, const void *)
 };
 
 /* start VE */
-int MigrateStateRemote::clean_startVE(const void * arg1, const void * arg2)
+int MigrateStateRemote::clean_startVE(const void * arg1, const void *)
 {
 	VEObj *ve = (VEObj *)arg1;
 	assert(ve);
@@ -1486,7 +1493,7 @@ int MigrateStateRemote::copy_delta(const char *delta, struct string_list *exclud
 
 int MigrateStateRemote::copy_deltas(struct string_list *deltas)
 {
-	int rc;
+	int rc = 0;
 	struct string_list_el *e;
 
 	string_list_for_each(deltas, e) {

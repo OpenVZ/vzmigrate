@@ -277,7 +277,6 @@ int MigrateStateLocal::updateDiskPath()
 int MigrateStateLocal::preMigrateStage()
 {
 	int rc;
-	int mask = 0;
 
 	START_STAGE();
 
@@ -736,6 +735,8 @@ int MigrateStateLocal::checkDiskSpaceValues(
 	return check_free_space(dstVE->priv, bytes, inodes);
 }
 
+/* unused function */
+#if 0
 static int doCopy(const char * const args[], ...)
 {
 	int rc;
@@ -753,6 +754,7 @@ static int doCopy(const char * const args[], ...)
 
 	return 0;
 }
+#endif
 
 int MigrateStateLocal::clean_restoreVE(const void * arg1, const void *)
 {
@@ -1061,7 +1063,6 @@ exit:
 int MigrateStateLocal::ploopCtClone()
 {
 	int rc = 0;
-	int ha_registerd = 0;
 
 	rc = copyDiskDescriptors();
 	if (rc)
@@ -1181,6 +1182,8 @@ bool MigrateStateLocal::isSameLocation()
 	return is_thesame_location;
 }
 
+/* unused function */
+#if 0
 static int vzml_execve2(const std::list<std::string> &args)
 {
 	string_list a;
@@ -1195,3 +1198,4 @@ static int vzml_execve2(const std::list<std::string> &args)
 	string_list_clean(&a);
 	return rc;
 }
+#endif
