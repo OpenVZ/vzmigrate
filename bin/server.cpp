@@ -102,7 +102,7 @@ static int cmdFinalStage(istringstream & is)
 	return state->finalStage(action);
 }
 
-static int cmdCheckIPs(istringstream & is)
+static int cmdCheckIPs(istringstream &)
 {
 	// obsoleted
 	return 0;
@@ -217,7 +217,6 @@ static int cmdMountPloop(istringstream & is)
 {
 	unsigned long ploop_size, create_size;
 	int lmounted;
-	int rc;
 
 	if ((is >> ploop_size >> lmounted) == NULL)
 		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);

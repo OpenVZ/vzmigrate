@@ -642,7 +642,7 @@ int MigrateStateDstRemote::cmdCheckKernelModules(istringstream &is)
 	return 0;
 }
 
-int MigrateStateDstRemote::cmdTemplateSync(istringstream &is)
+int MigrateStateDstRemote::cmdTemplateSync(istringstream &)
 {
 	// obsoleted, template syncronization removed starting from Vz7
 	return MIG_ERR_EXISTS;
@@ -684,7 +684,6 @@ std::string MigrateStateDstRemote::getCopyArea()
 
 int MigrateStateDstRemote::copyStage(int stage)
 {
-	int rc = 0;
 	assert(dstVE && dstVE->priv);
 
 	switch (stage) {
@@ -698,6 +697,7 @@ int MigrateStateDstRemote::copyStage(int stage)
 	case FASTCOPY_BINDMOUNTS:
 		return h_copy_remote_rsync_fast(dstVE->bindmountPath().c_str(), METHOD_CHECKSUM);
 	}
+	return 0;
 }
 
 int MigrateStateDstRemote::copySetConf()
@@ -731,8 +731,6 @@ int MigrateStateDstRemote::copySetConf()
 
 int MigrateStateDstRemote::restore_dd_xml(const ct_disk &disks)
 {
-	int rc;
-
 	for (ct_disk::const_iterator it = disks.begin();
 			it != disks.end(); ++it)
 	{
