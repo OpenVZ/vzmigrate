@@ -119,6 +119,8 @@ vzctl_env_handle* MigrateStateSrc::setBandwidth(unsigned long long speed_limit)
 		return NULL;
 	}
 
+	vzcnf->iolimit = speed_limit;
+
 	logger(LOG_WARNING, "IOlimit set to %lld", speed_limit);
 	return h;
 }

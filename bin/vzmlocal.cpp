@@ -112,8 +112,6 @@ int main(int argc, char **argv)
 	}
 
 	init_sig_handlers();
-	// Apply IO limits if any
-	vz_setiolimit();
 
 	if (isOptSet(OPT_PS_MODE) || isOptSet(OPT_NOEVENT)) {
 		/*

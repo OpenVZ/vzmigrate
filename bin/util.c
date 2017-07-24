@@ -53,13 +53,6 @@
 #define VZCTLDEV	"/dev/vzctl"
 #define VZIOLIMITTYPE	'I'
 
-struct iolimit_state {
-        unsigned int id;
-        unsigned int speed;
-        unsigned int burst;
-        unsigned int latency;
-};
-
 #define PHYS_LIMIT	256UL	/* in Mb */
 #define UB_PHYSPAGES	6
 
@@ -666,15 +659,6 @@ int check_fl_prls_release()
 		ret =  1;
 	}
 	return ret;
-}
-
-int vz_setiolimit()
-{
-	if (vzctl2_set_vzlimits("VZ_TOOLS"))
-		return putErr(MIG_ERR_VZCTL,
-				"Failed to set VZ_TOOLS limits: %s",
-				vzctl2_get_last_error());
-	return 0;
 }
 
 int bind_mount(const char *src, int extra_flags, char *dst, size_t size)
