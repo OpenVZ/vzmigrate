@@ -181,7 +181,7 @@ ctid_t g_keeperCTID = "\0";
 "      --whole-file           Use rsync --whole-file option.\n" \
 "  -l, --limit-speed          Limit maximum writing speed, in bytes per second.\n" \
 "  -t, --timeout              Connection timeout in seconds.\n" \
-"      --nocompress           Do not compress transferred data.\n" \
+"      --compress             Enable SSH channel compression.\n" \
 "  -v, --verbose              Print verbose information.\n\n" \
 "Online option: \n" 									\
 "      --online               Perform online (zero-downtime) migration.\n"		\
@@ -282,6 +282,7 @@ const char * VEArgs[MAX_ARGS + 1] =
 #define IGNORE_BACKUP_DISK_OPTS	26
 #define NOEVENT_OPTS		27
 #define LIMIT_SPEED_OPTS	28
+#define COMPRESS_OPTS		29
 
 /* parse user:password@host */
 static int parse_UPH(
@@ -646,6 +647,7 @@ void parse_options (int argc, char **argv)
 		{"keep-src", no_argument, NULL, KEEP_SRC_OPTS},
 		{"new-uuid", required_argument, NULL, NEW_UUID_OPTS},
 		{"nocompress", no_argument, NULL, NOCOMPRESS_OPTS},
+		{"compress", no_argument, NULL, COMPRESS_OPTS},
 		{"ignore-backup-disk", no_argument, NULL, IGNORE_BACKUP_DISK_OPTS},
 		{"noevent", no_argument, NULL, NOEVENT_OPTS},
 		{"limit-speed", required_argument, NULL, LIMIT_SPEED_OPTS},
@@ -934,6 +936,9 @@ void parse_options (int argc, char **argv)
 		case NOCOMPRESS_OPTS:
 			setOpt(OPT_NOCOMPRESS);
 			break;
+		case COMPRESS_OPTS:
+			setOpt(OPT_COMPRESS);
+			break;
 		case IGNORE_BACKUP_DISK_OPTS:
 			setOpt(OPT_IGNORE_BACKUP_DISK);
 			break;
@@ -949,7 +954,7 @@ void parse_options (int argc, char **argv)
 		}
 	}
 
-	if (!isOptSet(OPT_NOCOMPRESS))
+	if (isOptSet(OPT_COMPRESS))
 		string_list_add(&VZMoptions.ssh_options, "-C");
 
 	/* initialize destination CTID using uuid if it was not explicitly specified */
