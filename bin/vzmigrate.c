@@ -55,6 +55,7 @@
 #define IGNORE_BACKUP_DISK_OPTS	26
 #define NOEVENT_OPTS		27
 #define LIMIT_SPEED_OPTS	28
+#define COMPRESS_OPTS		29
 
 #define MAX_VE_AVAILABLE	512
 
@@ -185,7 +186,7 @@ static int call_pmigrate(char *src_ct, char *dst_hn, char *dst_ct, char **narg)
 "      --no-ssl               Do not use ssl transport.\n" \
 "  -l, --limit-speed          Limit maximum writing speed, in bytes per second.\n" \
 "  -t, --timeout              Connection timeout in seconds.\n" \
-"      --nocompress           Do not compress transferred data.\n" \
+"      --compress             Enable SSH channel compression.\n" \
 "  -v, --verbose              Print verbose information.\n\n" \
 "Online option: \n" 									\
 "      --online               Perform online (zero-downtime) migration.\n"		\
@@ -245,6 +246,7 @@ int main(int argc, char **argv)
 		{"ciphers", required_argument, NULL, CIPHERS_OPTS},
 		{"keep-images", no_argument, NULL, KEEP_IMAGES_OPTS},
 		{"nocompress", no_argument, NULL, NOCOMPRESS_OPTS},
+		{"compress", no_argument, NULL, COMPRESS_OPTS},
 		{"ignore-backup-disk", no_argument, NULL, IGNORE_BACKUP_DISK_OPTS},
 		{"noevent", no_argument, NULL, NOEVENT_OPTS},
 		{0, 0, 0, 0}
@@ -298,6 +300,7 @@ int main(int argc, char **argv)
 			CHECK_NOOPT_ARG(KEEP_IMAGES_OPTS, "--keep-images");
 			CHECK_NOOPT_ARG('b', "--batch");
 			CHECK_NOOPT_ARG(NOCOMPRESS_OPTS, "--nocompress");
+			CHECK_NOOPT_ARG(COMPRESS_OPTS, "--compress");
 			CHECK_NOOPT_ARG(NOEVENT_OPTS, "--noevent");
 
 			CHECK_MOPT_ARG(TIMEOUT_OPTS, "--timeout");
