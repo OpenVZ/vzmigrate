@@ -470,8 +470,6 @@ int main(int argc, char *argv[])
 /* TODO: lockf(/var/run/vzmd.pid) */
 
 	logger(LOG_INFO, "Started");
-	// Apply IO limits if any
-	vz_setiolimit();
 
 	while (1) {
 		addrsize = sizeof(addr);

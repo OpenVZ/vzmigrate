@@ -53,10 +53,6 @@ struct string_list_el {
 extern "C" {
 #endif
 
-/* limit IO rate of itself
-   according to global VZ config settings */
-int vz_setiolimit();
-
 /* list initialization */
 static inline void string_list_init(struct string_list *ls)
 {

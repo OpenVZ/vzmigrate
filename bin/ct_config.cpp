@@ -123,23 +123,6 @@ int vz_data_load(struct vz_data *vz)
 	if ((rc = vzctl2_env_get_param(h, VZ_CONF_REMOVEMIGRATED, &data)) == 0 && data != NULL)
 		vz->removemigrated = (strcasecmp(data, "yes") == 0);
 
-	/* read VZ_TOOLS_IOLIMIT */
-	vz->iolimit = ULONG_MAX;	/* == NOT PROVIDED */
-	if ((rc = vzctl2_env_get_param(h, VZ_CONF_TOOLS_IOLIMIT, &data)) == 0 && data != NULL) {
-		unsigned long limit = ULONG_MAX;
-		errno = 0;
-		limit = strtoul(data, NULL, 10);
-		if (errno == 0) {
-			logger(LOG_INFO,
-				"vzctl2_env_get_param(" VZ_CONF_TOOLS_IOLIMIT ") return %ld",
-				limit);
-			vz->iolimit = limit;
-		} else {
-			logger(LOG_ERR, "Unable to parse from global config %s=%s (%s)",
-				VZ_CONF_TOOLS_IOLIMIT, data, strerror(errno));
-		}
-	}
-
 cleanup:
 	vzctl2_env_close(h);
 
