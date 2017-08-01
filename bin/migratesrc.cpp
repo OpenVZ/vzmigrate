@@ -335,7 +335,7 @@ int MigrateStateSrc::checkDisks()
 	if (!isOptSet(OPT_FORCE) && !isOptSet(OPT_IGNORE_BACKUP_DISK))
 	{
 		if (srcVE->m_disks.has(disk_is_not_persistent)) {
-			return putErr(MIG_ERR_VZCTL,
+			return putErr(MIG_ERR_ATTACHED_BACKUP,
 					"Cannot migrate a Container with backup(s) attached.");
 		}
 	}

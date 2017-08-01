@@ -187,6 +187,7 @@ extern const char * getError();
 #define MIG_ERR_SECOND_LEVEL_BUG        -71 /* unused */
 #define MIG_ERR_EXTERNAL_PROCESS        -72 /* unused */
 #define MIG_ERR_PHAUL					-73
+#define MIG_ERR_ATTACHED_BACKUP			-74
 
 // internal error codes
 //#define MIG_ERR_SHARED_NOTFOUND	-101
