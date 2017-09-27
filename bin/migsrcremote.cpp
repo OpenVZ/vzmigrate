@@ -463,7 +463,9 @@ int MigrateStateRemote::checkSharedDisk()
 	for (ct_disk::iterator it = srcVE->m_disks.begin();
 			it != srcVE->m_disks.end(); ++it)
 	{
-		if (it->is_external()) {
+		if (it->is_device())
+			it->shared = true;
+		else if (it->is_external()) {
 			if ((rc = checkSharedFile(it->image.c_str(), &(it->shared))))
 				return rc;
 		} else if (m_nFlags & VZMSRC_SHARED_PRIV)
@@ -1966,7 +1968,7 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 
 std::string MigrateStateRemote::getPhaulSharedDisksArg() const
 {
-	ct_disk disks(srcVE->m_disks.get(disk_is_shared));
+	ct_disk disks(srcVE->m_disks.get(disk_is_shared_not_device));
 	if (disks.empty())
 		return "";
 
@@ -1978,6 +1980,7 @@ std::string MigrateStateRemote::getPhaulSharedDisksArg() const
 		shared << delim << it->image;
 		delim = ",";
 	}
+
 	logger(LOG_INFO, "shared disks: %s", shared.str().c_str());
 	return shared.str();
 }
@@ -1989,24 +1992,29 @@ std::string MigrateStateRemote::getPhaulSharedDisksArg() const
  */
 std::string MigrateStateRemote::getPhaulSecondaryDisksArg() const
 {
-	ct_disk disks(srcVE->m_disks.get(disk_is_secondary));
-	char devname[PATH_MAX];
 	struct stat st;
 	int rc;
+	ct_disk disks(srcVE->m_disks.get(disk_is_secondary_or_device));
 
 	std::ostringstream arg;
 	const char* delim = "";
 	for (ct_disk::const_iterator it = disks.begin(); it != disks.end(); ++it) {
+		std::string dev = it->image;
 
-		// Get device name
-		rc = vzctl2_get_ploop_dev(it->image.c_str(), devname, sizeof(devname));
-		if (rc != 0) {
-			logger(LOG_ERR, MIG_MSG_INTERNAL, "vzctl2_get_ploop_dev", rc);
-			continue;
+		if (!it->is_device()) {
+			char d[PATH_MAX];
+			char p[PATH_MAX];
+
+			rc = vzctl2_get_ploop_dev2(it->image.c_str(), d,
+					sizeof(d), p, sizeof(p));
+			if (rc != 0) {
+				logger(LOG_ERR, MIG_MSG_INTERNAL, "vzctl2_get_ploop_dev", rc);
+				continue;
+			}
+			dev = p;
 		}
 
-		// Stat device
-		if (stat(devname, &st) == -1) {
+		if (stat(dev.c_str(), &st) == -1) {
 			logger(LOG_ERR, MIG_MSG_INTERNAL, "stat", errno);
 			continue;
 		}

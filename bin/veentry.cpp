@@ -50,9 +50,19 @@ bool disk_is_shared(const disk_entry &d)
 	return d.is_shared();
 }
 
+bool disk_is_shared_not_device(const disk_entry &d)
+{
+	return d.is_shared() && !d.is_device();
+}
+
 bool disk_is_secondary(const disk_entry &d)
 {
 	return d.is_secondary();
+}
+
+bool disk_is_secondary_or_device(const disk_entry &d)
+{
+	return d.is_device() || d.is_secondary();
 }
 
 void VEObj::priv_init()
@@ -853,6 +863,11 @@ void VEObj::init_disks(const struct ve_data& data)
 		it != data.np_disks.end(); ++it) {
 		m_disks.push_back(disk_entry(*it, true, false));
 	}
+
+	for (std::list<ve_disk_data>::const_iterator it = data.dev_disks.begin();
+			it != data.dev_disks.end(); ++it) {
+		m_disks.push_back(disk_entry(*it, true, true, true));
+	}
 }
 
 /* set layout for new VE */
@@ -951,9 +966,9 @@ int ploop_get_spec_path(const char *dd_path, struct ploop_spec *spec)
 	int rc;
 
 	if ((rc = ploop_open_dd(&di, dd_path))) {
-		rc = putErr(MIG_ERR_PLOOP, "ploop_read_diskdescriptor(%s) : %s [%d]",
+		return putErr(MIG_ERR_PLOOP, "ploop_read_diskdescriptor(%s) : %s [%d]",
 				dd_path, ploop_get_last_error(), rc);
-		goto cleanup;
+	;
 	}
 	memset((void *)spec, 0, sizeof(*spec));
 	if ((rc = ploop_get_spec(di, spec))) {
@@ -976,6 +991,9 @@ int VEObj::getPloopMaxVersion(int &version)
 
 	version = 0;
 	for (ct_disk::const_iterator it = m_disks.begin(); it != m_disks.end(); ++it) {
+		if (it->is_device())
+			continue;
+
 		if ((rc = ploop_get_spec_path(get_dd_xml(it->image.c_str()).c_str(), &spec)))
 			break;
 

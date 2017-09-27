@@ -131,6 +131,7 @@ public:
 	std::list<ve_disk_data> disks;
 	std::list<ve_disk_data> ext_disks;
 	std::list<ve_disk_data> np_disks;
+	std::list<ve_disk_data> dev_disks;
 	char *disk_raw_str;
 };
 

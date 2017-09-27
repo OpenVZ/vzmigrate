@@ -466,8 +466,11 @@ int ve_data_load(const char *ctid, struct ve_data *ve)
 
 		vzctl2_env_get_disk_param(it, &disk, sizeof(disk));
 
+		if (disk.use_device) {
+			logger(LOG_DEBUG, "device %s", disk.path);
+			ve->dev_disks.push_back(ve_disk_data(disk));
 		/* FIXME: use normalized path */
-		if (disk.storage_url != NULL) {
+		} else if (disk.storage_url != NULL) {
 			logger(LOG_DEBUG, "non persistent disk %s", disk.path);
 			ve->np_disks.push_back(ve_disk_data(disk));
 
