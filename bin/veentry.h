@@ -49,19 +49,22 @@ typedef std::vector<string> IPList;
 
 struct disk_entry {
 public:
-	disk_entry(const ve_disk_data& data, bool _ext = false, bool _persistent = true)
+	disk_entry(const ve_disk_data& data, bool _ext = false,
+			bool _persistent = true, bool _device = false)
 		: image(data.m_path)
 		, uuid(data.m_uuid)
 		, ext(_ext)
 		, persistent(_persistent)
 		, shared(false)
 		, secondary(data.m_mnt != "/")
+		, device(_device)
 	{
 	}
 
 	bool is_external() const { return ext; }
 	bool is_shared() const { return shared; }
 	bool is_secondary() const { return secondary; }
+	bool is_device() const {return device; }
 
 public:
 	std::string image;
@@ -70,10 +73,14 @@ public:
 	bool persistent;
 	bool shared;
 	bool secondary;
+	bool device;
 };
 
 bool disk_is_shared(const disk_entry &d);
+bool disk_is_shared_not_device(const disk_entry &d);
 bool disk_is_secondary(const disk_entry &d);
+bool disk_is_secondary_or_device(const disk_entry &d);
+bool disk_is_device(const disk_entry &d);
 
 inline bool disk_is_non_shared(const struct disk_entry &d)
 {

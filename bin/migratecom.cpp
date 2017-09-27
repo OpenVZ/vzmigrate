@@ -1080,6 +1080,9 @@ int MigrateStateCommon::deleteKeepDstSnapshots(const VEObj &ve)
 	ct_disk disks(ve.m_disks.get(disk_is_non_shared));
 	for (ct_disk::iterator it = disks.begin(); it != disks.end(); ++it)
 	{
+		if (it->is_device())
+			continue;
+
 		bool exists;
 		if ((rc = ploopHasSnapshot(get_dd_xml(it->image).c_str(), KEEP_DST_SNAPSHOT_GUID, &exists))) {
 			if (!result)
