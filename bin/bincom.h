@@ -253,9 +253,6 @@ extern const char * ssh_test[];
 #define PHAUL_LOG_FILE			"/var/log/phaul.log"
 #define PHAUL_SRV_LOG_FILE		"/var/log/phaul-service.log"
 
-#ifndef GFS_MAGIC
-#define GFS_MAGIC               (0x01161970)
-#endif
 #ifndef NFS_SUPER_MAGIC
 #define NFS_SUPER_MAGIC                     0x6969
 #endif

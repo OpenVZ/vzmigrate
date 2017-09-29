@@ -350,9 +350,6 @@ static int check_cluster_id(
 	if (strlen(dst_lp) == 0)
 		strcpy(dst_lp, ".");
 
-	if ((rc = gfs_cluster_getid(mpoint, dst_id, sizeof(dst_id))))
-		return rc;
-
 	if (strcmp(src_id, dst_id) == 0) {
 		if (is_thesame_cluster)
 			*is_thesame_cluster = 1;
