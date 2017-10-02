@@ -382,45 +382,6 @@ const char ** MigrateStateCommon::getRsyncArgs()
 	return rsync_args;
 }
 
-/* for path <path> get :
-	cluster id <id>,
-	mount point <mpoint>,
-	local path on device <lpath>
-*/
-/* to get device name for path */
-static int get_device_name_for_path(const char *path, char *devname, int size)
-{
-	const char *mntfile = "/proc/mounts";
-	FILE *fp;
-	struct stat st;
-	struct mntent *mnt;
-	dev_t rdev;
-
-	if (stat(path, &st) != 0)
-		return putErr(MIG_ERR_SYSTEM, "stat(%s) error", path);
-	rdev = st.st_dev;
-
-	if ((fp = setmntent(mntfile, "r")) == NULL)
-		return putErr(MIG_ERR_SYSTEM, "setmntent(%s) error", mntfile);
-
-	while ((mnt = getmntent(fp)) != NULL) {
-		if (stat(mnt->mnt_fsname, &st) != 0)
-			continue;
-
-		if (!S_ISBLK(st.st_mode))
-			continue;
-
-		if (rdev == st.st_rdev)
-			break;
-	}
-	endmntent(fp);
-	if (mnt == NULL)
-		return putErr(MIG_ERR_SYSTEM, "can not find device for %s", path);
-	strncpy(devname, mnt->mnt_fsname, size);
-	devname[size-1] = '\0';
-	return 0;
-}
-
 /*
  remoteRsyncSrc() and remoteRsyncDst() works via main ssh connection
  and use patched rsync (--fdin/--fdout options).
