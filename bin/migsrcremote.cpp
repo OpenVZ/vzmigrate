@@ -329,16 +329,13 @@ int MigrateStateRemote::checkSharedDir(
 		const char *cmd,
 		const char *dir,
 		const char *title,
-		const char *uuid,
 		int *shared,
 		int *reply)
 {
 	int rc = 0;
 	char path[PATH_MAX+1];
 	int fd;
-	size_t size;
 	char *name;
-	char id[PATH_MAX+MAXHOSTNAMELEN+2];
 	long ret;
 	long fstype;
 	int dir_shared;
@@ -457,7 +454,7 @@ int MigrateStateRemote::checkClusterID()
 	/* for VE private */
 	if ((rc = checkSharedDir(
 		CMD_CHECK_SHARED_PRIV,
-		srcVE->priv, "CT private", NULL,
+		srcVE->priv, "CT private",
 		&shared, &is_thesame_shared)))
 		return rc;
 
@@ -502,7 +499,7 @@ int MigrateStateRemote::checkClusterID()
 	if (srcVE->veformat != VZ_T_SIMFS) {
 		if ((rc = checkSharedDir(
 			CMD_CHECK_SHARED_TMPL,
-			srcVE->tmplDir().c_str(), "template area", NULL,
+			srcVE->tmplDir().c_str(), "template area",
 			&shared, &is_thesame_shared)))
 			return rc;
 		if (shared && !is_thesame_shared) {

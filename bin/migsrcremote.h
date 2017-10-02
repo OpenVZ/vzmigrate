@@ -56,7 +56,6 @@ public:
 			const char *cmd,
 			const char *dir,
 			const char *title,
-			const char *uuid,
 			int *shared,
 			int *reply);
 

@@ -1006,7 +1006,6 @@ int is_path_on_shared_storage(const char *path, int *is_shared, long *fstype)
 {
 	int rc;
 	struct statfs stfs;
-	char cid[GFS_LOCKNAME_LEN+1];
 	char mpoint[PATH_MAX+1];
 	char lpath[PATH_MAX+1];
 
