@@ -152,9 +152,10 @@ int MigrateStateDstRemote::initVEMigration(VEObj * ve)
 	ve->clean();
 	ve->setLayout(option_to_vzlayout(m_initOptions));
 	ve->veformat = option_to_veformat(m_initOptions);
-
-	logger(LOG_INFO, "Start of CT %s migration (private %s, root %s, opt=%d, version remote %d, local %d)",
-		ve->ctid(), ve->priv, ve->root, m_initOptions,
+	logger(LOG_INFO, "Start of CT %s migration (private %s [%s], root %s, opt=%d, version remote %d, local %d)",
+		ve->ctid(), ve->priv,
+		ve->priv_custom ? "custom" : "default",
+		ve->root, m_initOptions,
 		VZMoptions.remote_version, MIGRATE_VERSION);
 
 	/* migration to 7.0 from versions lower than 612 is not supported */
@@ -172,9 +173,6 @@ int MigrateStateDstRemote::initVEMigration(VEObj * ve)
 	}
 
 	if ((rc = checkCommonDst(*ve)))
-		return rc;
-
-	if ((rc = is_path_on_shared_storage(ve->priv, &is_priv_on_shared, NULL)))
 		return rc;
 
 	/* check target private existance */
@@ -230,17 +228,6 @@ int MigrateStateDstRemote::initVEMigration(VEObj * ve)
 		// add error remover only for created directory
 		// not for existed
 		addCleanerRemove(clean_removeDir, ve->priv);
-
-	/* and lock VE only after private creation
-	   (vzctl will create lock file in private, #119945) */
-	/* postpone lock for 'private on nfs' case until
-	   'the same private' check (MigrateStateDstRemote::cmdCheckSharedPriv)
-	   If it's the same private, it's already locked by source side (#476968) */
-	/* do not lock for gfs/gfs2 too (https://jira.sw.ru/browse/PCLIN-29890) */
-	if (!is_priv_on_shared) {
-		if ((rc = ve->lock()))
-			return rc;
-	}
 
 	// do not use --sparse option for ploop image copy
 	use_sparse_opt = (ve->layout < VZCTL_LAYOUT_5);
@@ -373,6 +360,9 @@ int MigrateStateDstRemote::cmdCheckClusterID(
 	if ((is >> src_id >> mpath) == NULL)
 		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
 
+	if ((rc = is_path_on_shared_storage(dstVE->priv, &is_priv_on_shared, NULL)))
+		return rc;
+
 	if (!is_priv_on_shared)
 		return 0;
 
@@ -450,23 +440,53 @@ int MigrateStateDstRemote::cmdCheckSharedPriv(
 			ostringstream & os)
 {
 	int rc;
-	string name;
-	char path[PATH_MAX+1];
+	string name, path;
 	struct stat st;
-
-	if (!is_priv_on_shared)
-		return 0;
 
 	if ((is >> name) == NULL)
 		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
 
-	snprintf(path, sizeof(path), "%s/%s", dstVE->priv, name.c_str());
-	if (stat(path, &st)) {
+	if (!dstVE->priv_custom) {
+		string src_priv;
+
+		is >> src_priv;
+
+		if (!src_priv.empty()) {
+			path = src_priv + string("/") + name;
+			if (stat(path.c_str(), &st) == 0) {
+				logger(LOG_WARNING, "Update CT private %s -> %s",
+					dstVE->priv, src_priv.c_str());
+				dstVE->setPrivate(src_priv.c_str());
+				is_thesame_private = 1;
+			}
+		}
+	}
+
+	if (!is_thesame_private) {
+		path = dstVE->priv + string("/") + name;
+		if (stat(path.c_str(), &st) == 0)
+			is_thesame_private = 1;
+	}
+
+	if ((rc = is_path_on_shared_storage(dstVE->priv, &is_priv_on_shared, NULL)))
+		return rc;
+
+	if (!is_thesame_private) {
+		/* and lock VE only after private creation
+		   (vzctl will create lock file in private, #119945) */
+		/* postpone lock for 'private on nfs' case until
+		   'the same private' check (MigrateStateDstRemote::cmdCheckSharedPriv)
+		   If it's the same private, it's already locked by source side (#476968) */
+		/* do not lock for gfs/gfs2 too (https://jira.sw.ru/browse/PCLIN-29890) */
+		if ((rc = dstVE->lock()))
+			return rc;
+
 		os << "0";
 		return 0;
 	}
+
 	m_nFlags |= VZMSRC_SHARED_PRIV;
-	logger(LOG_DEBUG, MIG_MSG_THESAME_SHARED, "CT privates");
+	logger(LOG_DEBUG, MIG_MSG_THESAME_SHARED, "CT private", dstVE->priv);
 
 	/* and copy source VE config from original private */
 	if ((rc = copy_file(dstVE->confPath().c_str(),
@@ -529,7 +549,7 @@ int MigrateStateDstRemote::cmdCheckSharedTmpl(
 
 	snprintf(path, sizeof(path), "%s/%s", dstVE->tmplDir().c_str(), name.c_str());
 	if (stat(path, &st) == 0) {
-		logger(LOG_DEBUG, MIG_MSG_THESAME_SHARED, "template areas");
+		logger(LOG_DEBUG, MIG_MSG_THESAME_SHARED, "template areas", path);
 		os << "1";
 	} else {
 		os << "0";

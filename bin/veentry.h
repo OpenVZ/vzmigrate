@@ -133,6 +133,7 @@ public:
 
 	const char * root;
 	const char * priv;
+	bool priv_custom;
 	const char * dumpfile;
 	/* from VE config */
 	struct ve_data ve_data;

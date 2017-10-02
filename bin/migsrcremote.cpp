@@ -326,8 +326,7 @@ int MigrateStateRemote::checkPloopFormat()
    destination node return '1' if target VE private is
    on same shared fs with the same local path */
 int MigrateStateRemote::checkSharedDir(
-		const char *cmd400,
-		const char *cmd401,
+		const char *cmd,
 		const char *dir,
 		const char *title,
 		const char *uuid,
@@ -337,7 +336,6 @@ int MigrateStateRemote::checkSharedDir(
 	int rc = 0;
 	char path[PATH_MAX+1];
 	int fd;
-	char *buffer = NULL;
 	size_t size;
 	char *name;
 	char id[PATH_MAX+MAXHOSTNAMELEN+2];
@@ -382,21 +380,15 @@ int MigrateStateRemote::checkSharedDir(
 	close(fd);
 	name = basename(path);
 
-	/* and send request and wait answer */
-	size = strlen(cmd401) + strlen(name) + 4;
-	if ((buffer = (char *)malloc(size)) == NULL) {
-		unlink(path);
-		return putErr(MIG_ERR_SYSTEM, "malloc(): %s", strerror(errno));
-	}
-	snprintf(buffer, size, "%s %s", cmd401, name);
-	rc = sendRequest(buffer, &ret);
+	std::ostringstream req;
+
+	req << cmd << " " << name << " " << dir;	
+	rc = sendRequest(req.str().c_str(), &ret);
 	unlink(path);
 	if (ret) {
 		logger(LOG_INFO, "Source and target %s resides "
 			"on the same shared partition", title);
 	}
-	if (buffer)
-		free(buffer);
 	*reply = ret;
 
 	return rc;
@@ -464,7 +456,7 @@ int MigrateStateRemote::checkClusterID()
 
 	/* for VE private */
 	if ((rc = checkSharedDir(
-		CMD_CHECK_CLUSTER, CMD_CHECK_SHARED_PRIV,
+		CMD_CHECK_SHARED_PRIV,
 		srcVE->priv, "CT private", NULL,
 		&shared, &is_thesame_shared)))
 		return rc;
@@ -509,7 +501,7 @@ int MigrateStateRemote::checkClusterID()
 	/* for template area */
 	if (srcVE->veformat != VZ_T_SIMFS) {
 		if ((rc = checkSharedDir(
-			CMD_CHECK_CLUSTER_TMPL, CMD_CHECK_SHARED_TMPL,
+			CMD_CHECK_SHARED_TMPL,
 			srcVE->tmplDir().c_str(), "template area", NULL,
 			&shared, &is_thesame_shared)))
 			return rc;
