@@ -107,7 +107,11 @@ static int initializeVEs()
 		(*g_veList)[std::string(ve->ctid())] = ve;
 		(*g_ctidMap)[std::string((*it)->src_ctid)] = std::string(ve->ctid());
 
-		ve->setPrivate((*it)->priv_path);
+		if ((*it)->priv_path) {
+			ve->setPrivate((*it)->priv_path);
+			ve->priv_custom = true;
+		}
+
 		ve->setRoot((*it)->root_path);
 		int rc = ve->init_empty();
 		if (rc != 0)

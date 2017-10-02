@@ -317,7 +317,7 @@ extern const char * getError();
 /* shared FS support */
 #define MIG_MSG_THESAME_CLUSTER	"Source and target %s resides "\
 	"on the same cluster %s"
-#define MIG_MSG_THESAME_SHARED	"Source and target %s resides "\
+#define MIG_MSG_THESAME_SHARED	"Source and target %s %s resides "\
 	"on the same shared partition"
 
 #define MIG_MSG_VZFS_VEFORMAT		"Unable to migrate VZFS Container.\n"\

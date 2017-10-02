@@ -127,7 +127,7 @@ static int cmdInitMigration(istringstream & is)
 	// Get CTID to init
 	std::string ctid;
 	if ((is >> ctid) == NULL)
-		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
+		return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL "0");
 
 	// Get additional init options
 	int options = 0;
@@ -141,12 +141,12 @@ static int cmdInitMigration(istringstream & is)
 		// respective mapping and thus veObj with new ID.
 		std::map<std::string, std::string>::iterator it2 = g_ctidMap->find(ctid);
 		if (it2 == g_ctidMap->end())
-			return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
+			return putErr(MIG_ERR_PROTOCOL, "Cann not find ctid %s in map", ctid.c_str());
 
 		// map found, search list by dst_ctid
 		it = g_veList->find(it2->second);
 		if (it == g_veList->end())
-			return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL);
+			return putErr(MIG_ERR_PROTOCOL, MIG_MSG_PROTOCOL "2");
 	}
 
 	state = new MigrateStateDstRemote(it->second, options);

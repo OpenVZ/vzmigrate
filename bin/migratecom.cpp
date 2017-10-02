@@ -421,92 +421,6 @@ static int get_device_name_for_path(const char *path, char *devname, int size)
 	return 0;
 }
 
-int gfs_cluster_getid(
-		const char *path,
-		char *id,
-		size_t isize)
-{
-	char name[GFS_LOCKNAME_LEN+100];
-	char cmd[PATH_MAX+100];
-	FILE *fd;
-	int rc, status;
-	char *p;
-	const char *sb_lockproto = "sb_lockproto";
-	const char *sb_locktable = "sb_locktable";
-	struct statfs stfs;
-
-	id[0] = '\0';
-
-	if (statfs(path, &stfs))
-		return putErr(MIG_ERR_SYSTEM, "statfs(%s) : %m", path);
-
-	if (stfs.f_type != GFS_MAGIC)
-		return 0;
-
-	if ((access("/sbin/gfs_tool", X_OK) == 0) || (access("/usr/sbin/gfs_tool", X_OK) == 0))
-	{
-		snprintf(cmd, sizeof(cmd), "gfs_tool getsb %s 2>/dev/null", path);
-	}
-	else if ((access("/sbin/gfs2_edit", X_OK) == 0) || (access("/usr/sbin/gfs2_edit", X_OK) == 0))
-	{
-		char buf[PATH_MAX+1];
-		/* gfs2_tool nas not 'getsb' command, will use 'gfs2_edit -p sb /dev/sdm' */
-		if ((rc = get_device_name_for_path(path, buf, sizeof(buf))) != 0)
-			return rc;
-		snprintf(cmd, sizeof(cmd), "gfs2_edit -p sb %s 2>/dev/null", buf);
-	} else {
-		return putErr(MIG_ERR_SYSTEM,
-			"%s is placed on gfs/gfs2, but gfs tool"
-			" (gfs_tool or gfs2_edit) were not found",
-			path);
-	}
-
-	logger(LOG_DEBUG, cmd);
-	if ((fd = popen(cmd, "r")) == NULL)
-		return putErr(MIG_ERR_SYSTEM, "popen('%s') error: %s",
-				cmd, strerror(errno));
-
-	while(fgets(name, sizeof(name), fd)) {
-		if ((p = strchr(name, '\n')))
-			*p = '\0';
-		/* skip leading spaces */
-		for(p = name; *p == ' '; p++) ;
-		if (*p == '\0') continue;
-/*
-  sb_lockproto = lock_dlm
-  sb_locktable = cluster_vzctl:test1
-*/
-		if (strncmp(sb_lockproto, p, strlen(sb_lockproto)) == 0) {
-			/* sb_lockproto should be lock_dlm */
-			for(p += strlen(sb_lockproto);
-				*p == ' ' || *p == '='; p++) ;
-			if (strcmp(p, "lock_dlm")) {
-				id[0] = '\0';
-				break;
-			}
-		} else if (strncmp(sb_locktable, p, strlen(sb_locktable)) == 0) {
-			for(p += strlen(sb_locktable);
-				*p == ' ' || *p == '='; p++) ;
-			strncpy(id, p, isize);
-			break;
-		}
-	}
-	status = pclose(fd);
-	if (WEXITSTATUS(status)) {
-		rc = WEXITSTATUS(status);
-		if (rc == 1) {
-			/* gfs_tool return 1 for:
-			can't open /vzt1/qqq/test: No such file or directory
-			gfs_tool: /etc/ is not a GFS file/filesystem
-			...? */
-			return 0;
-		}
-		return putErr(MIG_ERR_SYSTEM, "'%s' error: rc=%d", cmd, rc);
-	}
-
-	return 0;
-}
-
 /*
  remoteRsyncSrc() and remoteRsyncDst() works via main ssh connection
  and use patched rsync (--fdin/--fdout options).
@@ -1144,15 +1058,9 @@ int is_path_on_shared_storage(const char *path, int *is_shared, long *fstype)
 	if (fstype)
 		*fstype = stfs.f_type;
 
-	*is_shared = 0;
-	if ((stfs.f_type == NFS_SUPER_MAGIC) || (stfs.f_type == PCS_SUPER_MAGIC)) {
-		*is_shared = 1;
-	} else if (stfs.f_type == GFS_MAGIC) {
+	*is_shared = (stfs.f_type == NFS_SUPER_MAGIC) ||
+			(stfs.f_type == PCS_SUPER_MAGIC);
 
-		if ((rc = gfs_cluster_getid(mpoint, cid, sizeof(cid))))
-			return rc;
-		*is_shared = (strlen(cid));
-	}
 	return 0;
 }
 

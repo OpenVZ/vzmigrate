@@ -326,8 +326,7 @@ int MigrateStateRemote::checkPloopFormat()
    destination node return '1' if target VE private is
    on same shared fs with the same local path */
 int MigrateStateRemote::checkSharedDir(
-		const char *cmd400,
-		const char *cmd401,
+		const char *cmd,
 		const char *dir,
 		const char *title,
 		const char *uuid,
@@ -337,7 +336,6 @@ int MigrateStateRemote::checkSharedDir(
 	int rc = 0;
 	char path[PATH_MAX+1];
 	int fd;
-	char *buffer = NULL;
 	size_t size;
 	char *name;
 	char id[PATH_MAX+MAXHOSTNAMELEN+2];
@@ -347,7 +345,7 @@ int MigrateStateRemote::checkSharedDir(
 
 	*shared = 0;
 	*reply = 0;
-	/* vzmigrate does not known nothing about GFS cluster until 400 */
+	/* vzmigrate does not known nothing about cluster until 400 */
 	if (VZMoptions.remote_version < MIGRATE_VERSION_400)
 		return 0;
 
@@ -373,60 +371,24 @@ int MigrateStateRemote::checkSharedDir(
 
 	*shared = 1;
 
-	if ((fstype == GFS_MAGIC) && (VZMoptions.remote_version < MIGRATE_VERSION_470))
-	{
-		char mpoint[PATH_MAX+1];
-		char lpath[PATH_MAX+1];
+	logger(LOG_DEBUG, "Source %s resides on shared partition %s",
+			title, fstype == NFS_SUPER_MAGIC ? "NFS" : "vstorage");
+	/* create temporary file */
+	snprintf(path, sizeof(path), "%s/vzmigrate_shared_file_XXXXXX", dir);
+	if ((fd = mkstemp(path)) == -1)
+		return putErr(MIG_ERR_SYSTEM, "mkstemp(%s)", path);
+	close(fd);
+	name = basename(path);
 
-		if ((rc = split_path(path, mpoint, sizeof(mpoint), lpath, sizeof(lpath))))
-			return rc;
-		if (strlen(lpath) == 0)
-			strcpy(lpath, ".");
-		if ((rc = gfs_cluster_getid(mpoint, id, sizeof(id))))
-			return rc;
+	std::ostringstream req;
 
-		logger(LOG_DEBUG, "Source %s resides on shared partition "
-			"(GFS cluster %s)", title, id);
-		size = strlen(cmd400) + strlen(id) + strlen(lpath) + 4;
-		if (uuid)
-			size += strlen(uuid) + 1;
-		if ((buffer = (char *)malloc(size)) == NULL)
-			return putErr(MIG_ERR_SYSTEM,
-				"malloc(): %s", strerror(errno));
-
-		if (uuid)
-			snprintf(buffer, size, "%s %s %s %s",
-				cmd400, id, uuid, lpath);
-		else
-			snprintf(buffer, size, "%s %s %s", cmd400, id, lpath);
-		rc = sendRequest(buffer, &ret);
-	}
-	else
-	{
-		logger(LOG_DEBUG, "Source %s resides on shared partition (NFS/GFS/GFS2/PCS)", title);
-		/* create temporary file */
-		snprintf(path, sizeof(path), "%s/vzmigrate_shared_file_XXXXXX", dir);
-		if ((fd = mkstemp(path)) == -1)
-			return putErr(MIG_ERR_SYSTEM, "mkstemp(%s)", path);
-		close(fd);
-		name = basename(path);
-
-		/* and send request and wait answer */
-		size = strlen(cmd401) + strlen(name) + 4;
-		if ((buffer = (char *)malloc(size)) == NULL) {
-			unlink(path);
-			return putErr(MIG_ERR_SYSTEM, "malloc(): %s", strerror(errno));
-		}
-		snprintf(buffer, size, "%s %s", cmd401, name);
-		rc = sendRequest(buffer, &ret);
-		unlink(path);
-	}
+	req << cmd << " " << name << " " << dir;	
+	rc = sendRequest(req.str().c_str(), &ret);
+	unlink(path);
 	if (ret) {
 		logger(LOG_INFO, "Source and target %s resides "
 			"on the same shared partition", title);
 	}
-	if (buffer)
-		free(buffer);
 	*reply = ret;
 
 	return rc;
@@ -494,7 +456,7 @@ int MigrateStateRemote::checkClusterID()
 
 	/* for VE private */
 	if ((rc = checkSharedDir(
-		CMD_CHECK_CLUSTER, CMD_CHECK_SHARED_PRIV,
+		CMD_CHECK_SHARED_PRIV,
 		srcVE->priv, "CT private", NULL,
 		&shared, &is_thesame_shared)))
 		return rc;
@@ -539,7 +501,7 @@ int MigrateStateRemote::checkClusterID()
 	/* for template area */
 	if (srcVE->veformat != VZ_T_SIMFS) {
 		if ((rc = checkSharedDir(
-			CMD_CHECK_CLUSTER_TMPL, CMD_CHECK_SHARED_TMPL,
+			CMD_CHECK_SHARED_TMPL,
 			srcVE->tmplDir().c_str(), "template area", NULL,
 			&shared, &is_thesame_shared)))
 			return rc;

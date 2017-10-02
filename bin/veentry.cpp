@@ -68,6 +68,7 @@ bool disk_is_secondary_or_device(const disk_entry &d)
 void VEObj::priv_init()
 {
 	root = priv = NULL;
+	priv_custom = false;
 	dumpfile = NULL;
 	lock_fd = -1;
 	layout = VZCTL_LAYOUT_5;

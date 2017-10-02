@@ -53,8 +53,7 @@ public:
 	int checkKeepDir();
 	int checkOptions(unsigned long long *options);
 	int checkSharedDir(
-			const char *cmd400,
-			const char *cmd401,
+			const char *cmd,
 			const char *dir,
 			const char *title,
 			const char *uuid,
