@@ -42,7 +42,7 @@ INCFLAGS += -I/usr/kerberos/include
 
 CC = gcc
 
-MFLAGS = -pthread -Werror -W -Wformat -g ${INCFLAGS} ${VZFS}
+MFLAGS = -pthread -Werror -Wall -W -Wformat -g ${INCFLAGS} ${VZFS} -Wno-unused-parameter -Wno-missing-field-initializers
 MFLAGS += -D_FILE_OFFSET_BITS=64 -DNDEBUG -D_VZLIN_
 
 # -pg
@@ -54,7 +54,7 @@ LIBVZ_SRC += -lfiu
 LIBVZ_DST += -lfiu
 endif
 
-CFLAGS += ${MFLAGS} -Wall -D_GNU_SOURCE
+CFLAGS += ${MFLAGS} -Wall -D_GNU_SOURCE -Wno-unused-parameter -Wno-missing-field-initializers
 CXXFLAGS += ${MFLAGS}
 
 #[ia64] gcc -pthread does not add -D_REENTRANT 
