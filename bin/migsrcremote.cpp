@@ -592,7 +592,7 @@ int MigrateStateRemote::doCtMigrationPhaul()
 	if (rc == 0)
 		postFinalStage();
 
-	return 0;
+	return rc;
 }
 
 int MigrateStateRemote::sendVersionCmd()

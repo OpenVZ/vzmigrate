@@ -162,6 +162,7 @@ public:
 	/* VE actions */
 	int start();
 	int stop(bool skip_umount = false);
+	int kill();
 	int mount();
 	int umount();
 	int tsnapshot(const char *guid);

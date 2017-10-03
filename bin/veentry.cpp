@@ -522,6 +522,12 @@ int VEObj::stop(bool skip_umount)
 	return operateVE("stop", "Stopping", skip_umount ? opt : NULL, 0);
 }
 
+int VEObj::kill()
+{
+	const char * opt[] = { "--fast", NULL };
+
+	return operateVE("stop", "Stopping", opt, 0);
+}
 int VEObj::mount()
 {
 	return operateVE("mount", "Mounting", NULL, 0);
