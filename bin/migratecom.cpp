@@ -347,8 +347,11 @@ int MigrateStateCommon::h_backup(const char *src)
 
 	if ((rc = copy_file(path, src)))
 		return rc;
-	// add clean renamer
+	// restore on error
 	addCleanerRename(path, src);
+	// unlink temporary file on success
+	addCleanerRemove(clean_removeFile, path, SUCCESS_CLEANER);
+
 	return 0;
 }
 
