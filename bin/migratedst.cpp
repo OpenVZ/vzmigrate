@@ -802,43 +802,55 @@ int MigrateStateDstRemote::finalStage(int action)
 	}
 
 	if ((rc = registerOnHaCluster()))
-		return rc;
+		goto err;
 
 	// Reread information about CT disks from config
 	if ((rc = rereadVeDisksFromConfig()))
-		return rc;
+		goto err;
 
 	if ((rc = deleteKeepDstSnapshots(*dstVE)))
-		return rc;
+		goto err;
 
 	if (action == DSTACT_START_VE)
 		rc = dstVE->start();
 	else if (action == DSTACT_MOUNT_VE)
 		rc = dstVE->mount();
 	if (rc)
-		return rc;
+		goto err;
 
+	/* rollback registration */
+	if (is_priv_on_shared && !(m_initOptions & MIGINIT_KEEP_SRC)) {
+		std::string f = dstVE->priv;
+		f += "/.owner";
+		h_backup(f.c_str());
+	}
+
+	if (dst_name)
+		dstVE->setNameData(dst_name);
 	/* vzctl register for new layout VE */
 	if ((rc = dstVE->veRegister()))
-		goto cleanup;
+		goto err;
 	addCleaner(clean_unregister, dstVE);
 
-	/* set ve name */
-	if ((rc = dstVE->setName(dst_name)))
-		goto cleanup;
-
 	if ((rc = finalVEtuning()))
-		goto cleanup;
+		goto err1;
 
 	dstVE->unlock();
 
 	return 0;
 
-cleanup:
+err1:
 	if (action == DSTACT_START_VE)
 		dstVE->stop();
 	else if (action == DSTACT_MOUNT_VE)
 		dstVE->umount();
+
+err:
+	if (isOptSet(OPT_ONLINE))
+		dstVE->kill();
+
+	dstVE->unlock();
+
 	return rc;
 }
 
