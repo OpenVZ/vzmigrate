@@ -825,14 +825,12 @@ int MigrateStateDstRemote::finalStage(int action)
 		h_backup(f.c_str());
 	}
 
+	if (dst_name)
+		dstVE->setNameData(dst_name);
 	/* vzctl register for new layout VE */
 	if ((rc = dstVE->veRegister()))
 		goto err;
 	addCleaner(clean_unregister, dstVE);
-
-	/* set ve name */
-	if ((rc = dstVE->setName(dst_name)))
-		goto err1;
 
 	if ((rc = finalVEtuning()))
 		goto err1;
