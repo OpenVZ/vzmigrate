@@ -30,6 +30,7 @@
 #include "migssh.h"
 #include "bincom.h"
 #include "remotecmd.h"
+#include "trace.h"
 
 #ifdef FIU_ENABLE
 #include <fiu.h>
@@ -151,8 +152,14 @@ int MigrateStateSrc::doMigration()
 	}
 
 	// Migrate container
+	Trace trace("vzmigrate", VZMoptions.bintype == BIN_LOCAL ?
+			(isOptSet(OPT_COPY) ? "clone" : "move") : "migrate",
+			srcVE->ctid());
+	trace.start();
+
 	rc = doCtMigration();
 
+	trace.finish(rc);
 	unsetBandwidth(h);
 
 	if (rc)
