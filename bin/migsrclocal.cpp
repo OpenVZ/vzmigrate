@@ -418,6 +418,9 @@ int MigrateStateLocal::preMigrateStage()
 
 	if (isOptSet(OPT_COPY))
 		dstVE->renewMAC();
+	else if (dst_name == NULL && srcVE->ve_data.name != NULL)
+		/* preserve name from source on move */
+		dstVE->setNameData(srcVE->ve_data.name);
 
 	END_STAGE();
 	return 0;
