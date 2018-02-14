@@ -65,19 +65,10 @@ bool disk_is_secondary_or_device(const disk_entry &d)
 	return d.is_device() || d.is_secondary();
 }
 
-void VEObj::priv_init()
+VEObj::VEObj(const char *ctid) :
+	lock_fd(-1), root(NULL), priv(NULL),
+	priv_custom(false), dumpfile(NULL), layout(VZCTL_LAYOUT_5)
 {
-	root = priv = NULL;
-	priv_custom = false;
-	dumpfile = NULL;
-	lock_fd = -1;
-	layout = VZCTL_LAYOUT_5;
-}
-
-VEObj::VEObj(const char *ctid)
-{
-	priv_init();
-
 	SET_CTID(m_ctid, ctid);
 }
 
@@ -92,20 +83,27 @@ VEObj::~VEObj()
 int VEObj::init_existed()
 {
 	int rc;
-	vzctl_env_status_t env_status;
 
-	if (vzctl2_get_env_status(ctid(), &env_status, ENV_STATUS_ALL))
-		return putErr(MIG_ERR_SYSTEM, MIG_MSG_NOSTATUS);
+	if (EMPTY_CTID(ctid())) {
+		rc = ve_data_load_by_conf(confRealPath().c_str(), &ve_data);
+		if (rc)
+			return rc;
+	} else {
+		vzctl_env_status_t env_status;
 
-	if (!(env_status.mask & ENV_STATUS_EXISTS))
-		return putErr(MIG_ERR_NOEXIST, MIG_MSG_NOEXIST, ctid());
+		if (vzctl2_get_env_status(ctid(), &env_status, ENV_STATUS_ALL))
+			return putErr(MIG_ERR_SYSTEM, MIG_MSG_NOSTATUS);
 
-	/* TODO: move to upper level */
-	if (isOptSet(OPT_COPY) && (env_status.mask & ENV_STATUS_SUSPENDED))
-		return putErr(MIG_ERR_SUSPEND, MIG_MSG_CLONE_FORBIDDEN_FOR_SUSPENDED);
+		if (!(env_status.mask & ENV_STATUS_EXISTS))
+			return putErr(MIG_ERR_NOEXIST, MIG_MSG_NOEXIST, ctid());
 
-	if ((rc = ve_data_load(m_ctid, &ve_data)))
-		return rc;
+		/* TODO: move to upper level */
+		if (isOptSet(OPT_COPY) && (env_status.mask & ENV_STATUS_SUSPENDED))
+			return putErr(MIG_ERR_SUSPEND, MIG_MSG_CLONE_FORBIDDEN_FOR_SUSPENDED);
+		rc = ve_data_load(ctid(), &ve_data);
+		if (rc)
+			return rc;
+	}
 
 	root = ve_data.root;
 	priv = ve_data.priv;
@@ -424,6 +422,9 @@ int VEObj::getStatus(int status, int *out)
 {
 	vzctl_env_status_t ve_status;
 
+	if (EMPTY_CTID(ctid()))
+		return 0;
+
 	if (vzctl2_get_env_status(m_ctid, &ve_status, status | ENV_SKIP_OWNER))
 		return putErr(MIG_ERR_VZCTL,
 			"vzctl2_get_env_status(%s) : %s", m_ctid, vzctl2_get_last_error());
@@ -444,6 +445,9 @@ int VEObj::isexist()
 int VEObj::isrun()
 {
 	int status;
+
+	if (EMPTY_CTID(ctid()))
+		return 0;
 
 	if (getStatus(ENV_STATUS_RUNNING, &status))
 		return 0;
@@ -886,12 +890,6 @@ void VEObj::setLayout(int new_layout)
 int VEObj::loadConfig()
 {
 	return ve_data_load(m_ctid, &ve_data);
-}
-
-int VEObj::updateMAC()
-{
-	const char *args[] = {"--netif_mac_renew", "--save", NULL};
-	return operateVE("set", "Update MAC", args, 0);
 }
 
 /* save new ve_private & ve_root in config */

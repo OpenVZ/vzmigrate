@@ -99,6 +99,7 @@ int main(int argc, char **argv)
 	if ((rc = vz_data_load(vzcnf)))
 		exitM(rc);
 
+	VZMoptions.bintype = BIN_LOCAL;
 	parse_options(argc, argv);
 
 	if (VZMoptions.bintype == BIN_SRC) {
@@ -180,13 +181,14 @@ static void migrateVEs()
 			(*it)->root_path ?: "");
 
 		SET_CTID(g_failedCTID, (*it)->dst_ctid);
-
 		if (VZMoptions.bintype == BIN_SRC)
 			state = new MigrateStateRemote((*it)->src_ctid, (*it)->dst_ctid,
 				(*it)->priv_path, (*it)->root_path, (*it)->dst_name);
 		else if (VZMoptions.bintype == BIN_LOCAL)
-			state = new MigrateStateLocal((*it)->src_ctid, (*it)->dst_ctid,
-				(*it)->priv_path, (*it)->root_path, (*it)->dst_name, (*it)->uuid);
+			state = new MigrateStateLocal((*it)->src_ctid,
+					(*it)->dst_ctid, (*it)->src_priv_path,
+					(*it)->priv_path, (*it)->root_path,
+					(*it)->dst_name, (*it)->uuid);
 
 		if (state == NULL) {
 			logger(LOG_ERR, MIG_MSG_SYSTEM);

@@ -75,10 +75,10 @@ std::string combine_path(const std::string &dir, const std::string &name)
 }
 
 MigrateStateLocal::MigrateStateLocal(
-				const char * src_ctid, const char * dst_ctid,
-				const char * priv, const char * root,
-				const char * dst_name, const char * uuid)
-		: MigrateStateSrc(src_ctid, dst_ctid, priv, root, dst_name)
+		const char * src_ctid, const char * dst_ctid,
+		const char * src_priv, const char * priv, const char * root,
+		const char * dst_name, const char * uuid)
+		: MigrateStateSrc(src_ctid, dst_ctid, src_priv, priv, root, dst_name)
 {
 	is_thesame_ctid = 0;
 	is_thesame_private = 0;
@@ -352,14 +352,6 @@ int MigrateStateLocal::preMigrateStage()
 	if (!is_thesame_ctid)
 		dstVE->clean();
 
-	// check VE root
-	if (!is_thesame_root) {
-		// check uniquely
-		if ((rc = checkVEDir(dstVE->root, 1)))
-			return rc;
-		addCleanerRemove(clean_removeDir, dstVE->root);
-	}
-
 	// check VE private
 	if (!is_thesame_private) {
 		// check uniquely
@@ -454,6 +446,15 @@ int MigrateStateLocal::preFinalStage()
 		}
 	}
 
+	if (isOptSet(OPT_SKIP_REGISTER)) {
+		if (srcVE->ve_data.name != NULL) {
+			std::string f("/etc/vz/names/");
+			f += srcVE->ve_data.name;
+			unlink(f.c_str());
+		}
+		return 0;
+	}
+
 	if (is_thesame_ctid) {
 		/* create config backup */
 		if ((rc = h_backup(dstVE->confRealPath().c_str())))
@@ -527,7 +528,7 @@ int MigrateStateLocal::preFinalStage()
 	 * Update MAC-addresses for all network interfaces in cloned VE (#PSBM-15447).
 	 * XXX: do it after veRegister(), otherwize vzctl fails to update MACs.
 	 */
-		if ((rc = dstVE->updateMAC()))
+		if ((rc = dstVE->renewMAC()))
 			return rc;
 	} else if (NULL == dstVE->ve_data.name && srcVE->ve_data.name != NULL) {
 		// New name for the target VE is undefined.
@@ -550,8 +551,11 @@ int MigrateStateLocal::postFinalStage()
 	START_STAGE();
 
 	if (!isOptSet(OPT_COPY)) {
-		if (!is_thesame_ctid)
+		if (isOptSet(OPT_SKIP_REGISTER))
+			unlink(srcVE->confPath().c_str());
+		else if (!is_thesame_ctid)
 			srcVE->unregister();
+
 		if (!is_thesame_private && access(srcVE->priv, F_OK) == 0)
 			rmdir_recursively(srcVE->priv);
 		if (!is_thesame_root)
@@ -567,9 +571,7 @@ int MigrateStateLocal::postFinalStage()
 		strbuf = dstVE->priv;
 		strbuf.append("/.uptime");
 		clean_removeFile(strbuf.c_str(), NULL);
-	}
 
-	if (isOptSet(OPT_COPY)) {
 		/* to execute /etc/sysconfig/vz-scripts/vps.clone
 		for local clone (#427065) */
 		char script[PATH_MAX+1];

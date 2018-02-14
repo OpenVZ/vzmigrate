@@ -57,13 +57,14 @@ struct VEOptEntry
 	ctid_t dst_ctid;
 	const char * root_path;
 	const char * priv_path;
+	const char * src_priv_path;
 	char * dst_name;
 	char * uuid;
 	VEOptEntry()
 	{
 		SET_CTID(src_ctid, NULL);
 		SET_CTID(dst_ctid, NULL);
-		root_path = priv_path = dst_name = uuid = NULL;
+		root_path = priv_path = src_priv_path = dst_name = uuid = NULL;
 	};
 	~VEOptEntry()
 	{
@@ -176,6 +177,7 @@ typedef vector<string> TemplOptEntries;
 #define OPT_NOEVENT	(1ULL << 45)
 #define OPT_LIMIT_SPEED	(1ULL << 46)
 #define OPT_COMPRESS	(1ULL << 47)
+#define OPT_SKIP_REGISTER (1ULL << 48)
 
 #define DSTACT_UNDUMP_VE	10
 #define DSTACT_RESUME_VE	11

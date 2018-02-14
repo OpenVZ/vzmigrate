@@ -180,97 +180,62 @@ ve_data::~ve_data()
 	string_list_clean(&templates);
 }
 
-int ve_data_load(const char *ctid, struct ve_data *ve)
+static int do_ve_data_load(struct vzctl_env_handle *h, struct ve_data *ve)
 {
-	int err, rc = 0;
+	int rc = 0;
 	const char *data;
 	char *str, *token;
-	struct vzctl_env_handle *h;
 	struct vzctl_env_param *env;
 	struct vzctl_disk_param disk;
 	vzctl_disk_iterator it = NULL;
 
-	h = vzctl2_env_open(ctid, VZCTL_CONF_SKIP_PARAM_ERRORS, &err);
-	if (err)
-		return putErr(MIG_ERR_VZCTL, "vzctl2_env_open(%s) err: %d error: %s",
-			ctid, err, vzctl2_get_last_error());
 
 	env = vzctl2_get_env_param(h);
 
 	/* read expanded and original root and private */
-	if (vzctl2_env_get_ve_root_orig_path(env, &data)) {
-		rc = putErr(MIG_ERR_SYSTEM,
-			"Can't read VE_ROOT from CT %s config", ctid);
-		goto cleanup;
-	}
-	if ((ve->root_orig = strdup(data)) == NULL) {
-		rc = putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
-		goto cleanup;
-	}
-
-	if (vzctl2_env_get_ve_root_path(env, &data)) {
-		rc = putErr(MIG_ERR_SYSTEM, "Can't read VE_ROOT from CT config");
-		goto cleanup;
-	}
-	if ((ve->root = strdup(data)) == NULL) {
-		rc = putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
-		goto cleanup;
-	}
-
-	if (vzctl2_env_get_ve_private_orig_path(env, &data)) {
-		rc = putErr(MIG_ERR_SYSTEM,
+	if (vzctl2_env_get_ve_root_orig_path(env, &data))
+		return putErr(MIG_ERR_SYSTEM,
+			"Can't read VE_ROOT from CT config");
+	if ((ve->root_orig = strdup(data)) == NULL)
+		return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
+	if (vzctl2_env_get_ve_root_path(env, &data))
+		return putErr(MIG_ERR_SYSTEM, "Can't read VE_ROOT from CT config");
+	if ((ve->root = strdup(data)) == NULL)
+		return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
+	if (vzctl2_env_get_ve_private_orig_path(env, &data))
+		return putErr(MIG_ERR_SYSTEM,
 				"Can't read VE_PRIVATE from CT config");
-		goto cleanup;
-	}
-	if ((ve->priv_orig = strdup(data)) == NULL) {
-		rc = putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
-		goto cleanup;
-	}
-
-	if (vzctl2_env_get_ve_private_path(env, &data)) {
-		rc = putErr(MIG_ERR_SYSTEM, "Can't read VE_PRIVATE from CT config");
-		goto cleanup;
-	}
-	if ((ve->priv = strdup(data)) == NULL) {
-		rc = putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
-		goto cleanup;
-	}
+	if ((ve->priv_orig = strdup(data)) == NULL)
+		return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
+	if (vzctl2_env_get_ve_private_path(env, &data))
+		return putErr(MIG_ERR_SYSTEM, "Can't read VE_PRIVATE from CT config");
+	if ((ve->priv = strdup(data)) == NULL)
+		return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
 	remove_trail_slashes(ve->priv);
 
 	/* read OSTEMPLATE */
-	if ((rc = vzctl2_env_get_param(h, VE_CONF_OSTEMPLATE, &data))) {
-		rc = putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
+	if ((rc = vzctl2_env_get_param(h, VE_CONF_OSTEMPLATE, &data)))
+		return putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
 			VE_CONF_OSTEMPLATE, vzctl2_get_last_error());
-		goto cleanup;
-	}
 	if (data == NULL)
 		ve->ostemplate = strdup("");
 	else
 		ve->ostemplate = strdup(data);
-	if (ve->ostemplate == NULL) {
-		rc = putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
-		goto cleanup;
-	}
-
+	if (ve->ostemplate == NULL)
+		return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
 	/* read UUID */
-	if ((rc = vzctl2_env_get_param(h, VE_CONF_UUIDDIR, &data))) {
-		rc = putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
+	if ((rc = vzctl2_env_get_param(h, VE_CONF_UUIDDIR, &data)))
+		return putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
 			VE_CONF_UUIDDIR, vzctl2_get_last_error());
-		goto cleanup;
-	}
 	if (data) {
-		if ((ve->uuid = strdup(data)) == NULL) {
-			rc = putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
-			goto cleanup;
-		}
+		if ((ve->uuid = strdup(data)) == NULL)
+			return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
 	}
 
 	/* read TECHNOLOGIES */
-	if ((rc = vzctl2_env_get_param(h, VE_CONF_TECHNOLOGIES, &data))) {
-		rc = putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
+	if ((rc = vzctl2_env_get_param(h, VE_CONF_TECHNOLOGIES, &data)))
+		return putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
 			VE_CONF_TECHNOLOGIES, vzctl2_get_last_error());
-		goto cleanup;
-	}
 	if (data) {
 		unsigned long tech;
 		char *p;
@@ -285,91 +250,71 @@ int ve_data_load(const char *ctid, struct ve_data *ve)
 		for (; ;str = NULL) {
 			if ((token = strtok(str, "  ")) == NULL)
 				break;
-			if ((tech = vzctl2_name2tech(token)) == 0) {
-				rc = putErr(MIG_ERR_TECHNOLOGIES,
+			if ((tech = vzctl2_name2tech(token)) == 0)
+				return putErr(MIG_ERR_TECHNOLOGIES,
 				"Unknown technology in TECHNOLOGIES: %s",\
 					token);
-				goto cleanup;
-			}
 			ve->technologies |= tech;
 		}
 	}
 
 	/* read NAME */
-	if ((rc = vzctl2_env_get_param(h, VE_CONF_NAME, &data))) {
-		rc = putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
+	if ((rc = vzctl2_env_get_param(h, VE_CONF_NAME, &data)))
+		return putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
 			VE_CONF_NAME, vzctl2_get_last_error());
-		goto cleanup;
-	}
 	if (data) {
-		if ((ve->name = strdup(data)) == NULL) {
-			rc = putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
-			goto cleanup;
-		}
+		if ((ve->name = strdup(data)) == NULL)
+			return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
 	}
 
 	/* read BINDMOUNT */
-	if ((rc = vzctl2_env_get_param(h, VE_CONF_BINDMOUNT, &data))) {
-		rc = putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
+	if ((rc = vzctl2_env_get_param(h, VE_CONF_BINDMOUNT, &data)))
+		return putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
 			VE_CONF_BINDMOUNT, vzctl2_get_last_error());
-		goto cleanup;
-	}
 	if (data) {
-		if ((ve->bindmount = strdup(data)) == NULL) {
-			rc = putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
-			goto cleanup;
-		}
+		if ((ve->bindmount = strdup(data)) == NULL)
+			return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
 	}
 
 	/* read IP_ADDRESS */
-	if ((rc = vzctl2_env_get_param(h, VE_CONF_IPADDR, &data))) {
-		rc = putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
+	if ((rc = vzctl2_env_get_param(h, VE_CONF_IPADDR, &data)))
+		return putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
 			VE_CONF_IPADDR, vzctl2_get_last_error());
-		goto cleanup;
-	}
 	if (data) {
 		for (str = strdupa(data); ;str = NULL) {
 			if ((token = strtok(str, "  ")) == NULL)
 				break;
 			if ((rc = string_list_add(&ve->ipaddr, token)))
-				goto cleanup;
+				return rc;
 		}
 	}
 
 	/* read RATE */
-	if ((rc = vzctl2_env_get_param(h, VE_CONF_RATE, &data))) {
-		rc = putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
+	if ((rc = vzctl2_env_get_param(h, VE_CONF_RATE, &data)))
+		return putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
 			VE_CONF_RATE, vzctl2_get_last_error());
-		goto cleanup;
-	}
 	if (data) {
 		for (str = strdupa(data); ;str = NULL) {
 			if ((token = strtok(str, "  ")) == NULL)
 				break;
 			if ((rc = string_list_add(&ve->rate, token)))
-				goto cleanup;
+				return rc;
 		}
 	}
 
 	/* read VE_TYPE */
-	if ((rc = vzctl2_env_get_param(h, VE_CONF_VETYPE, &data))) {
-		rc = putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
+	if ((rc = vzctl2_env_get_param(h, VE_CONF_VETYPE, &data)))
+		return putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
 			VE_CONF_VETYPE, vzctl2_get_last_error());
-		goto cleanup;
-	}
 	if (data) {
-		if ((ve->ve_type = strdup(data)) == NULL) {
+		if ((ve->ve_type = strdup(data)) == NULL)
 			rc = putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
-			goto cleanup;
-		}
 	}
 
 	/* read DISKSPACE */
-	if ((rc = vzctl2_env_get_param(h, VE_CONF_DISKSPACE , &data))) {
-		rc = putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
+	if ((rc = vzctl2_env_get_param(h, VE_CONF_DISKSPACE , &data)))
+		return putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
 			VE_CONF_DISKSPACE, vzctl2_get_last_error());
-		goto cleanup;
-	}
 	if (data) {
 		if ((str = (char*)strchr(data, ':'))) {
 			*str = '\0';
@@ -379,11 +324,9 @@ int ve_data_load(const char *ctid, struct ve_data *ve)
 	}
 
 	/* read DISKINODES */
-	if ((rc = vzctl2_env_get_param(h, VE_CONF_DISKINODES , &data))) {
-		rc = putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
+	if ((rc = vzctl2_env_get_param(h, VE_CONF_DISKINODES , &data)))
+		return putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
 			VE_CONF_DISKINODES, vzctl2_get_last_error());
-		goto cleanup;
-	}
 	if (data) {
 		if ((str = (char*)strchr(data, ':'))) {
 			*str = '\0';
@@ -393,48 +336,38 @@ int ve_data_load(const char *ctid, struct ve_data *ve)
 	}
 
 	/* read TEMPLATES */
-	if ((rc = vzctl2_env_get_param(h, VE_CONF_TEMPLATES, &data))) {
-		rc = putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
+	if ((rc = vzctl2_env_get_param(h, VE_CONF_TEMPLATES, &data)))
+		return putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
 			VE_CONF_TEMPLATES, vzctl2_get_last_error());
-		goto cleanup;
-	}
 	if (data) {
 		for (str = strdupa(data); ;str = NULL) {
 			if ((token = strtok(str, "  ")) == NULL)
 				break;
 			if ((rc = string_list_add(&ve->templates, token)))
-				goto cleanup;
+				return rc;
 		}
 	}
 
 	/* read SLMMODE */
-	if ((rc = vzctl2_env_get_param(h, VE_CONF_SLMMODE, &data))) {
-		rc = putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
+	if ((rc = vzctl2_env_get_param(h, VE_CONF_SLMMODE, &data)))
+		return putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
 			VE_CONF_SLMMODE, vzctl2_get_last_error());
-		goto cleanup;
-	}
 	if (data) {
-		if ((ve->slmmode = strdup(data)) == NULL) {
-			rc = putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
-			goto cleanup;
-		}
+		if ((ve->slmmode = strdup(data)) == NULL)
+			return putErr(MIG_ERR_SYSTEM, MIG_MSG_SYSTEM);
 	}
 
 	/* read HA_ENABLE */
-	if ((rc = vzctl2_env_get_param(h, VE_CONF_HA_ENABLE, &data))) {
-		rc = putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
+	if ((rc = vzctl2_env_get_param(h, VE_CONF_HA_ENABLE, &data)))
+		return putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
 			VE_CONF_HA_ENABLE, vzctl2_get_last_error());
-		goto cleanup;
-	}
 	if (data)
 		ve->ha_enable = !strcasecmp(data, "yes");
 
 	/* read HA_PRIO */
-	if ((rc = vzctl2_env_get_param(h, VE_CONF_HA_PRIO, &data))) {
-		rc = putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
+	if ((rc = vzctl2_env_get_param(h, VE_CONF_HA_PRIO, &data)))
+		return putErr(MIG_ERR_VZCTL, "vzctl2_env_get_param(%s) error: %s",
 			VE_CONF_HA_PRIO, vzctl2_get_last_error());
-		goto cleanup;
-	}
 	if (data) {
 		errno = 0;
 		unsigned long prio = strtoul(data, NULL, 10);
@@ -484,7 +417,37 @@ int ve_data_load(const char *ctid, struct ve_data *ve)
 		}
 	}
 
-cleanup:
+	return rc;
+}
+
+int ve_data_load_by_conf(const char *conf, struct ve_data *ve)
+{
+	int rc;
+	struct vzctl_env_handle *h;
+
+	h = vzctl2_env_open_conf(NULL, conf, VZCTL_CONF_SKIP_PARAM_ERRORS, &rc);
+	if (rc)
+		return putErr(MIG_ERR_VZCTL, "vzctl2_env_open(%s) err: %d error: %s",
+			conf, rc, vzctl2_get_last_error());
+
+	rc = do_ve_data_load(h, ve);
+
+	vzctl2_env_close(h);
+
+	return rc;
+}
+
+int ve_data_load(const char *ctid, struct ve_data *ve)
+{
+	int rc;
+	struct vzctl_env_handle *h;
+
+	h = vzctl2_env_open(ctid, VZCTL_CONF_SKIP_PARAM_ERRORS, &rc);
+	if (rc)
+		return putErr(MIG_ERR_VZCTL, "vzctl2_env_open(%s) err: %d error: %s",
+			ctid, rc, vzctl2_get_last_error());
+
+	rc = do_ve_data_load(h, ve);
 	vzctl2_env_close(h);
 
 	return rc;
