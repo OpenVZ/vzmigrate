@@ -205,7 +205,7 @@ static void usage(void)
 {
 	fprintf(stderr, VZMIGRATE_USAGE, "vzmigrate");
 	fprintf(stderr, "The vzmigrate utility is deprecated.\n");
-	fprintf(stderr, "Please, consider switching to pmigrate utility.\n");
+	fprintf(stderr, "Please, consider switching to the prlctl utility.\n");
 	exit(1);
 }
 
