@@ -118,12 +118,8 @@ class VEObj
 {
 private:
 	string m_snap_guid;
-
 	ctid_t m_ctid;
-
 	int lock_fd;
-
-	void priv_init();
 
 public:
 	const char* ctid() const
@@ -236,7 +232,6 @@ public:
 
 	int loadConfig();
 	void setLayout(int new_layout);
-	int updateMAC();
 	bool isCustomPrivate() const;
 private:
 	bool findInBindmounts(bool (*func)(const std::string &bstr));

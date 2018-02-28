@@ -60,8 +60,8 @@ public:
 	virtual int startVE();
 
 	MigrateStateLocal(const char * src_ctid, const char * dst_ctid,
-			const char * priv, const char * root,
-			const char *dst_name = NULL, const char *uuid = NULL);
+		const char * src_priv, const char * priv, const char * root,
+		const char *dst_name = NULL, const char *uuid = NULL);
 	~MigrateStateLocal();
 
 protected:

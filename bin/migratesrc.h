@@ -78,7 +78,8 @@ public:
 	virtual bool isSameLocation() = 0;
 
 	MigrateStateSrc(const char * src_ctid, const char * dst_ctid,
-		const char * priv, const char * root, const char *name);
+		const char * src_priv, const char * priv, const char * root,
+		const char *name);
 	~MigrateStateSrc();
 
 	static int getRelativePath(const char *directory, const char *path, char *rpath, size_t size);

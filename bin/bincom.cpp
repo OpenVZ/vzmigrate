@@ -283,6 +283,8 @@ const char * VEArgs[MAX_ARGS + 1] =
 #define NOEVENT_OPTS		27
 #define LIMIT_SPEED_OPTS	28
 #define COMPRESS_OPTS		29
+#define PRIVATE_OPTS		30
+#define SKIP_REGISTER_OPTS	31
 
 /* parse user:password@host */
 static int parse_UPH(
@@ -632,6 +634,8 @@ void parse_options (int argc, char **argv)
 		    {"new-id", required_argument, NULL, NEW_ID_OPTS},
 		    {"new-private", required_argument, NULL, NEW_PRIVATE_OPTS},
 				{"dst", required_argument, NULL, NEW_PRIVATE_OPTS},
+
+		    {"private", required_argument, NULL, PRIVATE_OPTS},
 		    {"new-root", required_argument, NULL, NEW_ROOT_OPTS},
 		    {"batch", no_argument, NULL, 'b'},
 //		    {"progress", no_argument, NULL, 'p'},
@@ -641,6 +645,7 @@ void parse_options (int argc, char **argv)
 		{"timeout", required_argument, NULL, TIMEOUT_OPTS},
 		{"aprogress", no_argument, NULL, APROGRESS_OPTS},
 		{"skiplock", no_argument, NULL, SKIP_LOCKVE_OPTS}, // Skip locking VE
+		{"skipregister", no_argument, NULL, SKIP_REGISTER_OPTS},
 		{"socket", no_argument, NULL, SOCKET_OPTS},
 		{"keep-images", no_argument, NULL, KEEP_IMAGES_OPTS}, // Keep images 
 		// Keep source CT - internal for parallels server mode
@@ -753,7 +758,9 @@ void parse_options (int argc, char **argv)
  		case SKIP_LOCKVE_OPTS:
 			setOpt(OPT_SKIP_LOCKVE);
 			break;
-
+ 		case SKIP_REGISTER_OPTS:
+			setOpt(OPT_SKIP_REGISTER);
+			break;
 		case READONLY_OPTS:
 			setOpt(OPT_READONLY);
 			break;
@@ -897,6 +904,10 @@ void parse_options (int argc, char **argv)
 			if (optarg == NULL)
 				usage();
 			entry->priv_path = strdup(optarg);
+			new_syntax = 1;
+			break;
+		case PRIVATE_OPTS:
+			entry->src_priv_path = optarg;
 			new_syntax = 1;
 			break;
 		case NEW_ROOT_OPTS:
@@ -1189,7 +1200,7 @@ void parse_options (int argc, char **argv)
 		size_t size;
 
 		/* read source veid or vename only */
-		if (new_syntax == 1 && argc != 1) {
+		if (new_syntax == 1 && argc != 1 && !isOptSet(OPT_SKIP_REGISTER) ) {
 			logger(LOG_ERR, "Only one veid/vename should be used "\
 				"with --new-* options");
 			usage();
@@ -1220,15 +1231,17 @@ void parse_options (int argc, char **argv)
 			if (EMPTY_CTID(entry->dst_ctid))
 				SET_CTID(entry->dst_ctid, entry->src_ctid);
 		} else {
-			if (strchr(argv[0], ':')) {
-				logger(LOG_ERR, "Old ve list syntax can not be used "\
-						"with --new-* options: %s", argv[0]);
-				usage();
-			}
-			get_ctid(argv[0], entry->src_ctid);
+			if (entry->src_priv_path == NULL ) {
+				if (strchr(argv[0], ':')) {
+					logger(LOG_ERR, "Old ve list syntax can not be used "\
+							"with --new-* options: %s", argv[0]);
+					usage();
+				}
+				get_ctid(argv[0], entry->src_ctid);
 
-			if (EMPTY_CTID(entry->dst_ctid))
-				SET_CTID(entry->dst_ctid, entry->src_ctid);
+				if (EMPTY_CTID(entry->dst_ctid))
+					SET_CTID(entry->dst_ctid, entry->src_ctid);
+			}
 
 			// check is private specified during local move, it's mandatory
 			if (VZMoptions.bintype == BIN_LOCAL && !isOptSet(OPT_COPY)

@@ -144,5 +144,6 @@ int vz_data_load(struct vz_data *vz);
  * Read VE config.
  */
 int ve_data_load(const char *ctid, struct ve_data *ve);
+int ve_data_load_by_conf(const char *conf, struct ve_data *ve);
 
 #endif

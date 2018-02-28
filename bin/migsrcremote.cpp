@@ -90,7 +90,7 @@ MigrateStateRemote::MigrateStateRemote(
 		const char * priv,
 		const char * root,
 		const char *dst_name)
-	: MigrateStateSrc(src_ctid, dst_ctid, priv, root, dst_name),
+	: MigrateStateSrc(src_ctid, dst_ctid, NULL, priv, root, dst_name),
 	m_bIsPrivOnShared(false)
 {
 	is_keep_dir = 0;

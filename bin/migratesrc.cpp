@@ -39,12 +39,14 @@
 extern struct vz_data *vzcnf;
 
 MigrateStateSrc::MigrateStateSrc(const char * src_ctid, const char * dst_ctid,
-				const char * priv, const char * root,
-				const char *name)
-		: MigrateStateCommon()
+		const char * src_priv, const char * priv, const char * root,
+		const char *name)
+	: MigrateStateCommon()
 {
 	keepVE = NULL;
 	srcVE = new VEObj(src_ctid);
+	if (src_priv)
+		 srcVE->setPrivate(src_priv);
 	dstVE = new VEObj(dst_ctid);
 	dstVE->setPrivate(priv);
 	dstVE->setRoot(root);
@@ -138,7 +140,9 @@ void MigrateStateSrc::unsetBandwidth(vzctl_env_handle *h)
 int MigrateStateSrc::doMigration()
 {
 	// Get status of container
-	int rc = srcVE->getStatus(ENV_STATUS_MOUNTED | ENV_STATUS_RUNNING, &m_srcInitStatus);
+	int rc;
+
+	rc = srcVE->getStatus(ENV_STATUS_MOUNTED | ENV_STATUS_RUNNING, &m_srcInitStatus);
 	if (rc)
 		return rc;
 
@@ -357,7 +361,7 @@ int MigrateStateSrc::checkCommonSrc()
 	if ((rc = checkDisks()))
 		return rc;
 
-	if (!srcVE->isrun() && isOptSet(OPT_ONLINE))
+	if (isOptSet(OPT_ONLINE) && !srcVE->isrun() )
 		return putErr(MIG_ERR_USAGE, "Source Container must be running for online migration");
 
 	// do not migrate temporary VE for template cache
