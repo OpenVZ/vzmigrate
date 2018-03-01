@@ -99,7 +99,6 @@ int main(int argc, char **argv)
 	if ((rc = vz_data_load(vzcnf)))
 		exitM(rc);
 
-	VZMoptions.bintype = BIN_LOCAL;
 	parse_options(argc, argv);
 
 	if (VZMoptions.bintype == BIN_SRC) {
