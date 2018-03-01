@@ -394,10 +394,9 @@ int MigrateStateLocal::preMigrateStage()
 		return rc;
 
 	if (!is_thesame_ctid) {
-		std::string uuid(m_uuid ? : "");
-
-		if ((rc = h_copy(srcVE->confPath().c_str(),
-				dstVE->confPath().c_str())))
+		std::string s = EMPTY_CTID(srcVE->ctid()) ?
+				srcVE->confRealPath() : srcVE->confPath();
+		if ((rc = h_copy(s.c_str(), dstVE->confPath().c_str())))
 			return rc;
 
 		if ((rc = dstVE->prepareConfig()))
