@@ -475,6 +475,8 @@ int MigrateStateLocal::preFinalStage()
 	if (rc)
 		return rc;
 
+	if (!isOptSet(OPT_COPY) && strcmp(srcVE->ctid(), dstVE->ctid()))
+		vzctl2_send_state_evt(srcVE->ctid(), VZCTL_ENV_UNREGISTERED);
 	logger(LOG_INFO, "Register CT %s uuid=%s", dstVE->ctid(), uuid ?: "");
 	if ((rc = dstVE->veRegister(uuid)))
 		return rc;
