@@ -425,7 +425,8 @@ int ve_data_load_by_conf(const char *conf, struct ve_data *ve)
 	int rc;
 	struct vzctl_env_handle *h;
 
-	h = vzctl2_env_open_conf(NULL, conf, VZCTL_CONF_SKIP_PARAM_ERRORS, &rc);
+	h = vzctl2_env_open_conf(NULL, conf,
+		VZCTL_CONF_SKIP_PARAM_ERRORS | VZCTL_CONF_UNREGISTERED, &rc);
 	if (rc)
 		return putErr(MIG_ERR_VZCTL, "vzctl2_env_open(%s) err: %d error: %s",
 			conf, rc, vzctl2_get_last_error());
