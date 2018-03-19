@@ -24,6 +24,8 @@
 #ifndef __TRACE_H__
 #define __TRACE_H__
 
+#include "common.h"
+
 #include <syslog.h>
 #include <boost/optional.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -32,33 +34,39 @@
 struct Trace
 {
 	Trace(const char *name, const char *action, const char *ctid) :
-		m_ctid(ctid), m_action(action)
+		m_name(name), m_ctid(ctid), m_action(action)
 	{
-		openlog(name, LOG_PID, LOG_INFO | LOG_USER);
-	}
-
-	~Trace()
-	{
-		closelog();
 	}
 
 	void start()
 	{
+		closelog();
+		openlog(m_name, LOG_PID, LOG_INFO | LOG_USER);
+
 		boost::property_tree::ptree t;
 		t.put("action", m_action.c_str());
 		t.put("op", "start");
 		t.put("ctid", m_ctid.c_str());
 		report(t);
+
+		closelog();
+		open_logger(NULL);
 	}
 
 	void finish(int code)
 	{
+		closelog();
+		openlog(m_name, LOG_PID, LOG_INFO | LOG_USER);
+
 		boost::property_tree::ptree t;
 		t.put("action", m_action.c_str());
 		t.put("op", "finish");
 		t.put("ctid", m_ctid.c_str());
 		t.put("result", code);
 		report(t);
+
+		closelog();
+		open_logger(NULL);
 	}
 
 private:
@@ -69,6 +77,7 @@ private:
 		syslog(LOG_INFO, s.str().c_str());
 	}
 
+	const char * m_name;
 	std::string m_ctid;
 	std::string m_action;
 };
