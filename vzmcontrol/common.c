@@ -32,7 +32,7 @@
 
 int debug_level = LOG_DEBUG;
 int is_quiet_logger = 0;
-const char * log_name = NULL;
+static const char * log_name = NULL;
 
 void print_def(int level, const char * s);
 printFunc print_func = print_def;
@@ -56,8 +56,9 @@ int set_clo(int fd, int state)
 
 void open_logger(const char * name)
 {
-	openlog(name, LOG_CONS | LOG_PID, LOG_USER);
-	log_name = name;
+	if (name != NULL)
+		log_name = name;
+	openlog(log_name, LOG_CONS | LOG_PID, LOG_USER);
 }
 
 void vprint_log(int level, const char* oformat, va_list pvar)
