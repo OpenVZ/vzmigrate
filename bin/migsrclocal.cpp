@@ -554,8 +554,10 @@ int MigrateStateLocal::postFinalStage()
 	if (!isOptSet(OPT_COPY)) {
 		if (isOptSet(OPT_SKIP_REGISTER))
 			unlink(srcVE->confPath().c_str());
-		else if (!is_thesame_ctid)
+		else if (!is_thesame_ctid) {
 			srcVE->unregister();
+			unlink(srcVE->confPath().c_str());
+		}
 
 		if (!is_thesame_private && access(srcVE->priv, F_OK) == 0)
 			rmdir_recursively(srcVE->priv);
