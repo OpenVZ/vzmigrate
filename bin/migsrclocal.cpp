@@ -26,6 +26,7 @@
 #include <map>
 #include <mntent.h>
 #include <sys/mount.h>
+#include <uuid/uuid.h>
 
 #include <vzctl/libvzctl.h>
 
@@ -433,8 +434,13 @@ int MigrateStateLocal::preFinalStage()
 	if (isOptSet(OPT_COPY)) {
 		/* regenerate uuid if not provided in clone mode */
 		if (m_uuid == NULL) {
-			gen_uuid(u);
-			uuid = u;
+			uuid_t x;
+			if (uuid_parse(dstVE->ctid(), x) == 0)
+				uuid = dstVE->ctid();
+			else {
+				gen_uuid(u);
+				uuid = u;
+			}
 		}
 	} else if (NULL == uuid && !is_thesame_ctid) {
 		if (strlen(dstVE->ctid()) == 36) {
