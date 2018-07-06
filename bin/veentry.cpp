@@ -684,7 +684,8 @@ int VEObj::registration(const char *uuid)
 {
 	// will rewrite old owner on force registration
 	// vzmigrate will itself to register CT on HA cluster
-	int flags = VZ_REG_RENEW | VZ_REG_FORCE | VZ_REG_SKIP_HA_CLUSTER;
+	int flags = VZ_REG_RENEW | VZ_REG_FORCE | VZ_REG_SKIP_HA_CLUSTER |
+			VZ_REG_RENEW_NETIF_IFNAME;
 
 	struct vzctl_reg_param reg;
 	memset(&reg, 0, sizeof(struct vzctl_reg_param));
