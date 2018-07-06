@@ -430,20 +430,9 @@ int MigrateStateLocal::preFinalStage()
 			(!isOptSet(OPT_COPY))) 
 		dstVE->ve_data.name = strdup(srcVE->ve_data.name);
 	*/
-
-	if (isOptSet(OPT_COPY)) {
-		/* regenerate uuid if not provided in clone mode */
-		if (m_uuid == NULL) {
-			uuid_t x;
-			if (uuid_parse(dstVE->ctid(), x) == 0)
-				uuid = dstVE->ctid();
-			else {
-				gen_uuid(u);
-				uuid = u;
-			}
-		}
-	} else if (NULL == uuid && !is_thesame_ctid) {
-		if (strlen(dstVE->ctid()) == 36) {
+	if (NULL == uuid && (isOptSet(OPT_COPY) || !is_thesame_ctid)) {
+		uuid_t x;
+		if (uuid_parse(dstVE->ctid(), x) == 0) {
 			uuid = dstVE->ctid();
 		} else {
 			gen_uuid(u);
