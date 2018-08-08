@@ -451,8 +451,10 @@ int MigrateStateCommon::remoteRsyncSrc(
 			goto cleanup_0;
 	}
 
-	if ((rc = channel.readReply()))
-		goto cleanup_0;
+	if (VZMoptions.remote_version < MIGRATE_VERSION_702) {
+		if ((rc = channel.readReply()))
+			goto cleanup_0;
+	}
 
 cleanup_0:
 	for (i = 0; args[i]; i++)

@@ -834,7 +834,7 @@ int MigrateStateRemote::preMigrateStage()
 
 	// copy config
 	if (!(m_nFlags & VZMSRC_SHARED_PRIV)) {
-		if ((rc = h_copy_remote_rsync_file(CMD_CONFSET, srcVE->confRealPath().c_str())))
+		if ((rc = h_copy_remote_rsync_file(srcVE->confRealPath().c_str())))
 			return rc;
 	}
 
@@ -1209,13 +1209,13 @@ int MigrateStateRemote::postFinalStage()
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  */
 
-int MigrateStateRemote::h_copy_remote_rsync_file(const char * cmd, const char * path)
+int MigrateStateRemote::h_copy_remote_rsync_file(const char * path)
 {
 	list<string> args;
 	args.push_back("--delete");
 	args.push_back(path);
 	args.push_back(DUMMY_DEST);
-	return remoteRsyncSrc(cmd, false, args);
+	return remoteRsyncSrc(CMD_CONFSET, false, args);
 }
 
 /* Restore VE config from backup (<veprivate>/ve.conf.migrated)

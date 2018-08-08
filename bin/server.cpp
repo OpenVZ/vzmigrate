@@ -411,16 +411,23 @@ static int proc_cmd(const char *cmd, istringstream & is, ostringstream & os)
 	return rc;
 }
 
-static int doReply(int status_, const std::string& message_)
+static int doReply(const string &cmd, int status_, const std::string& message_)
 {
+	if (VZMoptions.remote_version >= MIGRATE_VERSION_702 &&
+			(cmd == CMD_CONFSET ||
+			 cmd == CMD_PLOOP_COPY_SYNC ||
+			 cmd == CMD_FIRSTEMPL ||
+			 cmd == CMD_COPY_EZCACHE))
+		return 0;
+
 	return MigrateStateCommon::channel.sendReply(status_, "%s",
 			status_ ? getError() : message_.c_str());
 }
 
-static int doGoodbye(int status_, const std::string& message_)
+static int doGoodbye(const string &cmd, int status_, const std::string& message_)
 {
 	if (0 != status_)
-		return doReply(status_, message_);
+		return doReply(cmd, status_, message_);
 
 	MigrateStateCommon* migrateState =
 		((VZMoptions.bintype == BIN_DEST_TEMPL)
@@ -430,7 +437,7 @@ static int doGoodbye(int status_, const std::string& message_)
 	// success cleaning
 	migrateState->doCleaning(SUCCESS_CLEANER);
 
-	int output = doReply(status_, message_);
+	int output = doReply(cmd, status_, message_);
 	if (0 == output)
 	{
 		// clean MigrateState Cleaners
@@ -467,7 +474,7 @@ int main_loop()
 		        cmd.compare(CMD_RESUME) == 0 ||
 		        cmd.compare(CMD_FINTEMPL) == 0)
 		{
-			e = doGoodbye(rcode, os.str());
+			e = doGoodbye(cmd, rcode, os.str());
 			if (0 == e)
 			{
 				if (isOptSet(OPT_PS_MODE))
@@ -476,7 +483,7 @@ int main_loop()
 		}
 		else
 		{
-			e = doReply(rcode, os.str());
+			e = doReply(cmd, rcode, os.str());
 		}
 		if (0 != e)
 			return e;
