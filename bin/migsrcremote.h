@@ -86,7 +86,7 @@ protected:
 	int establishChannel(class MigrateSshChannel *ch, char *cmd);
 
 	/* copy functions */
-	int h_copy_remote_rsync_file(const char * cmd, const char * path);
+	int h_copy_remote_rsync_file(const char * path);
 	int copy_remote(const char *src, struct string_list *exclude, bool use_rsync);
 
 	/* Restore VE config from backup (<veprivate>/ve.conf.migrated)
