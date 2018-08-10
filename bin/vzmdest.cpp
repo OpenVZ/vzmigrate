@@ -160,7 +160,7 @@ void sigterm(int signum)
 		kill(tar_dst_pid, signum);
 		tar_dst_pid = -1;
 	}
-	exitM(MIG_ERR_TERM);
+	exit(MIG_ERR_TERM);
 }
 
 /* this function call by logger() & putErr() to send message to client */
