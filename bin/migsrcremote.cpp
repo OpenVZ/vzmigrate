@@ -1922,6 +1922,9 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 	if (isOptSet(OPT_NOSTART))
 		args.push_back("--nostart");
 
+	if (VZMoptions.remote_version < MIGRATE_VERSION_709)
+		args.push_back("--sync-copy");
+
 	return args;
 }
 

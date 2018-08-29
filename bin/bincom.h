@@ -82,7 +82,8 @@ typedef vector<string> TemplOptEntries;
 
 #define VZMDEST_REPLY		"migrate %d"
 
-#define MIGRATE_VERSION			MIGRATE_VERSION_702
+#define MIGRATE_VERSION			MIGRATE_VERSION_709
+#define MIGRATE_VERSION_709		709
 #define MIGRATE_VERSION_702		702
 #define MIGRATE_VERSION_701		701
 #define MIGRATE_VERSION_700		700
