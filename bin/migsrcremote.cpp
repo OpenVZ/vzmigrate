@@ -1027,8 +1027,6 @@ int MigrateStateRemote::startVE()
 			return rc;
 	}
 
-	unregisterHA();
-
 	return rc;
 }
 
@@ -1154,6 +1152,8 @@ int MigrateStateRemote::postFinalStage()
 		END_STAGE();
 		return 0;
 	}
+
+	unregisterHA();
 
 	if (isOptSet(OPT_KEEP_SRC) || !isOptSet(OPT_REMOVE))
 		deleteKeepDstSnapshots(*srcVE);
