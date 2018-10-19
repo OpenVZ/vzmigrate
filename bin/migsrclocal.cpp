@@ -278,6 +278,7 @@ int MigrateStateLocal::updateDiskPath()
 int MigrateStateLocal::preMigrateStage()
 {
 	int rc;
+	long fstype;
 
 	START_STAGE();
 
@@ -317,7 +318,8 @@ int MigrateStateLocal::preMigrateStage()
 	if ((rc = checkCommonDst(*dstVE)))
 		return rc;
 
-	if ((rc = is_path_on_shared_storage(dstVE->priv, &is_priv_on_shared, NULL)))
+	if ((rc = is_path_on_shared_storage(dstVE->priv, &is_priv_on_shared,
+					&fstype)))
 		return rc;
 
 	/* check private/root */
@@ -363,6 +365,11 @@ int MigrateStateLocal::preMigrateStage()
 
 	if ((rc = cmp_locations(srcVE->priv, dstVE->priv, &is_thesame_location)))
 		return rc;
+
+	if (fstype == PCS_SUPER_MAGIC && is_thesame_location) {
+		logger(LOG_ERR, "CT on shared storage, switching to copy mode");
+		is_thesame_location = 0;
+	}
 
 	logger(LOG_DEBUG, "location '%s' & '%s' are %s", srcVE->priv, dstVE->priv,
 			is_thesame_location ? "equal" : "differ" );
