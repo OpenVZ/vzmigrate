@@ -824,14 +824,14 @@ int rmdir_recursively(const char *dirname)
 	int rc = 0;
 
 	if ((dir = opendir(dirname)) == NULL)
-		return putErr(MIG_ERR_SYSTEM, "opendir(%s) error", dirname);
+		return putErr(MIG_ERR_SYSTEM, "opendir(%s) error: %m", dirname);
 
 	while (1) {
 		errno = 0;
 		if ((de = readdir(dir)) == NULL) {
 			if (errno)
 				rc = putErr(MIG_ERR_SYSTEM,
-					"readdir(%s) error", dirname);
+					"readdir(%s) error: %m", dirname);
 			break;
 		}
 
@@ -844,7 +844,7 @@ int rmdir_recursively(const char *dirname)
 		snprintf(path, sizeof(path), "%s/%s", dirname, de->d_name);
 
 		if (lstat(path, &st)) {
-			rc = putErr(MIG_ERR_SYSTEM, "stat(%s) error", path);
+			rc = putErr(MIG_ERR_SYSTEM, "stat(%s) error: %m", path);
 			break;
 		}
 
@@ -855,7 +855,7 @@ int rmdir_recursively(const char *dirname)
 		}
 		/* remove regfile, symlink, fifo, socket or device */
 		if (unlink(path)) {
-			rc = putErr(MIG_ERR_SYSTEM, "unlink(%s) error", path);
+			rc = putErr(MIG_ERR_SYSTEM, "unlink(%s) error: %m", path);
 			break;
 		}
 	}
@@ -866,7 +866,7 @@ int rmdir_recursively(const char *dirname)
 		return rc;
 
 	if (rmdir(dirname))
-		return putErr(MIG_ERR_SYSTEM, "rmdir(%s) error", dirname);
+		return putErr(MIG_ERR_SYSTEM, "rmdir(%s) error: %m", dirname);
 	return 0;
 }
 

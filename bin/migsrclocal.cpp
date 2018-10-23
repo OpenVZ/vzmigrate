@@ -560,7 +560,7 @@ int MigrateStateLocal::postFinalStage()
 			srcVE->unregister();
 			unlink(srcVE->confPath().c_str());
 		}
-
+		srcVE->unlock();
 		if (!is_thesame_private && access(srcVE->priv, F_OK) == 0)
 			rmdir_recursively(srcVE->priv);
 		if (!is_thesame_root)
