@@ -181,7 +181,7 @@ ctid_t g_keeperCTID = "\0";
 "      --whole-file           Use rsync --whole-file option.\n" \
 "  -l, --limit-speed          Limit maximum writing speed, in bytes per second.\n" \
 "  -t, --timeout              Connection timeout in seconds.\n" \
-"      --compress             Enable SSH channel compression.\n" \
+"      --compress             Enable ZSTD channel compression.\n" \
 "  -v, --verbose              Print verbose information.\n\n" \
 "Online option: \n" 									\
 "      --online               Perform online (zero-downtime) migration.\n"		\
@@ -965,9 +965,6 @@ void parse_options (int argc, char **argv)
 		}
 	}
 
-	if (isOptSet(OPT_COMPRESS))
-		string_list_add(&VZMoptions.ssh_options, "-C");
-
 	/* initialize destination CTID using uuid if it was not explicitly specified */
 	if (EMPTY_CTID(entry->dst_ctid) && (entry->uuid != NULL))
 		SET_CTID(entry->dst_ctid, entry->uuid);
@@ -1470,6 +1467,8 @@ int init_connection(MigrateStateCommon *st)
 		string_list_add(&args_list, "-v");
 	if (isOptSet(OPT_ONLINE))
 		string_list_add(&args_list, "--online");
+	if (isOptSet(OPT_COMPRESS))
+		string_list_add(&args_list, "--compress");
 	if (isOptSet(OPT_EZTEMPLATE))
 		string_list_add(&args_list, "-z");
 	for (i = 0; VEArgs[i]; i++)

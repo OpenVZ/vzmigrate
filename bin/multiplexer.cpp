@@ -24,9 +24,11 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <boost/bind.hpp>
+#include <boost/make_shared.hpp>
 #include "multiplexer.h"
 #include "migchannel.h"
 #include "common.h"
+#include <zstd.h>
 
 namespace multiplexer {
 
@@ -592,8 +594,137 @@ void ControlChannelConn::doProcessCommand(
 	}
 }
 
+/*
+ * Init ZSTD contexts
+ */
+CompressedWrapPolicy::CompressedWrapPolicy()
+{
+	m_zstdCCtx = ZSTD_createCCtx();
+	m_zstdDCtx = ZSTD_createDCtx();
+	m_rawWrapper = std::auto_ptr<RawWrapPolicy>();
+}
+
+CompressedWrapPolicy::~CompressedWrapPolicy()
+{
+	ZSTD_freeCCtx(m_zstdCCtx);
+	ZSTD_freeDCtx(m_zstdDCtx);
+}
+
+/*
+ * Pack raw packet and send it using master connection.
+ */
+
+boost::shared_ptr<PackedPacket> RawWrapPolicy::wrap(RawPacket* packet, size_t index)
+{
+	std::auto_ptr<RawPacket> rawPacket(packet);
+	size_t bodySize = rawPacket->getBodyBufSize();
+
+	// Release raw packet buffer
+	std::auto_ptr<PacketBuffer> buffer(rawPacket->releaseBuffer());
+
+	// Pack header manually
+	((MultiplexerPacketHeaderData*)buffer->getHeaderBuf())->m_channelIndex =
+		static_cast<uint32_t>(index);
+	((MultiplexerPacketHeaderData*)buffer->getHeaderBuf())->m_bodySize =
+		 static_cast<uint32_t>(bodySize);
+
+	// Build packed packet from raw packet
+	boost::shared_ptr<PackedPacket> packedPacket(
+		new PackedPacket(buffer.release()));
+	return packedPacket;
+}
+
+/*
+ * Construct compressed packed and send it through the raw packed routine
+ */
+boost::shared_ptr<PackedPacket> CompressedWrapPolicy::wrap(RawPacket* packet, size_t index)
+{
+	// Prepare packet with the size of a worst case compression size
+	RawPacket* outPacket = RawPacket::create(ZSTD_compressBound(packet->getBodyBufSize()));
+
+	// Compress body (without header)
+	size_t packSize = ZSTD_compressCCtx(m_zstdCCtx, outPacket->getBodyBuf(),
+		outPacket->getBodyBufSize(), packet->getBodyBuf(), packet->getBodyBufSize(), 3);
+
+	if (ZSTD_isError(packSize))
+	{
+		char buf[256];
+		snprintf(buf, sizeof(buf), MIG_mSG_ZSTD_COMP_ERR, ZSTD_getErrorName(packSize));
+		logger(LOG_ERR, buf);
+		abort();
+	}
+
+	// We do not need original packet anymore
+	delete packet;
+
+	// Resize packet to the actual data written by ZSTD
+	outPacket->shrinkBuffer(packSize);
+
+	// Reuse Raw wrapping
+	return m_rawWrapper->wrap(outPacket, index);
+}
+
+/*
+ * Unwrap raw packed packed and return it along with channel id
+ */
+std::pair<boost::shared_ptr<RawPacket>, size_t> RawWrapPolicy::unwrap(PackedPacket* packet)
+{
+	std::auto_ptr<PackedPacket> packedPacket(packet);
+
+	// Release packed packet buffer
+	std::auto_ptr<PacketBuffer> buffer(packedPacket->releaseBuffer());
+
+	// Unpack header manually
+	size_t channelIndex = ((MultiplexerPacketHeaderData*)
+		buffer->getHeaderBuf())->m_channelIndex;
+
+	// Build raw packet from packed packet
+	boost::shared_ptr<RawPacket> rawPacket(new RawPacket(buffer.release()));
+
+	return std::make_pair(rawPacket, channelIndex);
+}
+
+/*
+ * Unwrap compressed packed and send it through raw unwrap routine
+ */
+std::pair<boost::shared_ptr<RawPacket>, size_t> CompressedWrapPolicy::unwrap(PackedPacket* packet)
+{
+	// Construct new raw packet for decompressed data
+	size_t decompSize = ZSTD_getFrameContentSize(packet->getBodyBuf(), packet->getBodyBufSize());
+	std::auto_ptr<RawPacket> dummyRawPacket(RawPacket::create(decompSize));
+
+	size_t realZstdCompSize = ZSTD_decompressDCtx(m_zstdDCtx, dummyRawPacket->getBodyBuf(),
+		decompSize, packet->getBodyBuf(), packet->getBodyBufSize());
+	if (ZSTD_isError(realZstdCompSize))
+	{
+		char buf[BUFSIZ];
+		snprintf(buf, sizeof(buf), MIG_mSG_ZSTD_DECOMP_ERR,
+			ZSTD_getErrorName(realZstdCompSize));
+		logger(LOG_ERR, buf);
+		abort();
+	}
+
+	std::auto_ptr<PacketBuffer> buffer(dummyRawPacket->releaseBuffer());
+
+	// Pack header manually
+	((MultiplexerPacketHeaderData*)buffer->getHeaderBuf())->m_channelIndex =
+		((MultiplexerPacketHeaderData*)packet->getBuf())->m_channelIndex;
+	((MultiplexerPacketHeaderData*)buffer->getHeaderBuf())->m_bodySize =
+		decompSize;
+
+	// We don't need original packet anymore at this point
+	delete packet;
+
+	// Reuse Raw unwrap routine
+	PackedPacket* packedPacket = new PackedPacket(buffer.release());
+	return m_rawWrapper->unwrap(packedPacket);
+}
+
+/*
+ * IO Multiplexer class
+ */
 IoMultiplexer::IoMultiplexer(MigrateChannel& migrateChannel,
-	const std::vector<int>& channelFds, pid_t childPid, bool isMasterMode)
+	const std::vector<int>& channelFds, pid_t childPid, bool isMasterMode, bool isCompressionEnabled)
 	: m_migrateChannel(migrateChannel)
 	, m_childPid(childPid)
 	, m_isMasterMode(isMasterMode)
@@ -607,6 +738,13 @@ IoMultiplexer::IoMultiplexer(MigrateChannel& migrateChannel,
 
 	// Create control channel connection
 	m_controlConn.reset(new ControlChannelConn(*this));
+
+	if (isCompressionEnabled)
+	{
+		m_wrapPolicy = boost::make_shared<CompressedWrapPolicy>();
+	} else {
+		m_wrapPolicy = boost::make_shared<RawWrapPolicy>();
+	}
 
 	// Create channel connections
 	for (size_t i = 0; i < channelFds.size(); ++i) {
@@ -688,22 +826,7 @@ void IoMultiplexer::runMultiplexingAbort()
  */
 void IoMultiplexer::doMultiplex(RawPacket* packet, size_t index)
 {
-	boost::shared_ptr<RawPacket> rawPacket(packet);
-	size_t bodySize = rawPacket->getBodyBufSize();
-
-	// Release raw packet buffer
-	std::auto_ptr<PacketBuffer> buffer(rawPacket->releaseBuffer());
-
-	// Pack header manually
-	((MultiplexerPacketHeaderData*)buffer->getHeaderBuf())->m_channelIndex =
-		static_cast<uint32_t>(index);
-	((MultiplexerPacketHeaderData*)buffer->getHeaderBuf())->m_bodySize =
-		static_cast<uint32_t>(bodySize);
-
-	// Build packed packet from raw packet and forward to master connection
-	boost::shared_ptr<PackedPacket> packedPacket(
-		new PackedPacket(buffer.release()));
-	m_masterConn->doSendPacked(packedPacket);
+	m_masterConn->doSendPacked(m_wrapPolicy->wrap(packet, index));
 }
 
 /*
@@ -711,17 +834,9 @@ void IoMultiplexer::doMultiplex(RawPacket* packet, size_t index)
  */
 void IoMultiplexer::doDemultiplex(PackedPacket* packet)
 {
-	boost::shared_ptr<PackedPacket> packedPacket(packet);
-
-	// Release packed packet buffer
-	std::auto_ptr<PacketBuffer> buffer(packedPacket->releaseBuffer());
-
-	// Unpack header manually
-	uint32_t channelIndex = ((MultiplexerPacketHeaderData*)
-		buffer->getHeaderBuf())->m_channelIndex;
-
-	// Build raw packet from packed packet
-	boost::shared_ptr<RawPacket> rawPacket(new RawPacket(buffer.release()));
+	std::pair<boost::shared_ptr<RawPacket>, size_t> packet_pair = m_wrapPolicy->unwrap(packet);
+	boost::shared_ptr<RawPacket> rawPacket = packet_pair.first;
+	size_t channelIndex = packet_pair.second;
 
 	if (channelIndex < m_channelConns.size()) {
 		m_channelConns[channelIndex]->doSendRaw(rawPacket);
