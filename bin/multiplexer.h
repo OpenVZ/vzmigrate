@@ -32,6 +32,9 @@
 #include <boost/asio.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/noncopyable.hpp>
+#include <zstd.h>
+
+typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 
 class MigrateChannel;
 
@@ -236,6 +239,34 @@ private:
 	IoMultiplexer& m_ioMultiplexer;
 };
 
+/* Policy for wrapping/unwrapping packets, raw or compressed. */
+
+class WrapPolicy {
+public:
+	virtual ~WrapPolicy(){};
+	virtual boost::shared_ptr<PackedPacket> wrap(RawPacket*, size_t) = 0;
+	virtual std::pair<boost::shared_ptr<RawPacket>, size_t> unwrap(PackedPacket*) = 0;
+};
+
+class RawWrapPolicy : public WrapPolicy {
+public:
+	boost::shared_ptr<PackedPacket> wrap(RawPacket* packet, size_t index);
+	std::pair<boost::shared_ptr<RawPacket>, size_t> unwrap(PackedPacket* packet);
+};
+
+class CompressedWrapPolicy : public WrapPolicy {
+public:
+	CompressedWrapPolicy();
+	~CompressedWrapPolicy();
+	boost::shared_ptr<PackedPacket> wrap(RawPacket* packet, size_t index);
+	std::pair<boost::shared_ptr<RawPacket>, size_t> unwrap(PackedPacket* packet);
+
+private:
+	ZSTD_CCtx* m_zstdCCtx;
+	ZSTD_DCtx* m_zstdDCtx;
+	std::auto_ptr<RawWrapPolicy> m_rawWrapper;
+};
+
 /*
  * Io multiplexer which allows multiple virtual connections to be employed over
  * a single real connection. It multiplex/demultiplex data from/to several
@@ -246,7 +277,8 @@ private:
 class IoMultiplexer : private boost::noncopyable {
 public:
 	IoMultiplexer(MigrateChannel& migrateChannel,
-		const std::vector<int>& channelFds, pid_t childPid, bool isMasterMode);
+		const std::vector<int>& channelFds, pid_t childPid,
+		bool isMasterMode, bool isCompressionEnabled);
 	int runMultiplexing();
 	void runMultiplexingAbort();
 	void doMultiplex(RawPacket* packet, size_t index);
@@ -299,6 +331,7 @@ private:
 	pid_t m_childPid;
 	bool m_isMasterMode;
 	EStates m_state;
+	boost::shared_ptr<WrapPolicy> m_wrapPolicy;
 };
 
 } // namespace multiplexer

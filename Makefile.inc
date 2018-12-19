@@ -10,10 +10,10 @@ endif
 
 LIBVZM = libvzm.a
 LIBVZ_SRC = -Wl,-Bstatic -lvzsock -Wl,-Bdynamic -luuid -lvzctl2 -ldl \
-	-lploop -lboost_system -lboost_thread
+	-lploop -lboost_system -lboost_thread -lzstd
 LIBVZ_TEMPL = ${LIBVZ_SRC} -lvztt
 LIBVZ_DST = -Wl,-Bstatic -lvzsock -Wl,-Bdynamic -luuid -lvzctl2 -ldl -lvztt \
-	-lploop -lboost_system -lboost_thread
+	-lploop -lboost_system -lboost_thread -lzstd
 
 LIBDIR = ${VZMROOT}/lib
 

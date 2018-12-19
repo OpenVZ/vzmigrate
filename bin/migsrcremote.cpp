@@ -1823,7 +1823,7 @@ int MigrateStateRemote::runPhaulMigration()
 
 	// Create io multiplexer
 	multiplexer::IoMultiplexer ioMultiplexer(channel,
-		channels->getVzmigrateChannelFds(), phaulPid, true);
+		channels->getVzmigrateChannelFds(), phaulPid, true, isOptSet(OPT_COMPRESS));
 
 	// Run phaul io multiplexing
 	rc = ioMultiplexer.runMultiplexing();
