@@ -648,6 +648,14 @@ int MigrateStateRemote::checkRemoteVersion()
 		return putErr(MIG_ERR_LAYOUT,
 				"The migration via rsync is not supported for ploop-based CT");
 
+	// Backward compatibility for migration with compression on pre-7.0.9 hosts
+	if (VZMoptions.remote_version < MIGRATE_VERSION_709 && isOptSet(OPT_COMPRESS))
+	{
+		logger(LOG_INFO, "Enabling backward compatibility for compressed migration.");
+		string_list_add(&VZMoptions.ssh_options, "-C");
+		unSetOpt(OPT_COMPRESS);
+	}
+
 	return 0;
 }
 
