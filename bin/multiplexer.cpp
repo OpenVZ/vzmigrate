@@ -601,7 +601,7 @@ CompressedWrapPolicy::CompressedWrapPolicy()
 {
 	m_zstdCCtx = ZSTD_createCCtx();
 	m_zstdDCtx = ZSTD_createDCtx();
-	m_rawWrapper = std::auto_ptr<RawWrapPolicy>();
+	m_rawWrapper.reset(new RawWrapPolicy());
 }
 
 CompressedWrapPolicy::~CompressedWrapPolicy()
