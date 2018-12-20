@@ -167,6 +167,14 @@ int MigrateStateDstRemote::initVEMigration(VEObj * ve)
 		(VZMoptions.remote_version < MIGRATE_VERSION_700))
 		return putErr(MIG_ERR_ONLINE_ELDER, MIG_MSG_ONLINE_ELDER);
 
+	// Backward compatibility for migration with compression on pre-7.0.9 hosts
+	if (VZMoptions.remote_version < MIGRATE_VERSION_709 && isOptSet(OPT_COMPRESS))
+	{
+		logger(LOG_INFO, "Enabling backward compatibility for compressed migration.");
+		string_list_add(&VZMoptions.ssh_options, "-C");
+		unSetOpt(OPT_COMPRESS);
+	}
+
 	if (m_initOptions & MIGINIT_CONVERT_VZFS) {
 		logger(LOG_DEBUG, "The file system of a Container will be converted to ext4.");
 		setOpt(OPT_CONVERT_VZFS);
