@@ -181,7 +181,7 @@ ctid_t g_keeperCTID = "\0";
 "      --whole-file           Use rsync --whole-file option.\n" \
 "  -l, --limit-speed          Limit maximum writing speed, in bytes per second.\n" \
 "  -t, --timeout              Connection timeout in seconds.\n" \
-"      --compress             Enable ZSTD channel compression.\n" \
+"      --nocompress           Disable ZSTD channel compression.\n" \
 "  -v, --verbose              Print verbose information.\n\n" \
 "Online option: \n" 									\
 "      --online               Perform online (zero-downtime) migration.\n"		\
@@ -947,9 +947,6 @@ void parse_options (int argc, char **argv)
 		case NOCOMPRESS_OPTS:
 			setOpt(OPT_NOCOMPRESS);
 			break;
-		case COMPRESS_OPTS:
-			setOpt(OPT_COMPRESS);
-			break;
 		case IGNORE_BACKUP_DISK_OPTS:
 			setOpt(OPT_IGNORE_BACKUP_DISK);
 			break;
@@ -1467,8 +1464,8 @@ int init_connection(MigrateStateCommon *st)
 		string_list_add(&args_list, "-v");
 	if (isOptSet(OPT_ONLINE))
 		string_list_add(&args_list, "--online");
-	if (isOptSet(OPT_COMPRESS))
-		string_list_add(&args_list, "--compress");
+	if (isOptSet(OPT_NOCOMPRESS))
+		string_list_add(&args_list, "--nocompress");
 	if (isOptSet(OPT_EZTEMPLATE))
 		string_list_add(&args_list, "-z");
 	for (i = 0; VEArgs[i]; i++)

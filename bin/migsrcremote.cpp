@@ -649,11 +649,11 @@ int MigrateStateRemote::checkRemoteVersion()
 				"The migration via rsync is not supported for ploop-based CT");
 
 	// Backward compatibility for migration with compression on pre-7.0.9 hosts
-	if (VZMoptions.remote_version < MIGRATE_VERSION_709 && isOptSet(OPT_COMPRESS))
+	if (VZMoptions.remote_version < MIGRATE_VERSION_709 && !isOptSet(OPT_NOCOMPRESS))
 	{
 		logger(LOG_INFO, "Enabling backward compatibility for compressed migration.");
 		string_list_add(&VZMoptions.ssh_options, "-C");
-		unSetOpt(OPT_COMPRESS);
+		setOpt(OPT_NOCOMPRESS);
 	}
 
 	return 0;
@@ -1831,7 +1831,7 @@ int MigrateStateRemote::runPhaulMigration()
 
 	// Create io multiplexer
 	multiplexer::IoMultiplexer ioMultiplexer(channel,
-		channels->getVzmigrateChannelFds(), phaulPid, true, isOptSet(OPT_COMPRESS));
+		channels->getVzmigrateChannelFds(), phaulPid, true, !isOptSet(OPT_NOCOMPRESS));
 
 	// Run phaul io multiplexing
 	rc = ioMultiplexer.runMultiplexing();
