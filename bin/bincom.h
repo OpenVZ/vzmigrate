@@ -178,7 +178,7 @@ typedef vector<string> TemplOptEntries;
 #define OPT_IGNORE_BACKUP_DISK	(1ULL << 44)
 #define OPT_NOEVENT	(1ULL << 45)
 #define OPT_LIMIT_SPEED	(1ULL << 46)
-#define OPT_COMPRESS	(1ULL << 47)
+#define OPT_COMPRESS	(1ULL << 47) /* unused */
 #define OPT_SKIP_REGISTER (1ULL << 48)
 
 #define DSTACT_UNDUMP_VE	10

@@ -168,11 +168,11 @@ int MigrateStateDstRemote::initVEMigration(VEObj * ve)
 		return putErr(MIG_ERR_ONLINE_ELDER, MIG_MSG_ONLINE_ELDER);
 
 	// Backward compatibility for migration with compression on pre-7.0.9 hosts
-	if (VZMoptions.remote_version < MIGRATE_VERSION_709 && isOptSet(OPT_COMPRESS))
+	if (VZMoptions.remote_version < MIGRATE_VERSION_709 && !isOptSet(OPT_NOCOMPRESS))
 	{
 		logger(LOG_INFO, "Enabling backward compatibility for compressed migration.");
 		string_list_add(&VZMoptions.ssh_options, "-C");
-		unSetOpt(OPT_COMPRESS);
+		setOpt(OPT_NOCOMPRESS);
 	}
 
 	if (m_initOptions & MIGINIT_CONVERT_VZFS) {
@@ -1231,7 +1231,7 @@ int MigrateStateDstRemote::cmdRunPhaulMigration()
 
 	// Create io multiplexer
 	multiplexer::IoMultiplexer ioMultiplexer(channel,
-		channels->getVzmigrateChannelFds(), phaulServicePid, false, isOptSet(OPT_COMPRESS));
+		channels->getVzmigrateChannelFds(), phaulServicePid, false, !isOptSet(OPT_NOCOMPRESS));
 
 	int rc;
 	if (phaulServicePid != -1) {

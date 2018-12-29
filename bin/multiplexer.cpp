@@ -739,6 +739,7 @@ IoMultiplexer::IoMultiplexer(MigrateChannel& migrateChannel,
 	// Create control channel connection
 	m_controlConn.reset(new ControlChannelConn(*this));
 
+	logger(LOG_INFO, "Compression is %s", isCompressionEnabled ? "enabled" : "disabled");
 	if (isCompressionEnabled)
 	{
 		m_wrapPolicy = boost::make_shared<CompressedWrapPolicy>();
