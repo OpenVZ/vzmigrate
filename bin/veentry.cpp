@@ -475,7 +475,7 @@ int VEObj::issuspended()
 static const char *get_lock_status()
 {
 	if (VZMoptions.bintype != BIN_LOCAL)
-		return "migrating";
+		return VZCTL_TRANSITION_MIGRATING;
 
 	return isOptSet(OPT_COPY) ? "cloning" : "moving";
 }
