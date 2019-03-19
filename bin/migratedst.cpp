@@ -167,14 +167,6 @@ int MigrateStateDstRemote::initVEMigration(VEObj * ve)
 		(VZMoptions.remote_version < MIGRATE_VERSION_700))
 		return putErr(MIG_ERR_ONLINE_ELDER, MIG_MSG_ONLINE_ELDER);
 
-	// Backward compatibility for migration with compression on pre-7.0.9 hosts
-	if (VZMoptions.remote_version < MIGRATE_VERSION_709 && !isOptSet(OPT_NOCOMPRESS))
-	{
-		logger(LOG_INFO, "Enabling backward compatibility for compressed migration.");
-		string_list_add(&VZMoptions.ssh_options, "-C");
-		setOpt(OPT_NOCOMPRESS);
-	}
-
 	if (m_initOptions & MIGINIT_CONVERT_VZFS) {
 		logger(LOG_DEBUG, "The file system of a Container will be converted to ext4.");
 		setOpt(OPT_CONVERT_VZFS);
@@ -1228,6 +1220,15 @@ int MigrateStateDstRemote::cmdRunPhaulMigration()
 
 	// Close phaul-service channels ends
 	channels->closePhaulChannelFds();
+
+	// Backward compatibility for migration with compression on pre-7.0.9 hosts
+	// In agent mode we get incorrect remote version on start. Proper one
+	// is sent later, hence we check version right before the channel is created.
+	if (VZMoptions.remote_version < MIGRATE_VERSION_709 && !isOptSet(OPT_NOCOMPRESS))
+	{
+		logger(LOG_INFO, "Remote version %d. Disabling ZSTD compression.", VZMoptions.remote_version);
+		setOpt(OPT_NOCOMPRESS);
+	}
 
 	// Create io multiplexer
 	multiplexer::IoMultiplexer ioMultiplexer(channel,
