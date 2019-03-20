@@ -382,7 +382,7 @@ int MigrateStateDstRemote::cmdCheckClusterID(
 					dstVE->confRealPath().c_str(),
 					dstVE->confPath().c_str(),
 					getError());
-			addCleaner(clean_unregister, dstVE);
+			addCleanerRemove(clean_removeFile, dstVE->confPath().c_str());
 
 			/* update & load config here, so confset command will not send
 			   by source side for shared private case
@@ -496,6 +496,8 @@ int MigrateStateDstRemote::cmdCheckSharedPriv(
 			dstVE->confPath().c_str(),
 			getError());
 
+	addCleanerRemove(clean_removeFile, dstVE->confPath().c_str());
+
 	/* update & load config here, so confset command will not send
 	   by source side for shared private case
 	   https://jira.sw.ru/browse/PCLIN-29435 */
@@ -503,8 +505,6 @@ int MigrateStateDstRemote::cmdCheckSharedPriv(
 		return rc;
 	if ((rc = dstVE->loadConfig()))
 		return rc;
-
-	addCleaner(clean_unregister, dstVE);
 	os << "1";
 
 	return 0;
