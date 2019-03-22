@@ -1,35 +1,59 @@
-.TH vzmigrate 8 "October 2009" "@PRODUCT_NAME_SHORT@"
+.TH vzmigrate 8 "March 2019" "@PRODUCT_NAME_SHORT@"
 
 .SH NAME
-vzmigrate - utility for migration Containers between
-hardware nodes.
+vzmigrate \- utility for container migration between hardware nodes.
 
 .SH SYNOPSIS
 .TP
-.B vzmigrate [-r\ yes|no] [-sfvh] [--keeper[=<veid>]] [--ssh=<ssh\ \
-options>] [--keep-dst] [--keep-images] [--online] [--noiter] [--readonly] \
-[--require-realtime] [--dry-run] [--new-id=<CT ID>] [--new-name=<CT name>] \
-[--new-private=<CT private>] [--new-root=<CT root>] [--nonsharedfs] [--whole-file] [--timeout]\
-\fI<[user@]destination_node_address>\fP \fI{CT\ List}\fP
+.B vzmigrate
+.RB [ -r\ yes|no ]
+.RB [ -sfvh ]
+.RB [ --keeper\fR[=\fIveid\fR]
+.RB [ --ssh\fR=\fIssh_options\fR]
+.RB [ --keep-dst ]
+.RB [ --keep-images ]
+.RB [ --online ]
+.RB [ --noiter ]
+.RB [ --readonly ]
+.RB [ --require-realtime ]
+.RB [ --dry-run ]
+.RB [ --new-id\fR=\fICTID\fR]
+.RB [ --new-name\fR=\fICT_name\fR]
+.RB [ --new-private\fR=\fICT_private\fR]
+.RB [ --new-root\fR=\fICT_root\fR]
+.RB [ --nonsharedfs ]
+.RB [ --whole-file ]
+.RB [ --timeout\ \fIvalue\fR]
+.RB [ \fIuser\fB@\fR]\fIdst_node\fR
+.RI { CT_list }
 .TP
-\fI{CT\ List} = <source\ CT\ ID>[:<dst\ CTID>[:<dstCT\ private>[:<dstCT\ root>]]] [...]\fP
-without --new-id, --new-name, --new-private, --new-root option(s), and
+{\fICT_list\fR} := \fIsource_CTID\fR[\fB:\fIdst_CTID\fR[\fB:\fIdst_CT_private\fR[\fB:\fIdst_CT_root\fR]]] [...]
+without --new-id, --new-name, --new-private, --new-root option(s), or
 .TP
-\fI{CT\ List} = <source\ CT\ ID>\fP
-otherwise
-
+\fI{CT\ List}\fR := \fIsource_CTID\fR
+otherwise.
 
 .SH DESCRIPTION
 This utility is used for CT(s) migrating from one (source)
-node to another (destination) node.
-.TP
-\fI{CT\ List}\fP - List of containers for migration. You may specify
-\fBdst\ CT\ ID\fP, if you want to change CT ID after migration. Also you
-can change \fBdstCT\ private\fP and \fBdstCT\ root\fP paths.
+node to another (destination) node. The list of containers to migrate
+is specified by the \fICT_list\fR. A different
+.I dst_CTID
+can be specfied if you want to change CT ID during migration; in addition,
+.I dst_CT_private
+and
+.I dst_CT_root
+paths can also be changed.
+
+Either stopped or running CT can be migrated. For a stopped CT, simple
+CT private area transfer is performed (by means of
+.BR rsync (1),
+unless shared storage is set up).
+For running CTs, the migration may be slow (with a minute or more
+of downtime), fast (seconds of downtime) or online (zero downtime).
 
 .SH OPTIONS
 .TP
-\fB\-s, --nostart\fP
+.BR -s ,\  --nostart
 Do not attempt to restore CT state (start/mount CT) after successful
 migration on destination node, when it was running/mounted on source
 node. It means that CT should be started/mounted manually on the
@@ -37,141 +61,153 @@ destination node. Option doesn't affect CT that was stopped at the
 migration time.
 
 .TP
-\fB\-r, --remove-area yes|no\fP
-Remove/Don't Remove private area on source node for successfully migrated
-CT. Private area will save with .migrated suffix.
-Command-line option overrides configuration parameter
-\fBREMOVEMIGRATED\fP in vz config file (see \fBvz(5)\fP).
+.BR -r ,\  --remove-area \  yes\fR|\fBno
+Whether to remove private area on source node for successfully migrated
+CT. Private area will be saved with .migrated suffix.
+This command line option overrides the \fBREMOVEMIGRATED\fP
+configuration parameter in global configuration file
+.BR vz (5).
 
 .TP
-\fB\-f, --nodeps\fR\fI[=[all][,cpu_check][,disk_space][,technologies][,license][,rate][,bindmount][,template_area_sync][,kernel_modules]]\fP
-Ignore an absence of required package sets on destination node.
-To prevent CT against errors in filesystem due to absent template
-files, it will not be started on destination node after migration and
-must be started manually.
-.br
-Additional parameters:
-.br
-\fIall\fR - as is -f.
-.br
-\fIcpu_check\fR - to pass check of the cpu capabilities.
-.br
-\fIdisk_space\fR - to pass check of the disk usage.
-.br
-\fItechnologies\fR - to pass check of the used technologies.
-.br
-\fIlicense\fR - to pass check of the license.
-.br
-\fIrate\fR - to pass check of the RATE config parameters.
-.br
-\fIbindmount\fR - to pass check of the external bind mounts in config.
+\fB-f\fR, \fB--nodeps\fR[\fB=\fIopt\fR,\fIopt\fR...]
+Skip some or all checks on the destination node before performing migration.
+The argument is comma-separated set of checks to skip.
+The following checks can be skipped:
+.RS
+.TP
+.B all
+all checks (this is the default if \fIopt\fR is not provided)
+.TP
+.B cpu_check
+cpu capabilities
+.TP
+.B disk_space
+required free disk space
+.TP
+.B technologies
+technologies used
+.TP
+.B license
+license
+.TP
+.B rate
+container's RATE configuration parameters
+.TP
+.B bindmount
+container's external bind mounts
+.RE
+.P
+.RS
+To prevent CT from filesystem errors due to absent template
+files, it will not be started on the destination node after migration,
+and has to be started manually.
+.RE
 
 .TP
-\fB\-h, --help\fP
+.BR -h ,\  --help
 Get usage info.
 
 .TP
-\fB\--ssh=<ssh options>\fP
-Additional options that will be passed ssh during establishing
-connection with destination node. Please be carefully with passed
-options, DON'T pass destination hostname.
+.BR --ssh = \fIssh_options
+Additional options that will be passed to ssh during establishing
+connection with destination node. Please be careful with these,
+make sure to NOT pass the destination hostname.
 
 .TP
-\fB\--keeper[=<veid>]\fP
-Keeper CT identification, \fIService CT\fP ID used if not
+.BR --keeper =[ \fIveid\fR]
+Keeper CT identification. The service CT ID is used if not
 specified. Keeper CT is needed to keep CT IP addresses during
-migration (it used for example to show web page that CT in stage of migration).
+migration (it is used to e.g. show web page that CT is being migrated).
 
 .TP
-\fB\--keep-dst\fP
+.B --keep-dst
 Don't clean synced destination CT private area in case of some
 error. It is usefull to use this option on big CT migration to protect
 of syncing CT private area again in case of some error (on CT stop for
 example) occured during first migration attempt.
 
 .TP
-\fB\--keep-images\fP
+.B --keep-images
 Don't remove c/r images after a successful migration.
 
 .TP
-\fB\--online\fP
+.B --online
 Perform online (zero-downtime) migration: during the migration the CT
 hangs for a while and after the migration it continues working as though nothing has
-happened. Options --keeper and --nostart are ignored if this option is set.
+happened. Options
+.B --keeper and
+.B --nostart
+are ignored if this option is set.
 By default iterative scheme is used for online migration, that is most of the CT
 memory are transfered before CT suspend. This method introduces the smallest
 delay in service.
 
 .TP
-\fB\--noiter\fP
+.B --noiter
 Do not use iterative scheme during online migration.
 
 .TP
-\fB\--readonly\fP
+.B --readonly
 Allows to skip locking the source container and writing any migration-related information to the source server. Use the option if the source server's filesystem is remounted as readonly (e.g., due to corruption).
 
 .TP
-\fB\--require-realtime\fP
+.B --require-realtime
 Force to use only realtime scheme for online migration. Migration fails if this
-method is not available for some reason. It is useful to be sure that delay in
-service will be the smallest.
+method is not available for some reason. It is useful to ensure that delay in
+service will be minimal.
 
 .TP
-\fB\--dry-run\fP
+.B --dry-run
 Option that will perform only checks and will not perform actual data transfer.
 
 .TP
-\fB\--new-id=<CT ID>\fP
-Set destination CT ID.
+.BR --new-id = \fICTID\fR
+Set destination container ID.
 
 .TP
-\fB\--new-name=<CT name>\fP
-Set destination CT name.
+.BR --new-name = \fICT_name\fR
+Set destination container name (i.e. rename the container while migrating).
 
 .TP
-\fB\--new-private=<CT private>\fP
+.BR --new-private = \fICT_private\fR
 Set destination CT private.
 
 .TP
-\fB\--new-root=<CT root>\fP
+.B --new-root = \fICT_root\fR
 Set destination CT root.
 
 .TP
-\fB\--nonsharedfs\fP
-Option that will force migrate of CT private from shared partition on non-shared.
+.B --nonsharedfs\fP
+Force migrate of CT private from a shared partition to non-shared.
 
 .TP
-\fB\-W, --whole-file\fP
-Use rsync --whole-file option.
+.BR -W ,\  --whole-file
+Use rsync's
+.B --whole-file
+option.
 
 .TP
-\fB\-t, --timeout <value>\fP
-Set connection timeout in seconds.
+.BR -t ,\ --timeout \ \fIvalue\fR
+Set connection timeout, in seconds.
 
 .TP
-\fB\--compress\fP
+.B --compress
 Enable ZSTD channel compression.
 
 .TP
-\fB\-v, --verbose\fP
-Print verbose information.
-
-.SH MIGRATION
-Utility can migrate either stopped or running CT. For stopped CT, simple
-CT private area transfer is performed (\fBrsync(1)\fP is used for file
-transferring). For running CTs the migration may be slow (with minute or longer
-downtime), fast (seconds of downtime) or online (zero-downtime). 
-For the online migration kernel support of CPT is required.
-Utility also can migrate \fBshared\fP CTs, in this case it attempts to
-find suitable (templates set coincides with one of source CT) \fBshared
-base\fP CT on destination side, in case of failure it copies source \fBshared
-base\fP on destination side.
+.BR -v ,\  --verbose
+Be verbose.
 
 .SH NOTES
-If you want to migrate CT in bounds of one hardware node, you
-shouldn't use this utility, use \fBvzmlocal(8)\fP instead.
+If you want to "migrate" CT within the same hardware node, you
+use
+.BR vzmlocal(8)
+instead.
 
-You can set disk IO limits for migrating Containers by configuring the \fBVZ_TOOLS_BCID\fR and \fBVZ_TOOLS_IOLIMIT\fR parameters in the global configuration file (\fI/etc/vz/vz.conf\fR, see \fBvz\fR(5)).
+You can set disk IO limits for migrating Containers by configuring
+the \fBVZ_TOOLS_BCID\fR and \fBVZ_TOOLS_IOLIMIT\fR parameters
+in the global configuration file
+.BR vz (5).
 
 .SH EXAMPLES
 To migrate CT#101 as CT#1001 to \fI192.168.1.130\fR by user "test":
