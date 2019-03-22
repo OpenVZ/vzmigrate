@@ -412,7 +412,7 @@ int main(int argc, char **argv)
 		MigrateStateCommon::channel.sendReply(0, "");
 	}
 
-	main_loop();
+	rc = main_loop();
 
 	if (VZMoptions.bintype == BIN_DEST_TEMPL)
 		xdelete(g_stateTempl);
@@ -421,5 +421,5 @@ int main(int argc, char **argv)
 
 	vzctl2_lib_close();
 
-	exitM(0);
+	exitM(rc);
 }
