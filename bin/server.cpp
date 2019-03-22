@@ -453,12 +453,12 @@ static int doGoodbye(const string &cmd, int status_, const std::string& message_
 
 int main_loop()
 {
-	int code;
+	int code, rcode = 0;
 
 	while (const char * str = MigrateStateCommon::channel.readPkt(PACKET_SEPARATOR, &code))
 	{
 		istringstream is(str);
-		int rcode = -1, e = 0;
+		int e = 0;
 		ostringstream os;
 		string cmd;
 
@@ -468,7 +468,8 @@ int main_loop()
 		log_cmd(cmd);
 		rcode = proc_cmd(cmd.c_str(), is, os);
 		if (rcode != 0)
-			logger(LOG_DEBUG, "error [%d] : %s", rcode, getError());
+			logger(LOG_INFO, "cmd '%s' error [%d] : %s",
+					cmd.c_str(), rcode, getError());
 
 		if (cmd.compare(CMD_FINAL) == 0 ||
 		        cmd.compare(CMD_RESUME) == 0 ||
@@ -490,5 +491,5 @@ int main_loop()
 		if (rcode == MIG_ERR_PROTOCOL || rcode == MIG_ERR_TRANSMISSION_FAILED)
 			break;
 	}
-	return 0;
+	return rcode;
 }
