@@ -447,15 +447,6 @@ int MigrateStateLocal::preFinalStage()
 		}
 	}
 
-	if (isOptSet(OPT_SKIP_REGISTER)) {
-		if (srcVE->ve_data.name != NULL) {
-			std::string f("/etc/vz/names/");
-			f += srcVE->ve_data.name;
-			unlink(f.c_str());
-		}
-		return 0;
-	}
-
 	if (is_thesame_ctid) {
 		/* create config backup */
 		if ((rc = h_backup(dstVE->confRealPath().c_str())))
@@ -477,8 +468,22 @@ int MigrateStateLocal::preFinalStage()
 	if (rc)
 		return rc;
 
-	if (!isOptSet(OPT_COPY) && strcmp(srcVE->ctid(), dstVE->ctid()))
+	if (isOptSet(OPT_SKIP_REGISTER)) {
+		if (srcVE->ve_data.name != NULL) {
+			std::string f("/etc/vz/names/");
+			f += srcVE->ve_data.name;
+			unlink(f.c_str());
+		}
+		unlink(srcVE->confPath().c_str());
+		return 0;
+	}
+
+	if (!isOptSet(OPT_COPY) && !is_thesame_ctid) {
+		srcVE->unregister();
 		vzctl2_send_state_evt(srcVE->ctid(), VZCTL_ENV_UNREGISTERED);
+		unlink(srcVE->confPath().c_str());
+	}
+
 	logger(LOG_INFO, "Register CT %s uuid=%s", dstVE->ctid(), uuid ?: "");
 	if ((rc = dstVE->veRegister(uuid)))
 		return rc;
@@ -554,12 +559,6 @@ int MigrateStateLocal::postFinalStage()
 	START_STAGE();
 
 	if (!isOptSet(OPT_COPY)) {
-		if (isOptSet(OPT_SKIP_REGISTER))
-			unlink(srcVE->confPath().c_str());
-		else if (!is_thesame_ctid) {
-			srcVE->unregister();
-			unlink(srcVE->confPath().c_str());
-		}
 		srcVE->unlock();
 		if (!is_thesame_private && access(srcVE->priv, F_OK) == 0)
 			rmdir_recursively(srcVE->priv);
