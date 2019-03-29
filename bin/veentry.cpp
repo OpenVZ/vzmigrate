@@ -67,7 +67,7 @@ bool disk_is_secondary_or_device(const disk_entry &d)
 
 VEObj::VEObj(const char *ctid) :
 	lock_fd(-1), root(NULL), priv(NULL),
-	priv_custom(false), dumpfile(NULL), layout(VZCTL_LAYOUT_5)
+	priv_custom(false), layout(VZCTL_LAYOUT_5)
 {
 	SET_CTID(m_ctid, ctid);
 }
@@ -75,7 +75,6 @@ VEObj::VEObj(const char *ctid) :
 VEObj::~VEObj()
 {
 	unlock();
-	free((void *)dumpfile);
 }
 
 #define SUSPEND_DIR "dump"
@@ -588,7 +587,10 @@ int VEObj::cmd_suspend()
 
 int VEObj::cmd_restore()
 {
-	return operateVE("restore", "Restoring", NULL, 0);
+	const char *opt[] = {!dumpfile.empty() ? "--dumpfile" : NULL,
+		dumpfile.c_str(), NULL};
+
+	return operateVE("restore", "Restoring", opt, 0);
 }
 
 int VEObj::unSet(const char *param)
