@@ -385,7 +385,7 @@ int MigrateStateLocal::preMigrateStage()
 
 	/* and lock new VE only after private creation
 	   (vzctl will create lock file in private, #119945) */
-	if (!is_thesame_ctid) {
+	if (!is_thesame_ctid && !is_thesame_private) {
 		if ((rc = dstVE->lock()))
 			return rc;
 	}
@@ -1117,6 +1117,12 @@ int MigrateStateLocal::ploopCtMove()
 	bool run = srcVE->isrun();
 
 	string_list_init(&exclude);
+
+	if (is_thesame_private) {
+		if (run)
+			rc = stopVE();
+		return rc;
+	}
 
 	if (!is_thesame_location) {
 		if (run) {
