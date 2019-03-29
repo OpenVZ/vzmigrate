@@ -437,7 +437,7 @@ int MigrateStateLocal::preFinalStage()
 			(!isOptSet(OPT_COPY))) 
 		dstVE->ve_data.name = strdup(srcVE->ve_data.name);
 	*/
-	if (NULL == uuid && (isOptSet(OPT_COPY) || !is_thesame_ctid)) {
+	if (NULL == uuid && isOptSet(OPT_COPY)) {
 		uuid_t x;
 		if (uuid_parse(dstVE->ctid(), x) == 0) {
 			uuid = dstVE->ctid();
