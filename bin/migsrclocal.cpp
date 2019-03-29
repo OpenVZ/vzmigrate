@@ -1120,6 +1120,9 @@ int MigrateStateLocal::ploopCtMove()
 
 	if (!is_thesame_location) {
 		if (run) {
+			/* suspend CT on SRC */
+			srcVE->dumpfile = dstVE->dumpfile =
+				std::string(srcVE->priv) + std::string("/dump/Dump");
 			// #TODO snapshot only internal disks
 			rc = srcVE->tsnapshot(srcVE->gen_snap_guid());
 			if (rc)

@@ -130,7 +130,7 @@ public:
 	const char * root;
 	const char * priv;
 	bool priv_custom;
-	const char * dumpfile;
+	std::string dumpfile;
 	/* from VE config */
 	struct ve_data ve_data;
 	ct_disk m_disks;
