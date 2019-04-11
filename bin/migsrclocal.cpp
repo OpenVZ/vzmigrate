@@ -385,7 +385,7 @@ int MigrateStateLocal::preMigrateStage()
 
 	/* and lock new VE only after private creation
 	   (vzctl will create lock file in private, #119945) */
-	if (!is_thesame_ctid) {
+	if (!is_thesame_ctid && !is_thesame_private) {
 		if ((rc = dstVE->lock()))
 			return rc;
 	}
@@ -437,7 +437,7 @@ int MigrateStateLocal::preFinalStage()
 			(!isOptSet(OPT_COPY))) 
 		dstVE->ve_data.name = strdup(srcVE->ve_data.name);
 	*/
-	if (NULL == uuid && (isOptSet(OPT_COPY) || !is_thesame_ctid)) {
+	if (NULL == uuid && isOptSet(OPT_COPY)) {
 		uuid_t x;
 		if (uuid_parse(dstVE->ctid(), x) == 0) {
 			uuid = dstVE->ctid();
@@ -445,15 +445,6 @@ int MigrateStateLocal::preFinalStage()
 			gen_uuid(u);
 			uuid = u;
 		}
-	}
-
-	if (isOptSet(OPT_SKIP_REGISTER)) {
-		if (srcVE->ve_data.name != NULL) {
-			std::string f("/etc/vz/names/");
-			f += srcVE->ve_data.name;
-			unlink(f.c_str());
-		}
-		return 0;
 	}
 
 	if (is_thesame_ctid) {
@@ -477,8 +468,22 @@ int MigrateStateLocal::preFinalStage()
 	if (rc)
 		return rc;
 
-	if (!isOptSet(OPT_COPY) && strcmp(srcVE->ctid(), dstVE->ctid()))
+	if (isOptSet(OPT_SKIP_REGISTER)) {
+		if (srcVE->ve_data.name != NULL) {
+			std::string f("/etc/vz/names/");
+			f += srcVE->ve_data.name;
+			unlink(f.c_str());
+		}
+		unlink(srcVE->confPath().c_str());
+		return 0;
+	}
+
+	if (!isOptSet(OPT_COPY) && !is_thesame_ctid) {
+		srcVE->unregister();
 		vzctl2_send_state_evt(srcVE->ctid(), VZCTL_ENV_UNREGISTERED);
+		unlink(srcVE->confPath().c_str());
+	}
+
 	logger(LOG_INFO, "Register CT %s uuid=%s", dstVE->ctid(), uuid ?: "");
 	if ((rc = dstVE->veRegister(uuid)))
 		return rc;
@@ -554,12 +559,6 @@ int MigrateStateLocal::postFinalStage()
 	START_STAGE();
 
 	if (!isOptSet(OPT_COPY)) {
-		if (isOptSet(OPT_SKIP_REGISTER))
-			unlink(srcVE->confPath().c_str());
-		else if (!is_thesame_ctid) {
-			srcVE->unregister();
-			unlink(srcVE->confPath().c_str());
-		}
 		srcVE->unlock();
 		if (!is_thesame_private && access(srcVE->priv, F_OK) == 0)
 			rmdir_recursively(srcVE->priv);
@@ -1117,6 +1116,12 @@ int MigrateStateLocal::ploopCtMove()
 	bool run = srcVE->isrun();
 
 	string_list_init(&exclude);
+
+	if (is_thesame_private) {
+		if (run)
+			rc = stopVE();
+		return rc;
+	}
 
 	if (!is_thesame_location) {
 		if (run) {
