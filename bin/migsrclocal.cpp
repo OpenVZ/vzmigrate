@@ -1014,6 +1014,7 @@ int MigrateStateLocal::copyBundles()
 		}
 		// Add .running file to list of excludes
 		string_list_add_str(&exclude, VE_RUNNING_FILE);
+		string_list_add_str(&exclude, DISK_STATFS_FILE);
 		rc = copy_local(rsync_dir(b.src), b.dst, &exclude);
 		if (rc)
 			goto exit;
@@ -1048,6 +1049,7 @@ int MigrateStateLocal::copyUnbundledDisks()
 				goto exit;
 			string_list_add_str(&exclude, delta);
 		}
+		string_list_add_str(&exclude, DISK_STATFS_FILE);
 		rc = copy_local(rsync_dir(i->src_path()), i->dst_path(), &exclude);
 		if (rc)
 			goto exit;
