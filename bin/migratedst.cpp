@@ -876,14 +876,28 @@ int MigrateStateDstRemote::registerOnHaCluster()
 {
 	int rc;
 
-	if (!is_priv_on_shared || !dstVE->ve_data.ha_enable)
+	if (!dstVE->ve_data.ha_enable)
 		return 0;
+	if (!is_priv_on_shared) {
+		int shared = 0;
+		if ((rc = is_path_on_shared_storage(dstVE->priv, &shared, NULL)))
+			return rc;
+		if (!shared)
+			return 0;
+	
+		string id;
+		rc = getHaClusterNodeID(id);
+		if (rc)
+			return rc;
+		if (id.empty())
+			return 0;
+	}
 
 	if (m_sHaClusterNodeID.empty()) {
-		logger(LOG_DEBUG, "register HA cluster resource %s", dstVE->ctid());
+		logger(LOG_INFO, "register HA cluster resource %s", dstVE->ctid());
 		rc = runHaman(dstVE->ctid(), "add", dstVE->ve_data.ha_prio, dstVE->priv);
 	} else {
-		logger(LOG_DEBUG, "move HA cluster resource %s from node %s",
+		logger(LOG_INFO, "move HA cluster resource %s from node %s",
 			dstVE->ctid(), m_sHaClusterNodeID.c_str());
 		rc = runHaman(dstVE->ctid(), "move-from", m_sHaClusterNodeID.c_str());
 	}
