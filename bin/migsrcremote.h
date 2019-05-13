@@ -33,7 +33,7 @@ class MigrateStateRemote : public MigrateStateSrc
 {
 public:
 	virtual int doCtMigration();
-	int doCtMigrationDefault();
+	int doCtMigrationOffline();
 	int doCtMigrationPhaul();
 
 	int stopVE();
@@ -139,10 +139,6 @@ private:
 	int copy_delta(const char *delta, struct string_list *exclude);
 	int copy_deltas(struct string_list *deltas);
 	int open_active_deltas(struct string_list *active_deltas);
-	int copy_active_delta(struct ploop_delta_desc *desc);
-	int copy_active_deltas();
-	int copy_active_delta_dirty(struct ploop_delta_desc *desc);
-	int copy_active_deltas_dirty();
 	void close_active_deltas();
 
 	int sendVersionCmd();

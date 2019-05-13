@@ -528,15 +528,18 @@ int MigrateStateRemote::doCtMigration()
 	if (rc)
 		goto error;
 
-	if (srcVE->isrun() && srcVE->layout >= VZCTL_LAYOUT_5 &&
-			VZMoptions.remote_version >= MIGRATE_VERSION_700)
-	{
+	if (srcVE->isrun()) {
+		if (srcVE->layout < VZCTL_LAYOUT_5)
+			return putErr(-1, MIG_MSG_SIMFS_TRYOFFLINE);
+		if (VZMoptions.remote_version < MIGRATE_VERSION_700)
+			return putErr(-1, MIG_MSG_TRYOFFLINE);
+
 		if (isOptSet(OPT_KEEP_SRC))
 			rc = doPloopCtClone();
 		else
 			rc = doCtMigrationPhaul();
 	} else
-		rc = doCtMigrationDefault();
+		rc = doCtMigrationOffline();
 
 	if (rc)
 		goto error;
@@ -548,22 +551,14 @@ error:
 	return rc;
 }
 
-int MigrateStateRemote::doCtMigrationDefault()
+int MigrateStateRemote::doCtMigrationOffline()
 {
-	int rc = 0;
+	int rc;
 
-	if (srcVE->isrun()) {
-		if (srcVE->layout >= VZCTL_LAYOUT_5)
-			rc = doLegacyOnlinePloopCtMigration();
-		else
-			rc = putErr(-1, MIG_MSG_SIMFS_TRYOFFLINE);
-
-	} else {
-		if (srcVE->layout >= VZCTL_LAYOUT_5)
-			rc = doOfflinePloopCtMigration();
-		else
-			rc = doOfflineSimfsCtMigration();
-	}
+	if (srcVE->layout >= VZCTL_LAYOUT_5)
+		rc = doOfflinePloopCtMigration();
+	else
+		rc = doOfflineSimfsCtMigration();
 
 	if (rc)
 		return rc;
@@ -1509,66 +1504,6 @@ void MigrateStateRemote::unfreezeFS(int fd)
 		 logger(LOG_ERR, "ioctl(FITHAW) : %m");
 }
 
-int MigrateStateRemote::copy_active_delta(struct ploop_delta_desc *desc)
-{
-	char cmd[PATH_MAX];
-	int rc;
-
-	snprintf(cmd, sizeof(cmd), CMD_ONLINE_PLOOP_COPY_1 " %lu %s",
-		desc->blksize, desc->delta);
-	if ((rc = ch_send_cmd(&channel.ctx, channel.conn, cmd)))
-		return rc;
-
-	rc = ploop_src_online_copy_image_1(channel.getFd(1), VZMoptions.tmo.val,
-			!isOptSet(OPT_NOCOMPRESS), desc);
-	if (rc)
-		return putErr(MIG_ERR_PLOOP,
-			"Online copy of ploop image failed on stage 1, retcode %d", rc);
-
-	/* wait command completition on target side */
-	if ((rc = ch_read_retcode(&channel.ctx, channel.conn)))
-		return rc;
-
-	return rc;
-}
-
-int MigrateStateRemote::copy_active_delta_dirty(struct ploop_delta_desc *desc)
-{
-	int rc, fd = -1;
-	char cmd[PATH_MAX];
-
-	if (desc->mnt) {
-		fd = syncPageCacheAndFreezeFS(desc->mnt);
-		if (fd == -1)
-			return MIG_ERR_SYSTEM;
-	}
-
-	logger(LOG_INFO, "Copy dirty blocks %s", desc->delta);
-	snprintf(cmd, sizeof(cmd), CMD_ONLINE_PLOOP_COPY_2 " %lu %s",
-		desc->blksize, desc->delta);
-
-	if ((rc = ch_send_cmd(&channel.ctx, channel.conn, cmd)))
-		goto err;
-
-	if ((rc = ploop_src_online_copy_image_2(desc))) {
-		rc =  putErr(MIG_ERR_PLOOP,
-			"Online copy of ploop image failed on stage 2, retcode %d", rc);
-		goto err;
-	}
-
-	/* wait command completition on target side */
-	if ((rc = ch_read_retcode(&channel.ctx, channel.conn)))
-		goto err;
-
-err:
-	if (fd != -1) {
-		unfreezeFS(fd);
-		close(fd);
-	}
-
-	return rc;
-}
-
 int MigrateStateRemote::open_active_deltas(struct string_list *active_deltas)
 {
 	int rc;
@@ -1586,33 +1521,6 @@ int MigrateStateRemote::open_active_deltas(struct string_list *active_deltas)
 		m_deltas.push_back(d);
 	}
 
-	return 0;
-}
-
-int MigrateStateRemote::copy_active_deltas()
-{
-	int rc;
-	listDeltaDesc_t::const_iterator it;
-
-	for (it = m_deltas.begin(); it != m_deltas.end(); ++it) {
-		rc = copy_active_delta(*it);
-		if (rc)
-			return rc;
-	}
-
-	return 0;
-}
-
-int MigrateStateRemote::copy_active_deltas_dirty()
-{
-	int rc;
-	listDeltaDesc_t::const_iterator it;
-
-	for (it = m_deltas.begin(); it != m_deltas.end(); ++it) {
-		rc = copy_active_delta_dirty(*it);
-		if (rc)
-			return rc;
-	}
 	return 0;
 }
 
@@ -1707,54 +1615,6 @@ int MigrateStateRemote::doOnlinePloopCtMigration()
 
 	// Run iterative memory and fs migration via p.haul
 	return runPhaulMigration();
-}
-
-/*
- * Handle online migration to old vzmigrate versions (less than 700). Only
- * iterative ploop disks migration avaliable for such scenario, container
- * will be stopped finally anyway since checkpoint/restore technology in Vz7
- * and in older versions incompatible.
- */
-int MigrateStateRemote::doLegacyOnlinePloopCtMigration()
-{
-	StringListWrapper active_delta;
-	int rc;
-
-	rc = getActivePloopDelta(srcVE->m_disks.get(disk_is_non_shared),
-			&active_delta.getList());
-	if (rc)
-		return rc;
-
-	rc = open_active_deltas(&active_delta.getList());
-	if (rc)
-		goto err;
-
-	rc = copy_ct(&active_delta.getList());
-	if (rc)
-		goto err;
-
-	rc = copy_active_deltas();
-	if (rc)
-		goto err;
-
-	/* skip CT unmount to perform copy_active_deltas_dirty */
-	setOpt(OPT_SKIP_UMOUNT);
-	if ((rc = stopVE()))
-		goto err;
-
-	rc = copy_active_deltas_dirty();
-	if (rc)
-		goto err;
-
-	close_active_deltas();
-
-	srcVE->umount();
-
-	return 0;
-err:
-	close_active_deltas();
-
-	return rc;
 }
 
 /*

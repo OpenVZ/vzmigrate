@@ -63,9 +63,6 @@ extern "C" {
 int ploop_delta_desc_open(const char *basedir, const char *delta,
 		struct ploop_delta_desc *d);
 void ploop_delta_desc_close(struct ploop_delta_desc *d);
-int ploop_src_online_copy_image_1(int sock, int tmo,int lcompress,
-		struct ploop_delta_desc *desc);
-int ploop_src_online_copy_image_2(struct ploop_delta_desc *desc);
 int ploop_dst_online_copy_image_1(const char *image, int sock, int tmo, size_t blksize);
 int ploop_dst_online_copy_image_2(const char *image, size_t blksize);
 void ploop_data_close();
