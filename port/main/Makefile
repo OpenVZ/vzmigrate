@@ -1,6 +1,7 @@
 # $Id$
 #
 # Copyright (c) 2002-2017, Parallels International GmbH
+# Copyright (c) 2017-2019 Virtuozzo International GmbH. All rights reserved.
 # All rights reserved.
 #
 # Makefile for vzt-common (for build at freeBSD)
