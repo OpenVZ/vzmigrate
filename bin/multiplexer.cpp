@@ -314,13 +314,24 @@ void MasterConn::asyncSendPacked()
 {
 	assert(!m_sendQueue.empty());
 
-	boost::asio::async_write(m_outStream,
-		boost::asio::buffer(
-			m_sendQueue.front()->getBuf(),
-			m_sendQueue.front()->getBufSize()),
-		boost::bind(
-			&MasterConn::handleSendPacked, this,
-			boost::asio::placeholders::error));
+	if (m_sendQueue.size() < 31) {
+		boost::asio::async_write(m_outStream,
+				boost::asio::buffer(
+					m_sendQueue.front()->getBuf(),
+					m_sendQueue.front()->getBufSize()),
+				boost::bind(
+					&MasterConn::handleSendPacked, this,
+					boost::asio::placeholders::error));
+	} else {
+		boost::system::error_code error;
+
+		boost::asio::write(m_outStream,
+				boost::asio::buffer(
+					m_sendQueue.front()->getBuf(),
+					m_sendQueue.front()->getBufSize()),
+				error);
+		handleSendPacked(error);
+	}
 }
 
 void MasterConn::handleRecvHeader(const boost::system::error_code& error)
