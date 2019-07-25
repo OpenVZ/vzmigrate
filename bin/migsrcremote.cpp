@@ -81,8 +81,8 @@ void reportStage(const char* stage)
 	std::string s = stage;
 	s += "\n";
 	rc = write(VZMoptions.progress_fd, s.c_str(), s.length());
-	if (rc != 0)
-		logger(LOG_ERR, "Failed to write inside reportStage");
+	if (rc == -1)
+		logger(LOG_ERR, "Failed to write inside reportStage: %m");
 }
 
 MigrateStateRemote::MigrateStateRemote(

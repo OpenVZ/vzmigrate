@@ -332,10 +332,11 @@ int MigrateStateTemplate::fillEZDirList(char* const* const vzdir, char* dir,
 			continue;
 		strncpy(path, vzdir[i], sizeof(path));
 		p = basename(path);
-		if ((rc = write(fd, p, strlen(p))))
+		if (write(fd, p, strlen(p)) == -1 ||
+		    write(fd, "\n", 1) == -1) {
+			rc = putErr(MIG_ERR_SYSTEM, "write(%d): %m", fd);
 			break;
-		if ((rc = write(fd, "\n", 1)))
-			break;
+		}
 		if (strlen(dir) == 0)
 			strncpy(dir, dirname(path), dsize);
 	}
