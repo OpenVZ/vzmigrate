@@ -202,7 +202,8 @@ extern const char * getError();
 // Info messages
 
 #define MIG_INFO_LIVE_STARTED		"Live migration stage started"
-#define MIG_INFO_LIVE_COMPLETED		"Live migration stage completed"
+#define MIG_INFO_WARM_STARTED		"Warm migration stage started"
+#define MIG_INFO_COMPLETED		"Migration stage completed"
 #define MIG_INFO_MPX_SLAVE_PREFIX	"Destination: "
 
 // Errors message

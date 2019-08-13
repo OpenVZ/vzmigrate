@@ -1667,8 +1667,9 @@ int MigrateStateRemote::prePhaulMigration()
  */
 int MigrateStateRemote::runPhaulMigration()
 {
-	reportStage(MIG_INFO_LIVE_STARTED);
-	logger(LOG_INFO, MIG_INFO_LIVE_STARTED);
+	const char *s = isOptSet(OPT_ONLINE) ? MIG_INFO_LIVE_STARTED : MIG_INFO_WARM_STARTED;
+	reportStage(s);
+	logger(LOG_INFO, s);
 
 	// Transfer channels ownership from class object to local object
 	std::auto_ptr<PhaulChannels> channels = m_phaulChannels;
@@ -1705,7 +1706,7 @@ int MigrateStateRemote::runPhaulMigration()
 	if ((remoteRc != 0) || (rc != 0))
 		return putErr(MIG_ERR_PHAUL, MIG_MSG_RUN_PHAUL_LOG, PHAUL_LOG_FILE);
 
-	logger(LOG_INFO, MIG_INFO_LIVE_COMPLETED);
+	logger(LOG_INFO, MIG_INFO_COMPLETED);
 	return 0;
 }
 
