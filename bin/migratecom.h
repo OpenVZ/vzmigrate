@@ -57,8 +57,6 @@ protected:
 
 public:
 	int erase_flag;
-	int use_sparse_opt; // use --sparse option in rsync
-
 	// Cleaning functionality
 	typedef int (*MigrateCleanFunc) (const void *, const void *);
 	struct MCleanEntry

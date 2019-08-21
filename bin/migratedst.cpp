@@ -230,9 +230,6 @@ int MigrateStateDstRemote::initVEMigration(VEObj * ve)
 		// not for existed
 		addCleanerRemove(clean_removeDir, ve->priv);
 
-	// do not use --sparse option for ploop image copy
-	use_sparse_opt = (ve->layout < VZCTL_LAYOUT_5);
-
 	END_STAGE();
 	return 0;
 }
@@ -1035,7 +1032,6 @@ int MigrateStateDstRemote::h_copy_remote_rsync_fast(const char * dst, enum mig_m
 int MigrateStateDstRemote::h_copy_remote_tar(const char *dst)
 {
 	int rc = 0;
-	char *opt = NULL;
 	const char *rdst;
 	char tmpdir[PATH_MAX+1];
 
@@ -1052,14 +1048,7 @@ int MigrateStateDstRemote::h_copy_remote_tar(const char *dst)
 
 	char * const args[] =
 		{ (char *)BIN_TAR, (char *)"-p",
-			(char *)"--same-owner", (char *)"-x", (char *)"-C", (char *) rdst, opt, NULL };
-
-	if (isOptSet(OPT_CONVERT_VZFS)) {
-		// ploop image can not be sparse file
-		// but on vzfs->ploop convertation we copy files from root to mounted ploop
-		// so we can use --sparse option
-		opt = (char *)"-S";
-	}
+			(char *)"--same-owner", (char *)"-x", (char *)"-C", (char *) rdst, (char *) "-S", NULL };
 
 	if (isOptSet(OPT_AGENT)) {
 		rc = vza_recv_data(&channel.ctx, channel.conn, args);

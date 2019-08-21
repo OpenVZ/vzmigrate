@@ -74,8 +74,6 @@ MigrateStateCommon::MigrateStateCommon()
 {
 	erase_flag = 1;
 	dst_name = NULL;
-	use_sparse_opt = 1;
-
 	m_nFlags = 0ULL;
 }
 
@@ -368,8 +366,7 @@ const char ** MigrateStateCommon::getRsyncArgs()
 	rsync_args[i++] = "-H";
 	rsync_args[i++] = "-A";
 	rsync_args[i++] = "-X";
-	if (use_sparse_opt)
-		rsync_args[i++] = "--sparse";
+	rsync_args[i++] = "--sparse";
 	rsync_args[i++] = "--numeric-ids";
 	rsync_args[i++] = "--timeout";
 	rsync_args[i++] = VZMoptions.tmo.str;
