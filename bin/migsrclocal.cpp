@@ -813,7 +813,7 @@ static int copy_local(const char *src, const char *dst,
 	logger(LOG_ERR, "Copy %s %s", src, dst);
 	string_list_init(&args);
 	string_list_add(&args, (char *)"rsync");
-	string_list_add(&args, (char *)"-aH");
+	string_list_add(&args, (char *)"-aHS");
 	if (exclude) {
 		struct string_list_el *elem;
 

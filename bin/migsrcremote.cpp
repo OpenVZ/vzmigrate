@@ -720,9 +720,6 @@ int MigrateStateRemote::preMigrateStage()
 	if ((rc = checkRemoteVersion()))
 		return rc;
 
-	// do not use --sparse option for ploop image copy
-	use_sparse_opt = (srcVE->layout < VZCTL_LAYOUT_5);
-
 	if ((rc = checkBindMounts()))
 		return rc;
 
