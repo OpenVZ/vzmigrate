@@ -110,7 +110,6 @@ int ssh_send_data(
 	int i;
 	char dst[BUFSIZ];
 	struct string_list_el *p;
-	bool use_sparse = false;
 	int wait_tar[2], wait_ssh[2];
 	fd_set wait_fds;
 	int wait_max, sel_num;
@@ -152,18 +151,9 @@ int ssh_send_data(
 		goto cleanup;
 	}
 
-	/* run tar server on destination node */
-	for (i = 0; tar_argv[i]; i++) {
-		if (	(strcmp("--sparse", tar_argv[i]) == 0) ||
-			(strcmp("-S", tar_argv[i]) == 0))
-		{
-			use_sparse = true;
-			break;
-		}
-	}
 	snprintf(buffer, sizeof(buffer),
-	"echo $$ > %s/" PID_FILE "; %s -p %s --same-owner -x -C %s",
-		reply, BIN_TAR, use_sparse ? "-S" : "", reply);
+	"echo $$ > %s/" PID_FILE "; %s -p -S --same-owner -x -C %s",
+		reply, BIN_TAR, reply);
 
 	ssh_argv[0] = "ssh";
 	for (p = VZMoptions.ssh_options.tqh_first, i = 0; p && i < MAX_ARGS-5; p = p->e.tqe_next, i++)
