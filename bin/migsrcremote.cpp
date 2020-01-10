@@ -1267,6 +1267,7 @@ static int copy_remote_tar(
 	string_list_add(&ls, (char *)"-c");
 	string_list_add(&ls, (char *)"--ignore-failed-read");
 	string_list_add(&ls, (char *)"--numeric-owner");
+	string_list_add(&ls, (char *)"-S");
 	string_list_add(&ls, (char *)"-f");
 	string_list_add(&ls, (char *)"-");
 	string_list_add(&ls, (char *)"-C");
