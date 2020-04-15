@@ -57,6 +57,7 @@
 #define NOEVENT_OPTS		27
 #define LIMIT_SPEED_OPTS	28
 #define COMPRESS_OPTS		29
+#define SSH_CIPHER_OPTS		32
 
 #define MAX_VE_AVAILABLE	512
 
@@ -250,6 +251,7 @@ int main(int argc, char **argv)
 		{"compress", no_argument, NULL, COMPRESS_OPTS},
 		{"ignore-backup-disk", no_argument, NULL, IGNORE_BACKUP_DISK_OPTS},
 		{"noevent", no_argument, NULL, NOEVENT_OPTS},
+		{"ssh-cipher", required_argument, NULL, SSH_CIPHER_OPTS},
 		{0, 0, 0, 0}
 	};
 	char **new_args, *dst_host, *dst_ct = NULL, c;
@@ -312,6 +314,7 @@ int main(int argc, char **argv)
 			CHECK_MOPT_ARG(CIPHERS_OPTS, "--ciphers");
 			CHECK_MOPT_ARG('r', "--remove-area");
 			CHECK_MOPT_ARG(LIMIT_SPEED_OPTS, "--limit-speed");
+			CHECK_MOPT_ARG(SSH_CIPHER_OPTS, "--ssh-cipher");
 
 			CHECK_MOPT_NEW_ARG(NEW_PRIVATE_OPTS, "--new-private");
 			CHECK_MOPT_NEW_ARG(DST_OPTS, "--dst");

@@ -134,8 +134,6 @@ int main(int argc, char **argv)
 	string_list_add(&params, "ssh");
 	string_list_add(&params, "-T");
 //	string_list_add(&params, "-q");
-	string_list_add(&params, "-c");
-	string_list_add(&params, "arcfour");
 	string_list_add(&params, "-o");
 	string_list_add(&params, "StrictHostKeyChecking=no");
 	string_list_add(&params, "-o");
