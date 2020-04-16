@@ -36,10 +36,7 @@
 // common ssh args
 const char * ssh_args[1000] =
 {
-"ssh", "-T", "-q", "-c",
-/* blowfish is faster then DES3,
-but arcfour is faster then blowfish, according #84995 */
-"arcfour",
+"ssh", "-T", "-q",
 "-o", "StrictHostKeyChecking=no",
 "-o", "CheckHostIP=no",
 "-o", "UserKnownHostsFile=/dev/null",

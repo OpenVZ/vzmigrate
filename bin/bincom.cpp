@@ -286,6 +286,8 @@ const char * VEArgs[MAX_ARGS + 1] =
 #define COMPRESS_OPTS		29
 #define PRIVATE_OPTS		30
 #define SKIP_REGISTER_OPTS	31
+#define SSH_CIPHER_OPTS		32
+
 
 /* parse user:password@host */
 static int parse_UPH(
@@ -573,14 +575,13 @@ void parse_options (int argc, char **argv)
 {
 	int rc;
 	char buffer[BUFSIZ];
+	char *cipher = NULL;
 
 	/* common ssh options */
 	string_list_add(&VZMoptions.ssh_options, "-T");
 	string_list_add(&VZMoptions.ssh_options, "-q");
 	/* blowfish is faster then DES3,
 	   but arcfour is faster then blowfish, according #84995 */
-	string_list_add(&VZMoptions.ssh_options, "-c");
-	string_list_add(&VZMoptions.ssh_options, "arcfour");
 	string_list_add(&VZMoptions.ssh_options, "-o");
 	string_list_add(&VZMoptions.ssh_options, "StrictHostKeyChecking=no");
 	string_list_add(&VZMoptions.ssh_options, "-o");
@@ -649,6 +650,7 @@ void parse_options (int argc, char **argv)
 		{"skipregister", no_argument, NULL, SKIP_REGISTER_OPTS},
 		{"socket", no_argument, NULL, SOCKET_OPTS},
 		{"keep-images", no_argument, NULL, KEEP_IMAGES_OPTS}, // Keep images 
+		{"ssh-cipher", required_argument, NULL, SSH_CIPHER_OPTS}, // use AES
 		// Keep source CT - internal for parallels server mode
 		{"keep-src", no_argument, NULL, KEEP_SRC_OPTS},
 		{"new-uuid", required_argument, NULL, NEW_UUID_OPTS},
@@ -957,6 +959,9 @@ void parse_options (int argc, char **argv)
 		case LIMIT_SPEED_OPTS:
 			VZMoptions.speed_limit = atoll(optarg);
 			break;
+		case SSH_CIPHER_OPTS:
+			cipher = strdup(optarg);
+			break;
 		case 'h':
 		default:
 			usage();
@@ -969,6 +974,12 @@ void parse_options (int argc, char **argv)
 
 	snprintf(VZMoptions.tmo.str, sizeof(VZMoptions.tmo.str), "%ld", VZMoptions.tmo.val);
 	snprintf(buffer, sizeof(buffer), "ServerAliveInterval=%ld", VZMoptions.tmo.val/3);
+	if ( cipher != NULL )
+	{
+		string_list_add(&VZMoptions.ssh_options, "-c");
+		string_list_add(&VZMoptions.ssh_options, cipher);
+	}
+
 	string_list_add(&VZMoptions.ssh_options, "-o");
 	string_list_add(&VZMoptions.ssh_options, "ServerAliveCountMax=3");
 	string_list_add(&VZMoptions.ssh_options, "-o");

@@ -1,4 +1,4 @@
-.TH vzmigrate 8 "March 2019" "@PRODUCT_NAME_SHORT@"
+.TH vzmigrate 8 "April 2020" "@PRODUCT_NAME_SHORT@"
 
 .SH NAME
 vzmigrate \- utility for container migration between hardware nodes.
@@ -10,6 +10,7 @@ vzmigrate \- utility for container migration between hardware nodes.
 .RB [ -sfvh ]
 .RB [ --keeper\fR[=\fIveid\fR]
 .RB [ --ssh\fR=\fIssh_options\fR]
+.RB [ --ssh-cipher\fR=\fIssh_cipher\fR]
 .RB [ --keep-dst ]
 .RB [ --keep-images ]
 .RB [ --online ]
@@ -112,6 +113,12 @@ Get usage info.
 Additional options that will be passed to ssh during establishing
 connection with destination node. Please be careful with these,
 make sure to NOT pass the destination hostname.
+
+.TP
+.BR --ssh-cipher = \fIssh_cipher
+Override the cipher configured in the SSH configuration file. Both the source and
+destination servers must support the chosen cipher. Note, passing anything but a cipher
+may lead to unpredictable behavior.
 
 .TP
 .BR --keeper =[ \fIveid\fR]
@@ -370,4 +377,4 @@ Can not perform migration for container with attached backup.
 
 .SH COPYRIGHT
 Copyright (c) 2001-2017, Parallels International GmbH. All rights reserved.
-Copyright (c) 2017-2019 Virtuozzo International GmbH. All rights reserved.
+Copyright (c) 2017-2020 Virtuozzo International GmbH. All rights reserved.
