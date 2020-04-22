@@ -974,11 +974,11 @@ void parse_options (int argc, char **argv)
 
 	snprintf(VZMoptions.tmo.str, sizeof(VZMoptions.tmo.str), "%ld", VZMoptions.tmo.val);
 	snprintf(buffer, sizeof(buffer), "ServerAliveInterval=%ld", VZMoptions.tmo.val/3);
-	if ( cipher != NULL )
-	{
-		string_list_add(&VZMoptions.ssh_options, "-c");
+	string_list_add(&VZMoptions.ssh_options, "-c");
+	if (cipher != NULL)
 		string_list_add(&VZMoptions.ssh_options, cipher);
-	}
+	else
+		string_list_add(&VZMoptions.ssh_options, "aes256-gcm@openssh.com,arcfour");
 
 	string_list_add(&VZMoptions.ssh_options, "-o");
 	string_list_add(&VZMoptions.ssh_options, "ServerAliveCountMax=3");
