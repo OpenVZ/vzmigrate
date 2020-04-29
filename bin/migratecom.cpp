@@ -800,7 +800,7 @@ int MigrateStateCommon::runHaman(const char *ctid, const char *cmd, ...)
 {
 	char buf[100], argbuf[100];
 	char * args[] = {(char *)BIN_HAMAN, (char *)"-i", (char *)"-q", (char *)cmd,
-					 buf, NULL, NULL, NULL, NULL, NULL };
+					 buf, NULL, NULL, NULL, NULL, NULL, NULL };
 	struct stat st;
 	int ndx;
 	va_list pvar;
@@ -836,6 +836,7 @@ int MigrateStateCommon::runHaman(const char *ctid, const char *cmd, ...)
 		args[ndx++] = (char *)"--path";
 		strncpy(path, va_arg(pvar, char *), sizeof(path));
 		args[ndx++] = (char *)path;
+		args[ndx++] = (char *)"--force";
 	}
 	va_end(pvar);
 	snprintf(buf, sizeof(buf), "ct-%s", ctid);
