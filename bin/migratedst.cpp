@@ -891,14 +891,18 @@ int MigrateStateDstRemote::registerOnHaCluster()
 			return 0;
 	}
 
-	if (m_sHaClusterNodeID.empty()) {
-		logger(LOG_INFO, "register HA cluster resource %s", dstVE->ctid());
-		rc = runHaman(dstVE->ctid(), "add", dstVE->ve_data.ha_prio, dstVE->priv);
-	} else {
+	rc = MIG_ERR_SYSTEM;
+	if (!m_sHaClusterNodeID.empty()) {
 		logger(LOG_INFO, "move HA cluster resource %s from node %s",
 			dstVE->ctid(), m_sHaClusterNodeID.c_str());
 		rc = runHaman(dstVE->ctid(), "move-from", m_sHaClusterNodeID.c_str());
 	}
+
+	if (rc) {
+		logger(LOG_INFO, "register HA cluster resource %s", dstVE->ctid());
+		rc = runHaman(dstVE->ctid(), "add", dstVE->ve_data.ha_prio, dstVE->priv);
+	}
+
 	if (rc)
 		return putErr(rc, "Can't register resource %s at HA cluster", dstVE->ctid());
 
