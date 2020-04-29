@@ -800,7 +800,7 @@ int MigrateStateDstRemote::finalStage(int action)
 	}
 
 	if ((rc = registerOnHaCluster()))
-		goto err;
+		logger(LOG_WARNING, "WARNING: Unable to register shaman resource. Make sure that shaman is operational and then sync resources.");
 
 	// Reread information about CT disks from config
 	if ((rc = rereadVeDisksFromConfig()))
