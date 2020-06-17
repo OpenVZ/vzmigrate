@@ -178,6 +178,7 @@ public:
 private:
 	void asyncRecvHeader();
 	void asyncRecvBody();
+	void syncSendPacked();
 	void asyncSendPacked();
 	void handleRecvHeader(const boost::system::error_code& error);
 	void handleRecvBody(const boost::system::error_code& error);
@@ -268,6 +269,29 @@ private:
 	std::auto_ptr<RawWrapPolicy> m_rawWrapper;
 };
 
+struct Throttler
+{
+	Throttler(size_t limit = 32 * 1024 * 1024) :
+		m_limit(limit), m_total(0), m_active(false)
+	{
+	}
+	bool active() const
+	{
+		return m_active;
+	}
+	void account(size_t size);
+	bool release(size_t size);
+	void clear()
+	{
+		m_total = 0;
+		m_active = false;
+	}
+
+	size_t m_limit;
+	size_t m_total;
+	bool m_active;
+};
+
 /*
  * Io multiplexer which allows multiple virtual connections to be employed over
  * a single real connection. It multiplex/demultiplex data from/to several
@@ -290,6 +314,14 @@ public:
 	void doProcessOOM();
 	boost::asio::io_service& getIoService();
 	bool isChildTerminated() const;
+	void doRecvPacked()
+	{
+		m_masterConn->doRecvPacked();
+	}
+	Throttler &throttler()
+	{
+		return m_throttler;
+	}
 
 private:
 	void processSigchld();
@@ -333,6 +365,7 @@ private:
 	bool m_isMasterMode;
 	EStates m_state;
 	boost::shared_ptr<WrapPolicy> m_wrapPolicy;
+	Throttler m_throttler;
 };
 
 } // namespace multiplexer

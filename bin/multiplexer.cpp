@@ -262,6 +262,7 @@ void MasterConn::doSendPacked(const boost::shared_ptr<PackedPacket>& packet)
 	// Add new packed packet to write queue
 	bool writeQueued = !m_sendQueue.empty();
 	m_sendQueue.push_back(packet);
+	m_ioMultiplexer.throttler().account(packet->getBodyBufSize());
 
 	// Start new send operation if not already started
 	if (!writeQueued) {
@@ -310,27 +311,46 @@ void MasterConn::asyncRecvBody()
 			boost::asio::placeholders::error));
 }
 
+
+void MasterConn::syncSendPacked()
+{		
+	boost::system::error_code error;
+
+	while (m_sendQueue.size() > 1) {
+		boost::asio::write(m_outStream,
+			boost::asio::buffer(
+				m_sendQueue.front()->getBuf(),
+				m_sendQueue.front()->getBufSize()),
+			error);
+		if (error) {
+			m_sendQueue.clear();
+			m_ioMultiplexer.throttler().clear();
+			doCloseOutStream();
+			m_ioMultiplexer.doProcessDisconnect();
+			return;
+		}
+
+		m_ioMultiplexer.throttler().release(m_sendQueue.front()->getBodyBufSize());
+		// Remove processed packet from send queue
+		m_sendQueue.pop_front();
+	}
+}
+
 void MasterConn::asyncSendPacked()
 {
 	assert(!m_sendQueue.empty());
 
-	if (m_sendQueue.size() < 31) {
-		boost::asio::async_write(m_outStream,
-				boost::asio::buffer(
-					m_sendQueue.front()->getBuf(),
-					m_sendQueue.front()->getBufSize()),
-				boost::bind(
-					&MasterConn::handleSendPacked, this,
-					boost::asio::placeholders::error));
-	} else {
-		boost::system::error_code error;
+	if (m_ioMultiplexer.throttler().active())
+		syncSendPacked();
 
-		boost::asio::write(m_outStream,
-				boost::asio::buffer(
-					m_sendQueue.front()->getBuf(),
-					m_sendQueue.front()->getBufSize()),
-				error);
-		handleSendPacked(error);
+	if (!m_sendQueue.empty()) {
+		boost::asio::async_write(m_outStream,
+			boost::asio::buffer(
+				m_sendQueue.front()->getBuf(),
+				m_sendQueue.front()->getBufSize()),
+			boost::bind(
+				&MasterConn::handleSendPacked, this,
+				boost::asio::placeholders::error));
 	}
 }
 
@@ -367,18 +387,21 @@ void MasterConn::handleRecvBody(const boost::system::error_code& error)
 	m_ioMultiplexer.doDemultiplex(m_recvPacket.release());
 
 	// Start async receiving of new packed packet
-	asyncRecvHeader();
+	if (!m_ioMultiplexer.throttler().active())
+		asyncRecvHeader();
 }
 
 void MasterConn::handleSendPacked(const boost::system::error_code& error)
 {
 	if (error) {
 		m_sendQueue.clear();
+		m_ioMultiplexer.throttler().clear();
 		doCloseOutStream();
 		m_ioMultiplexer.doProcessDisconnect();
 		return;
 	}
 
+	m_ioMultiplexer.throttler().release(m_sendQueue.front()->getBodyBufSize());
 	// Remove processed packet from send queue
 	m_sendQueue.pop_front();
 
@@ -418,6 +441,8 @@ void ChannelConn::doSendRaw(const boost::shared_ptr<RawPacket>& packet)
 	// Add new raw packet to write queue
 	bool writeQueued = !m_sendQueue.empty();
 	m_sendQueue.push_back(packet);
+
+	m_ioMultiplexer.throttler().account(packet->getBodyBufSize());
 
 	// Start new send operation if not already started
 	if (!writeQueued) {
@@ -509,8 +534,14 @@ void ChannelConn::handleSendRaw(const boost::system::error_code& error)
 {
 	if (error) {
 		m_sendQueue.clear();
+		m_ioMultiplexer.throttler().clear();
 		doClose();
 		return;
+	}
+
+	if (m_ioMultiplexer.throttler().release(m_sendQueue.front()->getBodyBufSize())) {
+		// Start async receiving of new packed packet
+		m_ioMultiplexer.doRecvPacked();
 	}
 
 	// Remove processed packet from send queue
@@ -1189,6 +1220,32 @@ bool IoMultiplexer::isAllChannelsSendQueuesEmpty() const
 	}
 
 	return true;
+}
+
+/////////////////////////////////////////////////////////
+// Throttler
+void Throttler::account(size_t size)
+{
+	m_total += size;
+	if (!m_active && m_total > m_limit) {
+		logger(LOG_INFO, "throttler: start throtling total: %lu", m_total);
+		m_active = true;
+	}
+}
+
+bool Throttler::release(size_t size)
+{
+	bool a = m_active;
+
+	m_total -= size;
+	if (m_total < m_limit)
+		m_active = false;
+	if (a && a != m_active) {
+		logger(LOG_INFO, "throttler: stop throtling total: %lu", m_total);
+		return true;
+	}
+
+	return false;
 }
 
 } // namespace multiplexer
