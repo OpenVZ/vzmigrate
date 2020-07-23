@@ -1228,7 +1228,7 @@ void Throttler::account(size_t size)
 {
 	m_total += size;
 	if (!m_active && m_total > m_limit) {
-		logger(LOG_INFO, "throttler: start throtling total: %lu", m_total);
+		logger(LOG_DEBUG, "throttler: start throtling total: %lu", m_total);
 		m_active = true;
 	}
 }
@@ -1241,7 +1241,7 @@ bool Throttler::release(size_t size)
 	if (m_total < m_limit)
 		m_active = false;
 	if (a && a != m_active) {
-		logger(LOG_INFO, "throttler: stop throtling total: %lu", m_total);
+		logger(LOG_DEBUG, "throttler: stop throtling total: %lu", m_total);
 		return true;
 	}
 
