@@ -303,7 +303,7 @@ int main(int argc, char **argv)
 		exitM(MIG_ERR_OBSOLETE);
 	}
 
-	if (isOptSet(OPT_PS_MODE) || isOptSet(OPT_NOEVENT))
+	if (isOptSet(OPT_NOEVENT))
 	{
 		/*
 		   to forbid to send vzevents by libvzctl to avoid race

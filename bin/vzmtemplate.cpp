@@ -99,7 +99,7 @@ int main(int argc, char** argv)
 	// Unconditionally specify template as ez
 	setOpt(OPT_EZTEMPLATE);
 
-	if (isOptSet(OPT_PS_MODE)) {
+	if (isOptSet(OPT_NOEVENT)) {
 		/*
 		   to forbid to send vzevents by libvzctl to avoid race
 		   between vzevents from vzctl and events from dispatcher's migration task
