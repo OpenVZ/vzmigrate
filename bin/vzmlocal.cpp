@@ -114,7 +114,7 @@ int main(int argc, char **argv)
 
 	init_sig_handlers();
 
-	if (isOptSet(OPT_PS_MODE) || isOptSet(OPT_NOEVENT)) {
+	if (isOptSet(OPT_NOEVENT)) {
 		/*
 		   to forbid to send vzevents by libvzctl to avoid race
 		   between vzevents from vzctl and events from dispatcher's migration task
