@@ -61,6 +61,7 @@ MigrateStateDstRemote::MigrateStateDstRemote(VEObj * ve, int options)
 
 	is_thesame_private = 0;
 	is_privdir_exist = 0;
+	is_keepdir_exist = 0;
 	is_priv_on_shared = 0;
 	m_nXxlTimeout = 0;
 	m_convertQuota2[0] = '\0';
@@ -187,9 +188,28 @@ int MigrateStateDstRemote::initVEMigration(VEObj * ve)
 		is_privdir_exist = 1;
 	}
 
+	/* check old migrated directory exist */
 	string keepDir = string(ve->priv) + SUFFIX_MIGRATED;
-	if (access(keepDir.c_str(), F_OK) == 0)
-		clean_removeDir(keepDir.c_str());
+	if (access(keepDir.c_str(), F_OK) == 0) {
+		/* . If private exist then keep dir is obsoleted */
+		/* . Don's use on layout mismatch */
+		/* . Don's use on vzfs conversion */
+		/* . Don's use for online migration */
+		if ((m_initOptions & MIGINIT_LAYOUT_5) &&
+				(access(ve->priv, F_OK) == 0 ||
+				vzctl2_env_layout_version(keepDir.c_str()) != ve->layout ||
+				isOptSet(OPT_CONVERT_VZFS) ||
+				isOptSet(OPT_ONLINE))) {
+			clean_removeDir(keepDir.c_str());
+		} else {
+			logger(LOG_INFO, "Use old .migrated folder");
+			if (::rename(keepDir.c_str(), ve->priv) != 0)
+				return putErr(MIG_ERR_SYSTEM, MIG_MSG_MOVE, keepDir.c_str(), ve->priv);
+			addCleanerRename(ve->priv, keepDir.c_str(), 0);
+
+			is_keepdir_exist = 1;
+		}
+	}
 
 	// check VE root
 	if ((rc = checkVEDir(ve->root)) < 0)
@@ -540,7 +560,7 @@ int MigrateStateDstRemote::cmdCheckSharedTmpl(
 int MigrateStateDstRemote::cmdCheckKeepDir(
 			ostringstream & os)
 {
-	if (!is_privdir_exist) {
+	if (!is_keepdir_exist && !is_privdir_exist) {
 		os << "0";
 		return 0;
 	}

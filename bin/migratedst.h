@@ -53,6 +53,7 @@ protected:
 	int m_initOptions;
 	int is_thesame_private;
 	int is_privdir_exist;
+	int is_keepdir_exist;
 	long m_nXxlTimeout;
 	struct ploop_online_copy_data *m_pPloopData;
 	char m_convertQuota2[PATH_MAX];
