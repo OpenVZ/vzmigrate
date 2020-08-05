@@ -191,15 +191,15 @@ int MigrateStateDstRemote::initVEMigration(VEObj * ve)
 	/* check old migrated directory exist */
 	string keepDir = string(ve->priv) + SUFFIX_MIGRATED;
 	if (access(keepDir.c_str(), F_OK) == 0) {
-		/* 1. Do not use keep dir for ploop based CT on vz6 and previous vz7 */
-		/* 2. If private exist then keep dir is obsoleted */
-		/* 3. Don's use on layout mismatch */
-		/* 4. Don's use on vzfs conversion */
-		if (((m_initOptions & MIGINIT_LAYOUT_5) &&
-					(VZMoptions.remote_version < MIGRATE_VERSION_701)) ||
-				access(ve->priv, F_OK) == 0 ||
+		/* . If private exist then keep dir is obsoleted */
+		/* . Don's use on layout mismatch */
+		/* . Don's use on vzfs conversion */
+		/* . Don's use for online migration */
+		if ((m_initOptions & MIGINIT_LAYOUT_5) &&
+				(access(ve->priv, F_OK) == 0 ||
 				vzctl2_env_layout_version(keepDir.c_str()) != ve->layout ||
-				isOptSet(OPT_CONVERT_VZFS)) {
+				isOptSet(OPT_CONVERT_VZFS) ||
+				isOptSet(OPT_ONLINE))) {
 			clean_removeDir(keepDir.c_str());
 		} else {
 			logger(LOG_INFO, "Use old .migrated folder");
