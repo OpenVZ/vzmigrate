@@ -1271,7 +1271,6 @@ static int copy_remote_tar(
 	string_list_init(&ls);
 	string_list_add(&ls, BIN_TAR);
 	string_list_add(&ls, (char *)"-c");
-	string_list_add(&ls, (char *)"--ignore-failed-read");
 	string_list_add(&ls, (char *)"--numeric-owner");
 	string_list_add(&ls, (char *)"-S");
 	string_list_add(&ls, (char *)"-f");
