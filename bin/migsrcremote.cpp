@@ -556,6 +556,12 @@ int MigrateStateRemote::doCtMigrationOffline()
 {
 	int rc;
 
+	if (srcVE->ismount()) {
+		rc = srcVE->umount();
+		if (rc)
+			return rc;
+	}
+
 	if (srcVE->layout >= VZCTL_LAYOUT_5)
 		rc = doOfflinePloopCtMigration();
 	else
@@ -1265,7 +1271,6 @@ static int copy_remote_tar(
 	string_list_init(&ls);
 	string_list_add(&ls, BIN_TAR);
 	string_list_add(&ls, (char *)"-c");
-	string_list_add(&ls, (char *)"--ignore-failed-read");
 	string_list_add(&ls, (char *)"--numeric-owner");
 	string_list_add(&ls, (char *)"-S");
 	string_list_add(&ls, (char *)"-f");

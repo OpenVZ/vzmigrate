@@ -1080,7 +1080,7 @@ int MigrateStateLocal::ploopCtClone()
 	if (rc)
 		goto err;
 
-	if (srcVE->isrun()) {
+	if (srcVE->isrun() || srcVE->ismount()) {
 		rc = srcVE->tsnapshot(srcVE->gen_snap_guid());
 		if (rc)
 			goto err;
