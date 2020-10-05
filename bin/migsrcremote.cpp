@@ -556,6 +556,12 @@ int MigrateStateRemote::doCtMigrationOffline()
 {
 	int rc;
 
+	if (srcVE->ismount()) {
+		rc = srcVE->umount();
+		if (rc)
+			return rc;
+	}
+
 	if (srcVE->layout >= VZCTL_LAYOUT_5)
 		rc = doOfflinePloopCtMigration();
 	else
