@@ -448,7 +448,7 @@ static ssize_t read_block_from_sock(struct ploop_online_copy_data *data, off_t *
 		buffer = data->read_buffer;
 		bsize = data->blksize;
 	} else if (pkt.marker == PLOOPCOPY_COMPRESSED_DATA_MARKER) {
-		print_log(LOG_ERR, "Compresed mode is not supported, use --nocompress option");
+		print_log(LOG_ERR, "Compressed mode is not supported, use --nocompress option");
 		return -1;
 	} else {
 		print_log(LOG_ERR, "stream corrupted, bad marker");
