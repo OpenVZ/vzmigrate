@@ -61,8 +61,7 @@ static struct ploop_online_copy_data *_g_online_copy_data;
 #pragma pack(0)
 #define PLOOPCOPY_START_MARKER 0x4cc0ac3c
 #define PLOOPCOPY_DATA_MARKER 0x4cc0ac3d
-// comment prlcompress usage
-//#define PLOOPCOPY_COMPRESSED_DATA_MARKER 0x4cc0ac3e
+#define PLOOPCOPY_COMPRESSED_DATA_MARKER 0x4cc0ac3e
 struct ploopcopy_start_packet
 {
 	__u32   marker;
@@ -448,10 +447,9 @@ static ssize_t read_block_from_sock(struct ploop_online_copy_data *data, off_t *
 	if (pkt.marker == PLOOPCOPY_DATA_MARKER) {
 		buffer = data->read_buffer;
 		bsize = data->blksize;
-	// comment prlcompress usage
-	//} else if (pkt.marker == PLOOPCOPY_COMPRESSED_DATA_MARKER) {
-	//	buffer = data->compress_buffer;
-	//	bsize = data->blksize + LZRW4_MAX_OVERHEAD(data->blksize);
+	} else if (pkt.marker == PLOOPCOPY_COMPRESSED_DATA_MARKER) {
+		print_log(LOG_ERR, "Compresed mode is not supported, use --nocompress option");
+		return -1;
 	} else {
 		print_log(LOG_ERR, "stream corrupted, bad marker");
 		return -1;
@@ -562,7 +560,7 @@ int ploop_dst_online_copy_image_1(const char *image, int sock, int tmo, size_t b
 
 	data->blksize = blksize;
 
-	rc = ploop_data_init(sock, tmo, 1, data);
+	rc = ploop_data_init(sock, tmo, 0, data);
 	if (rc)
 		return rc;
 
