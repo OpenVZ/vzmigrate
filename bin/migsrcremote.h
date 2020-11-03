@@ -78,6 +78,7 @@ protected:
 	long m_isTargetInHaCluster;
 	typedef std::list<struct ploop_delta_desc *> listDeltaDesc_t;
 	listDeltaDesc_t m_deltas;
+	std::string m_criuErrLog;
 
 	std::auto_ptr<PhaulChannels> m_phaulChannels;
 
@@ -98,6 +99,8 @@ protected:
 
 	bool isSameLocation();
 	int checkDiskSpaceValues(unsigned long long bytes, unsigned long long inodes);
+	std::string getCriuErrLog() const;
+	void logCriuErrors();
 
 private:
 	bool is_shared() const
