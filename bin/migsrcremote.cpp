@@ -103,6 +103,11 @@ MigrateStateRemote::MigrateStateRemote(
 		keepVE = new VEObj(g_keeperCTID);
 		addCleaner(clean_delVeobj, keepVE, NULL, ANY_CLEANER);
 	}
+
+	m_criuErrLog = std::string(vzcnf->dumpdir);
+	m_criuErrLog.append("/").append(srcVE->ctid()).append("-criu_err.log");
+	unlink(m_criuErrLog.c_str());
+	addCleaner(clean_removeFile, m_criuErrLog.c_str());
 };
 
 MigrateStateRemote::~MigrateStateRemote()
@@ -1706,8 +1711,10 @@ int MigrateStateRemote::runPhaulMigration()
 
 	// Read CMD_RUN_PHAUL_MIGRATION command reply and check result
 	int remoteRc = channel.readReply();
-	if ((remoteRc != 0) || (rc != 0))
+	if ((remoteRc != 0) || (rc != 0)) {
+		logCriuErrors();
 		return putErr(MIG_ERR_PHAUL, MIG_MSG_RUN_PHAUL_LOG, PHAUL_LOG_FILE);
+	}
 
 	logger(LOG_INFO, MIG_INFO_COMPLETED);
 	return 0;
@@ -1797,6 +1804,13 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 
 	if (VZMoptions.remote_version < MIGRATE_VERSION_709)
 		args.push_back("--sync-copy");
+
+	// Specify path to CRIU error log file
+	const std::string criuErrLog = getCriuErrLog();
+	if (!criuErrLog.empty()) {
+		args.push_back("--criu-errorlog");
+		args.push_back(getCriuErrLog());
+	}
 
 	return args;
 }
@@ -1895,5 +1909,25 @@ void MigrateStateRemote::deletePloopStatfsFiles()
 		ostringstream statfsFilename;
 		statfsFilename << it->image << "/" << PLOOP_STATFS_FILENAME;
 		clean_removeFile(statfsFilename.str().c_str(), NULL);
+	}
+}
+
+std::string MigrateStateRemote::getCriuErrLog() const
+{
+	return m_criuErrLog;
+}
+
+void MigrateStateRemote::logCriuErrors() {
+	FILE *fd;
+	char buf[BUFSIZ-6], obuf[BUFSIZ];
+
+	if ((fd = fopen(getCriuErrLog().c_str(), "r")) == NULL)
+		return;
+
+	while(fgets(buf, sizeof(buf), fd)) {
+		buf[strcspn(buf, "\n")] = '\0';
+		sprintf(obuf, "CRIU: %s", buf);
+		reportStage(obuf);
+		logger(LOG_ERR, obuf);
 	}
 }
