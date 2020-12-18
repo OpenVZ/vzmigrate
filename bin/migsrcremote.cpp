@@ -25,6 +25,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/wait.h>
+#include <sys/sysmacros.h>
 #include <libgen.h>
 #include <linux/limits.h>
 #include <sys/vfs.h>
@@ -1873,8 +1874,8 @@ std::string MigrateStateRemote::getPhaulSecondaryDisksArg() const
 		delim = ",";
 
 		// Append %uuid%:%major%:%minor% tuple
-		arg << it->uuid << ":" << gnu_dev_major(st.st_rdev) << ":"
-			<< gnu_dev_minor(st.st_rdev);
+		arg << it->uuid << ":" << major(st.st_rdev) << ":"
+			<< minor(st.st_rdev);
 	}
 
 	return arg.str();

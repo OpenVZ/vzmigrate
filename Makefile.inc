@@ -55,7 +55,7 @@ LIBVZ_DST += -lfiu
 endif
 
 CFLAGS += ${MFLAGS} -Wall -D_GNU_SOURCE -Wno-unused-parameter -Wno-missing-field-initializers
-CXXFLAGS += ${MFLAGS}
+CXXFLAGS += ${MFLAGS}  --std=c++98
 
 #[ia64] gcc -pthread does not add -D_REENTRANT 
 #http://gcc.gnu.org/bugzilla/show_bug.cgi?id=10865

@@ -21,7 +21,6 @@
  * Schaffhausen, Switzerland.
  *
  */
-#include <libio.h>
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <libgen.h>
