@@ -5,6 +5,8 @@ ifneq "" "$(findstring ai64,$(ARCH))"
 __ia64__=true
 endif
 
+STDVER = --std=c++98
+
 TRG_VZMPIPE = ${VZMROOT}/vzmpipe
 OBJPIPE = vzmpipe.o
 LIBPIPE = ${LIBDIR}/${LIBVZM}
@@ -56,25 +58,25 @@ include ${VZMROOT}/Makefile.inc
 all:: ${PROGS}
 
 ${TRG_VZMPIPE}:: ${OBJPIPE}
-	g++ -o $@ ${OBJPIPE} ${LDFLAGS} ${LIBPIPE}
+	g++ -o $@ ${OBJPIPE} ${LDFLAGS} ${LIBPIPE} ${STDVER}
 
 ${TRG_VZMLOCAL}:: ${OBJLOCAL}
-	g++ -o $@ ${OBJLOCAL} ${LDFLAGS} ${LIBLOCAL} ${LPTHREAD}
+	g++ -o $@ ${OBJLOCAL} ${LDFLAGS} ${LIBLOCAL} ${LPTHREAD} ${STDVER}
 
 ${TRG_VZMSRC}:: ${OBJSRC} ${OBJC}
-	g++ -o $@ ${OBJSRC} ${OBJC} ${LDFLAGS} ${LIBSRC} ${LPTHREAD}
+	g++ -o $@ ${OBJSRC} ${OBJC} ${LDFLAGS} ${LIBSRC} ${LPTHREAD} ${STDVER}
 
 ${TRG_VZMTEMPL}:: ${OBJTEMPL} ${OBJC}
-	g++ -o $@ ${OBJTEMPL} ${OBJC} ${LDFLAGS} ${LIBTEMPL} ${LPTHREAD}
+	g++ -o $@ ${OBJTEMPL} ${OBJC} ${LDFLAGS} ${LIBTEMPL} ${LPTHREAD} ${STDVER}
 
 ${TRG_VZMDEST}:: ${OBJDST} ${OBJC}
-	g++ -o $@ ${OBJDST} ${OBJC} ${LDFLAGS} ${LIBDST} ${LPTHREAD}
+	g++ -o $@ ${OBJDST} ${OBJC} ${LDFLAGS} ${LIBDST} ${LPTHREAD} ${STDVER}
 
 ${TRG_VZMIGRATE}:: ${OBJVZMIGRATE}
-	gcc -o $@ ${OBJVZMIGRATE} ${LDFLAGS} 
+	gcc -o $@ ${OBJVZMIGRATE} ${LDFLAGS} ${STDVER}
 
 ${TRG_VZMD}:: ${OBJVZMD} ${OBJC}
-	g++ -o $@ ${OBJVZMD} ${OBJC} ${LDFLAGS} ${LIBDST} ${LPTHREAD}
+	g++ -o $@ ${OBJVZMD} ${OBJC} ${LDFLAGS} ${LIBDST} ${LPTHREAD} ${STDVER}
 
 clean::
 	rm -f ${PROGS} ${OBJ}

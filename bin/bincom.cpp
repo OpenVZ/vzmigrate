@@ -978,7 +978,7 @@ void parse_options (int argc, char **argv)
 	if (cipher != NULL)
 		string_list_add(&VZMoptions.ssh_options, cipher);
 	else
-		string_list_add(&VZMoptions.ssh_options, "aes256-gcm@openssh.com,arcfour");
+		string_list_add(&VZMoptions.ssh_options, "aes256-gcm@openssh.com");
 
 	string_list_add(&VZMoptions.ssh_options, "-o");
 	string_list_add(&VZMoptions.ssh_options, "ServerAliveCountMax=3");

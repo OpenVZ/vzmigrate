@@ -1044,7 +1044,7 @@ std::string rsync_dir(const std::string &str)
 
 std::string get_dd_xml(const std::string &dir)
 {
-	return dir + "/"DISKDESCRIPTOR_XML;
+	return dir + "/" DISKDESCRIPTOR_XML;
 }
 
 std::string get_dd_xml(const char *dir)

@@ -209,7 +209,7 @@ int MigrateChannel::createSshChannel(
 		goto cleanup_0;
 	}
 
-	if ((ret = vzsock_set(&ctx, VZSOCK_DATA_ARGS, (void *)ssh_args, sizeof(ssh_args)))) {
+	if ((ret = vzsock_set(&ctx, VZSOCK_DATA_ARGS, (void *)ssh_args, sizeof((void *)ssh_args)))) {
 		rc = putErr(MIG_ERR_CONN_BROKEN, "vzsock_set() return %d", ret);
 		goto cleanup_0;
 	}
