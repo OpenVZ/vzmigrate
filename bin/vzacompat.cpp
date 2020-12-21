@@ -51,7 +51,9 @@ static int vza_open_sock(const char *sfx, int *sock)
 {
 	int rc;
 	struct sockaddr_un addr;
-	char root[PATH_MAX + 1];
+	// addr.sun_path is 108 symbols. 108 - VZMPIPE_DIR(9) - STREAM_FILE(4) - sfx(0-2) - VZMoptions.bigname(0+)
+	// 95 for root is the best case
+	char root[95];
 
 	if (VZMoptions.version <= MIGRATE_VERSION_202 || isOptSet(OPT_AGENT40)) {
 		strcpy(root, "");

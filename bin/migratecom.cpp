@@ -326,7 +326,7 @@ int MigrateStateCommon::h_rename(const char * src, const char * dst)
 int MigrateStateCommon::h_backup(const char *src)
 {
 	int rc;
-	char tmpdir[PATH_MAX+1];
+	char tmpdir[PATH_MAX - 17];
 	char path[PATH_MAX + 1];
 	int fd;
 	char *p;
