@@ -53,7 +53,7 @@ static int generate_askpass(const char *pass, char *path, size_t size)
 {
 	int fd;
 	FILE *fp;
-	char tmpdir[PATH_MAX+1];
+	char tmpdir[PATH_MAX-15];
 	const char *p;
 
 	path[0] = '\0';
@@ -97,8 +97,8 @@ int ssh_send_data(
 		char * const *tar_argv)
 {
 	int rc = 0;
-	char buffer[2*PATH_MAX+100];
-	char reply[BUFSIZ+1];
+	char buffer[2*BUFSIZ+100]; // must be 2x reply + some extra payload
+	char reply[BUFSIZ];
 	pid_t ssh_pid = -1, tar_pid = -1, pid;
 	int status;
 	char path[PATH_MAX];

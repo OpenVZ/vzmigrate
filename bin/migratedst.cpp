@@ -1429,7 +1429,7 @@ int MigrateStateDstRemote::cmdCopyVzPackages()
 int MigrateStateDstRemote::copySetNativeQuota(istringstream &is)
 {
 	string fname;
-	char tmpdir[PATH_MAX];
+	char tmpdir[PATH_MAX-1];
 	int rc;
 
 	if ((is >> fname) == NULL)

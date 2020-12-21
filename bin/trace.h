@@ -75,7 +75,7 @@ private:
 	{
 		std::stringstream s;
 		boost::property_tree::json_parser::write_json(s, progress_, false);
-		syslog(LOG_INFO, s.str().c_str());
+		syslog(LOG_INFO, "%s", s.str().c_str());
 	}
 
 	const char * m_name;
