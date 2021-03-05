@@ -1676,6 +1676,7 @@ int MigrateStateRemote::prePhaulMigration()
  */
 int MigrateStateRemote::runPhaulMigration()
 {
+	int rc = 0;
 	const char *s = isOptSet(OPT_ONLINE) ? MIG_INFO_LIVE_STARTED : MIG_INFO_WARM_STARTED;
 	reportStage(s);
 	logger(LOG_INFO, s);
@@ -1686,7 +1687,11 @@ int MigrateStateRemote::runPhaulMigration()
 		return putErr(MIG_ERR_PHAUL, MIG_MSG_RUN_PHAUL);
 
 	// Exec phaul
-	std::vector<std::string> phaulArgs = getPhaulArgs(*channels);
+	std::vector<std::string> phaulArgs;
+	rc = getPhaulArgs(phaulArgs, *channels);
+	if (rc)
+		return rc;
+
 	pid_t phaulPid = execPhaul(phaulArgs);
 	if (phaulPid == -1)
 		return putErr(MIG_ERR_PHAUL, MIG_MSG_RUN_PHAUL);
@@ -1696,7 +1701,7 @@ int MigrateStateRemote::runPhaulMigration()
 
 	// Send CMD_RUN_PHAUL_MIGRATION command to destination. ATTENTION!, have
 	// to read reply further in this function unconditionally!
-	int rc = channel.sendPkt(PACKET_SEPARATOR, CMD_RUN_PHAUL_MIGRATION);
+	rc = channel.sendPkt(PACKET_SEPARATOR, CMD_RUN_PHAUL_MIGRATION);
 	if (rc)
 		return rc;
 
@@ -1724,10 +1729,10 @@ int MigrateStateRemote::runPhaulMigration()
 /*
  * Return vector of command line arguments for p.haul exec.
  */
-std::vector<std::string> MigrateStateRemote::getPhaulArgs(
-	const PhaulChannels& channels)
+int MigrateStateRemote::getPhaulArgs(
+	std::vector<std::string> &args, const PhaulChannels& channels)
 {
-	std::vector<std::string> args;
+	int rc = 0;
 	args.push_back(BIN_PHAUL);
 	args.push_back("vz");
 	args.push_back(srcVE->ctid());
@@ -1775,11 +1780,13 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 		args.push_back(sharedArg);
 	}
 
-	std::string secondaryDisksArg = getPhaulSecondaryDisksArg();
-	if (!secondaryDisksArg.empty()) {
-		args.push_back("--vz-secondary-disks");
-		args.push_back(secondaryDisksArg);
-	}
+	std::string externalDisksArg;
+	rc = getPhaulExternalDisksArg(externalDisksArg);
+	if (rc)
+		return rc;
+
+	args.push_back("--vz-external-disks");
+	args.push_back(externalDisksArg);
 
 	std::string dumpdir(vzcnf->dumpdir);
 	dumpdir.append("/").append(srcVE->ctid());
@@ -1813,7 +1820,7 @@ std::vector<std::string> MigrateStateRemote::getPhaulArgs(
 		args.push_back(getCriuErrLog());
 	}
 
-	return args;
+	return rc;
 }
 
 std::string MigrateStateRemote::getPhaulSharedDisksArg() const
@@ -1836,49 +1843,33 @@ std::string MigrateStateRemote::getPhaulSharedDisksArg() const
 }
 
 /*
- * Return value of --vz-secondary-disks argument. It contain list of secondary
- * ploop disks in format %uuid%:%major%:%minor%[,...]. Consider all additional
- * disks of container (second, third and so on) are secondary.
+ * Return value of --vz-external-disks argument. It contain list of all
+ * ploop disks in format %uuid%@%devname%:%minor%:%major%:%isroot%[,...].
  */
-std::string MigrateStateRemote::getPhaulSecondaryDisksArg() const
+int MigrateStateRemote::getPhaulExternalDisksArg(std::string &out) const
 {
-	struct stat st;
-	int rc;
-	ct_disk disks(srcVE->m_disks.get(disk_is_secondary_or_device));
+	int rc = 0, err;
+	char buf[PATH_MAX + 15];
+	struct vzctl_env_handle *h;
 
-	std::ostringstream arg;
-	const char* delim = "";
-	for (ct_disk::const_iterator it = disks.begin(); it != disks.end(); ++it) {
-		std::string dev = it->image;
+	h = vzctl2_env_open(srcVE->ctid(), 0, &err);
+	if (err)
+		return putErr(MIG_ERR_SYSTEM, "vzctl2_env_open(%s) error: %s",
+			srcVE->ctid(), vzctl2_get_last_error());
 
-		if (!it->is_device()) {
-			char d[PATH_MAX];
-			char p[PATH_MAX];
+	rc = vzctl2_get_criu_arg(h, VZCTL_GET_PLOOP_ARGS_EXTERNAL, buf, sizeof(buf));
+	vzctl2_env_close(h);
 
-			rc = vzctl2_get_ploop_dev2(it->image.c_str(), d,
-					sizeof(d), p, sizeof(p));
-			if (rc != 0) {
-				logger(LOG_ERR, MIG_MSG_INTERNAL, "vzctl2_get_ploop_dev", rc);
-				continue;
-			}
-			dev = p;
-		}
+	if (rc) 
+		return putErr(MIG_ERR_SYSTEM, "vzctl2_get_ploop_args(%d, %s) error: %d",
+			VZCTL_GET_PLOOP_ARGS_EXTERNAL, srcVE->ctid(), rc);
 
-		if (stat(dev.c_str(), &st) == -1) {
-			logger(LOG_ERR, MIG_MSG_INTERNAL, "stat", errno);
-			continue;
-		}
+	out = string(buf);
+	// Starting with criu-3.15.1.19 we report even the root ploop disk, thus "external disks" option is not expected to be empty
+	if (out.empty())
+		return putErr(MIG_ERR_SYSTEM, "getPhaulExternalDisksArg(%s) got empty disk list", srcVE->ctid());
 
-		// Append disks separator
-		arg << delim;
-		delim = ",";
-
-		// Append %uuid%:%major%:%minor% tuple
-		arg << it->uuid << ":" << major(st.st_rdev) << ":"
-			<< minor(st.st_rdev);
-	}
-
-	return arg.str();
+	return 0;
 }
 
 pid_t MigrateStateRemote::execPhaul(const std::vector<std::string>& args)

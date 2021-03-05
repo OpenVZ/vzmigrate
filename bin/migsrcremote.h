@@ -126,9 +126,10 @@ private:
 	int preparePhaulConnection(const std::vector<std::string>& activeDeltas);
 	int prePhaulMigration();
 	int runPhaulMigration();
-	std::vector<std::string> getPhaulArgs(const PhaulChannels& channels);
+	int getPhaulArgs(std::vector<std::string> &args, const PhaulChannels& channels);
+
 	std::string getPhaulSharedDisksArg() const;
-	std::string getPhaulSecondaryDisksArg() const;
+	int getPhaulExternalDisksArg(std::string &out) const;
 	pid_t execPhaul(const std::vector<std::string>& args);
 
 	int syncPageCacheAndFreezeFS(const char *mnt);
