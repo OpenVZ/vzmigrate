@@ -78,7 +78,6 @@ protected:
 	long m_isTargetInHaCluster;
 	typedef std::list<struct ploop_delta_desc *> listDeltaDesc_t;
 	listDeltaDesc_t m_deltas;
-	std::string m_criuErrLog;
 
 	std::auto_ptr<PhaulChannels> m_phaulChannels;
 
