@@ -77,6 +77,7 @@ public:
 	vector<string> tmpNames;
 	// Temporary files collection
 	vector<string> tmpFiles;
+	std::string m_criuErrLog;
 
 public:
 	static MigrateSshChannel channel;
