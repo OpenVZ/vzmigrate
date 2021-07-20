@@ -421,6 +421,7 @@ int VEObj::getStatus(int status, int *out)
 {
 	vzctl_env_status_t ve_status;
 
+	*out = 0;
 	if (EMPTY_CTID(ctid()))
 		return 0;
 
