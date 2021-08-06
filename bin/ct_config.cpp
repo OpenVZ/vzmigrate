@@ -152,6 +152,7 @@ ve_data::ve_data()
 	, quotaugidlimit(0)
 	, ha_enable(1)
 	, ha_prio(0)
+	, disk_raw_str(NULL)
 {
 	memset(diskspace, 0, sizeof(diskspace));
 	memset(diskinodes, 0, sizeof(diskinodes));
@@ -173,6 +174,7 @@ ve_data::~ve_data()
 	free(priv_orig);
 	free(ve_type);
 	free(slmmode);
+	free(disk_raw_str);
 
 	string_list_clean(&ipaddr);
 	string_list_clean(&rate);
@@ -389,6 +391,10 @@ static int do_ve_data_load(struct vzctl_env_handle *h, struct ve_data *ve)
 				VE_CONF_QUOTAUGIDLIMIT, data, strerror(errno));
 		}
 	}
+
+	/* DISK */
+	if (vzctl2_env_get_param(h, VE_CONF_DISK, &data) == 0 && data != NULL)
+		ve->disk_raw_str = strdup(data);
 
 	while ((it = vzctl2_env_get_disk(env, it)) != NULL) {
 
