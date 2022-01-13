@@ -43,7 +43,7 @@ INCFLAGS += -I/usr/kerberos/include
 CC = gcc
 
 MFLAGS = -pthread -Werror -Wall -W -Wformat -g ${INCFLAGS} ${VZFS} -Wno-unused-parameter -Wno-missing-field-initializers
-MFLAGS += -D_FILE_OFFSET_BITS=64 -DNDEBUG -D_VZLIN_
+MFLAGS += -D_FILE_OFFSET_BITS=64 -DNDEBUG -D_VZLIN_ -DBOOST_BIND_GLOBAL_PLACEHOLDERS
 
 # -pg
 LPTHREAD = -lpthread
