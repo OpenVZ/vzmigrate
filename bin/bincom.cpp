@@ -54,7 +54,7 @@ static volatile int sig_handler_disabled;
 static void sighandler(int signum)
 {
 	if (!sig_handler_disabled) {
-		sigignore(signum);
+		signal(signum, SIG_IGN);
 		// send sigterm to all processes in group
 		kill(0, signum);
 		terminated = 1;
