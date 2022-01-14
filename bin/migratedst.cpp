@@ -321,7 +321,6 @@ static int check_cluster_id(
 		int *is_thesame_path)
 {
 	int rc;
-	char dst_id[GFS_LOCKNAME_LEN+1];
 	char dst_lp[PATH_MAX+1];
 	char mpoint[PATH_MAX+1];
 
@@ -334,12 +333,6 @@ static int check_cluster_id(
 		return rc;
 	if (strlen(dst_lp) == 0)
 		strcpy(dst_lp, ".");
-
-	if (strcmp(src_id, dst_id) == 0) {
-		if (is_thesame_cluster)
-			*is_thesame_cluster = 1;
-		*is_thesame_path = (strcmp(dst_lp, src_lp) == 0);
-	}
 
 	return 0;
 }
