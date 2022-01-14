@@ -692,7 +692,12 @@ int VEObj::registration(const char *uuid)
 
 	struct vzctl_reg_param reg;
 	memset(&reg, 0, sizeof(struct vzctl_reg_param));
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
 	SET_CTID(reg.ctid, ctid());
+#pragma GCC diagnostic pop
+
 	reg.uuid = uuid;
 	reg.name = ve_data.name;
 
