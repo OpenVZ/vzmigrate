@@ -179,7 +179,7 @@ int vzm_execve(
 	if (terminated)
 		return MIG_ERR_TERM;
 
-	strncpy(path, argv[0], sizeof(path));
+	strncpy(path, argv[0], sizeof(path) - TRAILING_ZERO);
 /* TODO: relative path */
 	if (debug_level >= LOG_DEBUG) {
 		buffer[0] = '\0';
@@ -547,7 +547,7 @@ int split_path(	const char *path,
 		return putErr(MIG_ERR_SYSTEM,
 			"%s is not a absolute path", path);
 
-	strncpy(buf, path, sizeof(buf));
+	strncpy(buf, path, sizeof(buf) - TRAILING_ZERO);
 	/* skip non-exists part of path */
 	while (1) {
 		errno = 0;

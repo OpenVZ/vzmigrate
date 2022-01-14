@@ -62,6 +62,8 @@ extern "C" {
 
 #define SERVICE_CTID	"1"
 
+#define TRAILING_ZERO	1
+
 extern int debug_level;
 extern int terminated;
 

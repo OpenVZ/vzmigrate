@@ -644,7 +644,7 @@ int MigrateStateDstRemote::cmdCheckKernelModules(istringstream &is)
 
 	while (is >> module)
 	{
-		strncpy(buf, module.c_str(), sizeof(buf));
+		strncpy(buf, module.c_str(), sizeof(buf) - TRAILING_ZERO);
 		if (isOptSet(OPT_SUDO))
 			rc = vzm_execve(args, NULL, -1, -1, NULL);
 		else
@@ -994,7 +994,7 @@ int MigrateStateDstRemote::h_copy_remote_rsync(const char * dst)
 	}
 	rc = h_copy_remote_rsync_dir(dst);
 	if (str) {
-		strncpy(VZMoptions.tmo.str, str, sizeof(VZMoptions.tmo.str));
+		strncpy(VZMoptions.tmo.str, str, sizeof(VZMoptions.tmo.str) - TRAILING_ZERO);
 		free((void *)str);
 	}
 	return rc;

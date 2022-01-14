@@ -1193,7 +1193,7 @@ std::string subst_VEID_back(const char *ctid, const char *path)
 	char buffer[PATH_MAX];
 	char *bdir, *bname;
 
-	strncpy(buffer, path, sizeof(buffer));
+	strncpy(buffer, path, sizeof(buffer) - TRAILING_ZERO);
 	remove_trail_slashes(buffer);
 	bname = basename(buffer);
 	bdir = dirname(buffer);
