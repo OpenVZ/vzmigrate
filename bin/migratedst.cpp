@@ -321,7 +321,6 @@ static int check_cluster_id(
 		int *is_thesame_path)
 {
 	int rc;
-	char dst_id[GFS_LOCKNAME_LEN+1];
 	char dst_lp[PATH_MAX+1];
 	char mpoint[PATH_MAX+1];
 
@@ -334,12 +333,6 @@ static int check_cluster_id(
 		return rc;
 	if (strlen(dst_lp) == 0)
 		strcpy(dst_lp, ".");
-
-	if (strcmp(src_id, dst_id) == 0) {
-		if (is_thesame_cluster)
-			*is_thesame_cluster = 1;
-		*is_thesame_path = (strcmp(dst_lp, src_lp) == 0);
-	}
 
 	return 0;
 }
@@ -644,7 +637,7 @@ int MigrateStateDstRemote::cmdCheckKernelModules(istringstream &is)
 
 	while (is >> module)
 	{
-		strncpy(buf, module.c_str(), sizeof(buf));
+		strncpy(buf, module.c_str(), sizeof(buf) - TRAILING_ZERO);
 		if (isOptSet(OPT_SUDO))
 			rc = vzm_execve(args, NULL, -1, -1, NULL);
 		else
@@ -994,7 +987,7 @@ int MigrateStateDstRemote::h_copy_remote_rsync(const char * dst)
 	}
 	rc = h_copy_remote_rsync_dir(dst);
 	if (str) {
-		strncpy(VZMoptions.tmo.str, str, sizeof(VZMoptions.tmo.str));
+		strncpy(VZMoptions.tmo.str, str, sizeof(VZMoptions.tmo.str) - TRAILING_ZERO);
 		free((void *)str);
 	}
 	return rc;

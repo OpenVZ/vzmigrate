@@ -348,7 +348,7 @@ int main(int argc, char *argv[])
 
 	static struct vz_data vz_conf;
 
-	strncpy(progname, basename(argv[0]), sizeof(progname));
+	strncpy(progname, basename(argv[0]), sizeof(progname) - TRAILING_ZERO);
 	snprintf(pidfile, sizeof(pidfile), "/var/run/%s.pid", progname);
 
 	if (stat(pidfile, &st) == 0) {

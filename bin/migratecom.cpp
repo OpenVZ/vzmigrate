@@ -190,7 +190,7 @@ int MigrateStateCommon::clean_removeDir(const void * arg, const void *)
 
 	logger(LOG_DEBUG, MIG_MSG_RST_RM_DIR, dir);
 
-	strncpy(path, dir, sizeof(path));
+	strncpy(path, dir, sizeof(path) - TRAILING_ZERO);
 	path[sizeof(path)-1] = '\0';
 	/* remove tail slashes */
 	for(i = strlen(path)-1; (i >= 0) && (path[i] == '/'); --i)
@@ -206,7 +206,7 @@ int MigrateStateCommon::clean_removeDir(const void * arg, const void *)
 	if (rename(dir, path)) {
 		// copy function may haven't time to create dir
 		logger(LOG_DEBUG, "can not rename : [%s] -> [%s]", dir, path);
-		strncpy(path, dir, sizeof(path));
+		strncpy(path, dir, sizeof(path) - TRAILING_ZERO);
 	}
 
 	chpid = fork();
@@ -820,10 +820,10 @@ int MigrateStateCommon::runHaman(const char *ctid, const char *cmd, ...)
 		snprintf(argbuf, sizeof(argbuf), "ct-%s", va_arg(pvar, const char*));
 		args[ndx++] = (char *)argbuf;
 	} else if (strcmp(cmd, "move-to") == 0) {
-		strncpy(argbuf, va_arg(pvar, char *), sizeof(argbuf));
+		strncpy(argbuf, va_arg(pvar, char *), sizeof(argbuf) - TRAILING_ZERO);
 		args[ndx++] = (char *)argbuf;
 	} else if (strcmp(cmd, "move-from") == 0) {
-		strncpy(argbuf, va_arg(pvar, char *), sizeof(argbuf));
+		strncpy(argbuf, va_arg(pvar, char *), sizeof(argbuf) - TRAILING_ZERO);
 		args[ndx++] = (char *)argbuf;
 	} else if (strcmp(cmd, "add") == 0) {
 		char prio[10 + 1];

@@ -62,6 +62,8 @@ extern "C" {
 
 #define SERVICE_CTID	"1"
 
+#define TRAILING_ZERO	1
+
 extern int debug_level;
 extern int terminated;
 
@@ -111,8 +113,8 @@ extern const char * getError();
 #endif
 
 #define MAX_CMD_SIZE		BUFSIZ
-/* 0x7FFFFFFF == 2.147.483.647 */
-#define ITOA_BUF_SIZE		11
+/* 0 to 18,446,744,073,709,551,615 */
+#define ITOA_BUF_SIZE		21
 
 // Errors
 #define MIG_ERR_USAGE		-1

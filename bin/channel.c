@@ -116,7 +116,8 @@ int ch_read_retcode(
 		void *conn)
 {
 	char buffer[BUFSIZ];
-	int rc, code;
+	int code = 0;
+	int rc;
 
 	if ((rc = ch_read_reply(ctx, conn, &code, buffer, sizeof(buffer))))
 		return rc;

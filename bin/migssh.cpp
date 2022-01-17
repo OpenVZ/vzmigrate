@@ -118,7 +118,7 @@ int ssh_send_data(
 		snprintf(dst, sizeof(dst), "%s@%s",
 			VZMoptions.dst_user, VZMoptions.dst_addr);
 	else
-		strncpy(dst, VZMoptions.dst_addr, sizeof(dst));
+		strncpy(dst, VZMoptions.dst_addr, sizeof(dst) - TRAILING_ZERO);
 
 	size = sizeof(password);
 	if ((ret = vzsock_get(ctx, VZSOCK_DATA_PASSWORD, (void *)password, &size)))

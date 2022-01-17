@@ -80,7 +80,7 @@ int TmplEntryEz::list()
 	char* ptr;
 	char* ostmpl;
 
-	strncpy(tmpl, m_id.c_str(), sizeof(tmpl));
+	strncpy(tmpl, m_id.c_str(), sizeof(tmpl) - TRAILING_ZERO);
 
 	vztt_set_default_options(&opts);
 	opts.fld_mask = VZTT_INFO_TMPL_ALL;
@@ -188,7 +188,7 @@ int TmplEntryEz::check()
 	char* ptr;
 	char* ostmpl;
 
-	strncpy(tmpl, m_id.c_str(), sizeof(tmpl));
+	strncpy(tmpl, m_id.c_str(), sizeof(tmpl) - TRAILING_ZERO);
 
 	vztt_set_default_options(&opts);
 	opts.debug = 0;

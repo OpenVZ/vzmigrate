@@ -330,7 +330,7 @@ int MigrateStateTemplate::fillEZDirList(char* const* const vzdir, char* dir,
 			break;
 		if (lexist)
 			continue;
-		strncpy(path, vzdir[i], sizeof(path));
+		strncpy(path, vzdir[i], sizeof(path) - TRAILING_ZERO);
 		p = basename(path);
 		if (write(fd, p, strlen(p)) == -1 ||
 		    write(fd, "\n", 1) == -1) {

@@ -195,7 +195,7 @@ int MigrateChannel::createSshChannel(
 		snprintf(dst, sizeof(dst), "%s@%s",
 			VZMoptions.dst_user, VZMoptions.dst_addr);
 	else
-		strncpy(dst, VZMoptions.dst_addr, sizeof(dst));
+		strncpy(dst, VZMoptions.dst_addr, sizeof(dst) - TRAILING_ZERO);
 
 	if ((ret = vzsock_init(VZSOCK_SSH, &ctx)))
 		return putErr(MIG_ERR_CONN_BROKEN,
