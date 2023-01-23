@@ -215,7 +215,7 @@ int ssl_cli_conn_init(
 	SSL_load_error_strings();
 
 	/* Create SSL context (framework) */
-	if ((cn->ctx = SSL_CTX_new(SSLv23_client_method())) == NULL) {
+	if ((cn->ctx = SSL_CTX_new(TLS_client_method())) == NULL) {
 		rc = ssl_error(MIG_ERR_SSL, "SSL_CTX_new()");
 		goto cleanup_0;
 	}
@@ -362,7 +362,7 @@ int ssl_srv_init(
 	SSL_load_error_strings();
 
 	/* Create SSL context (framework) */
-	if ((cn->ctx = SSL_CTX_new(SSLv23_server_method())) == NULL) {
+	if ((cn->ctx = SSL_CTX_new(TLS_server_method())) == NULL) {
 		rc = ssl_error(MIG_ERR_SSL, "SSL_CTX_new()");
 		goto cleanup_0;
 	}

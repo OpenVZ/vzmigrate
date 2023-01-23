@@ -179,7 +179,7 @@ int main(int argc, char **argv)
 	SSL_load_error_strings();
 
 	/* to create SSL context */
-	meth = SSLv23_server_method();
+	meth = TLS_server_method();
 	if ((ctx = SSL_CTX_new(meth)) == NULL) {
 		fprintf(stderr, "SSL_CTX_new() : %m\n");
 		ERR_print_errors_fp(stdout);

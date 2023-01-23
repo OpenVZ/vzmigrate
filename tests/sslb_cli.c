@@ -160,7 +160,7 @@ int main(int argc, char **argv, char **envp)
 	}
 
 	/* Create SSL context (framework) */
-	if ((ctx = SSL_CTX_new(SSLv23_client_method())) == NULL) {
+	if ((ctx = SSL_CTX_new(TLS_client_method())) == NULL) {
 		ERR_print_errors_fp(stderr);
 		rc = 1;
 		goto cleanup_0;

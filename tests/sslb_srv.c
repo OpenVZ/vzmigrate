@@ -143,7 +143,7 @@ int main()
 	}
 
 	/* to create SSL context */
-	if ((ctx = SSL_CTX_new(SSLv23_server_method())) == NULL) {
+	if ((ctx = SSL_CTX_new(TLS_server_method())) == NULL) {
 		ERR_print_errors_fp(stderr);
 		return 1;
 	}
