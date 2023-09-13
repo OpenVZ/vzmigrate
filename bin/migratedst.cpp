@@ -777,6 +777,9 @@ int MigrateStateDstRemote::finalVEtuning()
 		rc = dstVE->renewMAC();
 		if (rc)
 			return rc;
+
+		if (isOptSet(OPT_ONLINE))
+			dstVE->start();
 	}
 
 	logger(LOG_INFO, "End of CT %s migration", dstVE->ctid());

@@ -567,18 +567,51 @@ int VEObj::destroy()
 
 int VEObj::tsnapshot(const char *guid)
 {
-	const char *opt[] = {
-		"--uuid", guid, "--component-name", VZMIGRATE_COMPONENT_NAME, NULL
-	};
-	logger(LOG_DEBUG, "Createing tsnapshot %s", guid);
-	return operateVE("tsnapshot", "Snapshoting", opt, 0);
+	int err;
+	vzctl_env_handle_ptr h;
+
+	h = vzctl2_env_open(ctid(), 0, &err);
+	if (h == NULL) {
+		logger(LOG_ERR, "Failed to open vzctl2_env handler: %s", vzctl2_get_last_error());
+		return -1;
+	}
+
+	m_tsnap.component_name = (char *)VZMIGRATE_COMPONENT_NAME;
+	err = vzctl2_env_create_temporary_snapshot(h, guid, &m_tsnap, NULL);
+	vzctl2_env_close(h);
+	if (err) {
+		logger(LOG_ERR, "Failed to create tmp snapshot %s: %s", guid, vzctl2_get_last_error());
+		return -1;
+	}
+
+	return 0;
 }
 
 int VEObj::tsnapshot_delete(const char *guid)
 {
-	const char *opt[] = {"--uuid", guid, NULL};
+	int err;
+	vzctl_env_handle_ptr h;
 
-	return operateVE("tsnapshot-delete", "Deleting snapshot", opt, 0);
+	err = vzctl2_umount_image_by_dev(m_tsnap.device);
+	if (err) {
+		logger(LOG_ERR, "Failed to umount device %s", m_tsnap.device, vzctl2_get_last_error());
+		return -1;
+	}
+
+	h = vzctl2_env_open(ctid(), 0, &err);
+	if (h == NULL) {
+		logger(LOG_ERR, "Failed to open vzctl2_env handler: %s", vzctl2_get_last_error());
+		return -1;
+	}
+
+	err = vzctl2_delete_snapshot(h, guid);
+	vzctl2_env_close(h);
+	if (err) {
+		logger(LOG_ERR, "Failed to delete snapshot %s", vzctl2_get_last_error());
+		return -1;
+	}
+
+	return 0;
 }
 
 int VEObj::cmd_suspend()

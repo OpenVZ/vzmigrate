@@ -120,6 +120,7 @@ class VEObj
 private:
 	string m_snap_guid;
 	ctid_t m_ctid;
+	struct vzctl_tsnapshot_param m_tsnap;
 	int lock_fd;
 
 public:
